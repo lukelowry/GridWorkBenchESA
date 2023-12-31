@@ -11,8 +11,8 @@ with open("README.rst", "r") as fh:
 # Update the __version__ in __init__ before installing:
 # Update the __version__ in __about__ before installing:
 # Path to __init__.py:
-init_path = os.path.join('esa', '__init__.py')
-about_path = os.path.join('esa', '__about__.py')
+init_path = os.path.join('gridwb', '__init__.py')
+about_path = os.path.join('gridwb', '__about__.py')
 # Read __init__.py:
 with open(init_path, 'r') as fh:
     __init__ = fh.read()
@@ -39,7 +39,7 @@ with open(about_path, 'w') as fh:
     fh.write(__about__)
 
 setuptools.setup(
-    name='esa',
+    name='gridwb',
     version=__version__,
     description='Easy SimAuto (ESA): An easy-to-use Python connector to '
                 'PowerWorld Simulator Automation Server (SimAuto).',

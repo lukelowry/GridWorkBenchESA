@@ -48,9 +48,9 @@ import networkx as nx
 import scipy as sp
 from scipy.sparse import csr_matrix
 
-from esa import SAW, COMError, PowerWorldError, CommandNotRespectedError, \
+from gridwb import SAW, COMError, PowerWorldError, CommandNotRespectedError, \
     Error
-from esa.saw import convert_to_windows_path, df_to_aux
+from gridwb.saw import convert_to_windows_path, df_to_aux
 
 # noinspection PyUnresolvedReferences
 from tests.constants import PATH_14, PATH_14_PWD, PATH_2000, \

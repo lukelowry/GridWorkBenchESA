@@ -3273,7 +3273,7 @@ class SAW(object):
         )
 
     def _to_numeric(self, data: Union[pd.DataFrame, pd.Series],
-                    errors='raise') -> \
+                    errors='ignore') -> \
             Union[pd.DataFrame, pd.Series]:
         """Helper to convert data from string to numeric. The primary
         purpose for this function's existence is to handle European style

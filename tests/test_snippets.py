@@ -5,7 +5,7 @@ import unittest
 import doctest
 import logging
 
-from esa import SAW
+from gridwb import SAW
 # noinspection PyUnresolvedReferences
 from tests.constants import CASE_MAP, SNIPPET_FILES, CANDIDATE_LINES, PATH_14
 

@@ -4,7 +4,7 @@ to run this script from the directory in which it resides.
 """
 import argparse
 import os
-from esa import SAW
+from gridwb import SAW
 
 
 def main(version):

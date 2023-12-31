@@ -16,7 +16,7 @@ import sys
 from os.path import dirname, relpath
 from typing import Union
 from pathlib import Path
-import esa
+import gridwb
 sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../../'))
 
@@ -152,7 +152,7 @@ def linkcode_resolve(
     else:
         linespec = ""
 
-    fn = relpath(fn, start=dirname(esa.__file__))
+    fn = relpath(fn, start=dirname(gridwb.__file__))
 
     if "dev" in about["__version__"]:
         return "{}/blob/master/{}/{}{}".format(

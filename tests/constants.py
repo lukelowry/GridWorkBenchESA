@@ -1,6 +1,6 @@
 """Module to hold constants for testing."""
 import os
-from esa import SAW
+from gridwb import SAW
 
 # Handle pathing.
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
