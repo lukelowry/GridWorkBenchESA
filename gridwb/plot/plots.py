@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 
 # Plotting
 from warnings import filterwarnings
+
+from matplotlib.collections import LineCollection
+import numpy as np
 filterwarnings( "ignore", module = "matplotlib\..*" )
 
 from matplotlib import pyplot as plt
@@ -59,6 +62,8 @@ class Plot(ABC):
 
         # Add Color to Meta
         self.metaMaster['Color'] = [cmap(norm(v)) for v in cVals]
+        self.cmap = cmap
+        self.norm = norm
 
         # 'Frame' Versions - Identical for a plot
         self.meta  = self.metaMaster
@@ -80,10 +85,13 @@ class Plot(ABC):
 
     @abstractmethod
     def plot(self, ax: Axes) -> Axes:
+
+        if ax is None:
+            fig, ax = plt.subplots()
         
         # Axis Numeric Limits
-        ax.set_xlim(self.xlim)
-        ax.set_ylim(self.ylim)
+        ax.set_xlim(self.xlim,auto=self.xlim is None)
+        ax.set_ylim(self.ylim,auto=self.ylim is None)
 
         # Axis Titles
         ax.set_xlabel(self.xlabel)
@@ -137,8 +145,7 @@ class TSPlot(Plot):
 
     def plot(self, ax: Axes=None):
 
-        if ax is None:
-            fig, ax = plt.subplots()
+        ax = super().plot(ax)
 
         # Plot - Have more control with mpl
         for col in self.df:
@@ -153,28 +160,11 @@ class TSPlot(Plot):
         self.ylabel = self.units
         
         # Standard Formats
-        return super().plot(ax)
+        return ax
 
 class ContingencyImpact(Plot):
 
     def plot(self, ax: Axes=None):
-
-        if ax is None:
-            fig, ax = plt.subplots()
-
-        # Scatter Form
-        d = self.df.T
-
-        # Plot
-        ax.scatter(
-            x=d['Reference'],
-            y=d['Value'],
-            c=self.meta['Color']
-        )
-
-        # 'No Change' Line
-        line = lines.Line2D([0, 2], [0, 2], color='red')
-        ax.add_line(line)
 
         # Plot Text
         self.title  = "Contingency Impact"
@@ -182,7 +172,47 @@ class ContingencyImpact(Plot):
         self.ylabel = "Post-CTG " + self.units
         
         # Standard Formats
-        return super().plot(ax)
+        ax = super().plot(ax)
+
+        # Scatter Form
+        m = self.meta
+        d = self.df.T
+
+         # 'No Change' Line
+        line = lines.Line2D([0, 2], [0, 2], color='red')
+        ax.add_line(line)
+
+
+        # Lines Connecting Scatter Indicating Objects
+        for o in m['ID-A'].unique():
+            objmeta = m[m['ID-A']==o].index
+            #print(m[m['ID-A']==o].sort_values(by=[self.colorkey]))
+            objPoints = d.loc[objmeta]
+
+            x = objPoints["Reference"].tolist()
+            y = objPoints["Value"].tolist()
+            colors = m.loc[objmeta, 'Color'].tolist()[1:]
+            segments = []
+
+            i = 0
+            for x1, x2, y1,y2 in zip(x, x[1:], y, y[1:]):
+                segments.append([(x1, y1), (x2, y2)])
+                i += 1  
+
+            lc = LineCollection(segments,color=colors, linewidths=2)
+            ax.add_collection(lc)
+
+        # Plot Scatter
+        '''
+        ax.scatter(
+            x=d['Reference'],
+            y=d['Value'],
+            c=self.meta['Color'],
+            zorder=3
+        )
+        '''
+
+        return 
 
 
 

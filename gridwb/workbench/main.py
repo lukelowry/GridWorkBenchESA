@@ -18,52 +18,67 @@
 
 
 # Imports
+from gridwb.workbench.grid.builders import GridType, ObjectFactory
+from .plugins.powerworld.powerworld import PowerWorldIO
 from .grid import *
-from .apps.dyn import *
-from .apps.static import *
+from .apps.dyn import Dynamics
+from .apps.static import Statics
 from .utils.conditions import *
-from .io.pwb import PowerWorldIO
 
 class GridWorkBench:
 
     def __init__(self, fname=None):
 
         # PW Interface
-        self.io = PowerWorldIO()
+        self.io   = PowerWorldIO(fname)
 
         # Main Model
-        self.case = Case(self.io)
+        #self.case = Case(self.io)
 
         # Applications
-        self.dyn  = Dynamics(self.case)
-        self.statics = Statics(self.case)
+        self.dyn     = Dynamics(self.io)
+        self.statics = Statics(self.io)
 
         # Read Data into Case
         if fname is not None:
-            self.io.open(fname)
-            self.io.read(self.case)
-        
-    @property
-    def esa(self):
-        return self.io.esa
-        
-    # Return Type Given Specifier
-    def region(self, name: str)         : return self.case.H.get(Region, name)
-    def area(self, idOrName: int | str) : return self.case.H.get(Area, idOrName)
-    def sub(self, idOrName: int | str)  : return self.case.H.get(Sub, idOrName)
-    def bus(self, idOrName: int | str)  : return self.case.H.get(Bus, idOrName)
-    def gen(self, idOrName: int | str)  : return self.case.H.get(Gen, idOrName)
-    def shunt(self, idOrName: int | str): return self.case.H.get(Shunt, idOrName)
-    def ctg(self, name)     : return self.case.ctg(name)
-    def tsctg(self, name)   : return self.case.tsctg(name)
+            self.io.open()
+            self.objs = ObjectFactory.makeFrom(self.io)
+    
+    def ofType(self, otype: GridType):
+        for o in self.objs:
+            if o._type is otype:
+                yield o
 
     # Return All of Type
-    def regions(self)   : return list(self.case.H.getAll(Region))
-    def areas(self)     : return list(self.case.H.getAll(Area))
-    def subs(self)      : return list(self.case.H.getAll(Sub))
-    def buses(self)     : return list(self.case.H.getAll(Bus))
-    def loads(self)     : return list(self.case.H.getAll(Load))
-    def gens(self)      : return list(self.case.H.getAll(Gen))
-    def shunts(self)    : return list(self.case.H.getAll(Shunt))
-    def ctgs(self)      : return self.case.ctgs
-    def tsctgs(self)    : return self.case.tsctgs
+    @property
+    def regions(self)   : return [*self.ofType(GridType.Region)]
+    @property
+    def areas(self)     : return [*self.ofType(GridType.Area)]
+    @property
+    def subs(self)      : return [*self.ofType(GridType.Sub)]
+    @property
+    def buses(self)     : return [*self.ofType(GridType.Bus)]
+    @property
+    def loads(self)     : return [*self.ofType(GridType.Load)]
+    @property
+    def gens(self)      : return [*self.ofType(GridType.Gen)]
+    @property
+    def shunts(self)    : return [*self.ofType(GridType.Shunt)]
+    @property
+    def ctgs(self)      : return [*self.ofType(GridType.Contingency)]
+    @property
+    def tsctgs(self)      : return [*self.ofType(GridType.TSContingency)]
+
+    def find(self, otype: GridType, *keyvals):
+        for o in self.objs:
+            if o._type is otype and tuple(o._keys.values())==keyvals:
+                return o
+
+    # Return Type Given Specifier
+    def region(self, name: str) : return self.find(GridType.Region, name)
+    def area(self, num: int)    : return self.find(GridType.Area, num)
+    def sub(self, num: int)     : return self.find(GridType.Sub, num)
+    def bus(self, num: int)     : return self.find(GridType.Bus, num)
+    def gen(self, id, bus)   : return self.find(GridType.Gen, id, bus)
+    def load(self, id, bus)  : return self.find(GridType.Load, id, bus)
+    def shunt(self, id, bus) : return self.find(GridType.Shunt, id, bus)

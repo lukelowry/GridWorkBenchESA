@@ -18,6 +18,8 @@ from abc import ABC, abstractmethod
 import os
 import pandas as pd
 from typing import Any
+
+from gridwb.workbench.grid.builders import GridType, ObjectFactory
 from ...saw import SAW
 
 from ..utils.decorators import timing
@@ -81,22 +83,22 @@ class PowerWorldIO(IO):
 
     # Attibute Name: (PWName, DataType, KeyField)
     iomap: dict[GridObject, Any] = {
-        Region: {
+        GridType.Region: {
             "name" : ("SAName",  str, False)
         },
-        Area: {
+        GridType.Area: {
             "id"           : ("AreaNum"         , int, False),
             "container_id" : ("SAName"          , str, False),
             "name"         : ("AreaName"        , str, False),
         },
-        Sub: {
+        GridType.Sub: {
             "id"           : ("SubNum"          , int, False),            
             "container_id" : ("AreaNum"         , int, False),            
             "name"         : ("SubName"         , str, False),            
             "latitude"     : ("Latitude"        , float, False),          
             "longitude"    : ("Longitude"       , float, False),          
         },
-        Bus: {
+        GridType.Bus: {
             "id"           : ("BusNum"          , int, True),            
             "container_id" : ("SubNum"          , int, False),            
             "name"         : ("BusName"         , str, False),            
@@ -106,7 +108,7 @@ class PowerWorldIO(IO):
             "status"       : ("BusStatus"       , pw_bool, False),        
             "zone_number"  : ("ZoneNum"         , int, False),            
         },
-        Gen: {
+        GridType.Gen: {
             "id"           : ("GenID"           , int, False),            
             "container_id" : ("BusNum"          , str, False),            
             "status"       : ("GenStatus"       , pw_bool, False),        
@@ -130,7 +132,7 @@ class PowerWorldIO(IO):
             "fuel_cost"    : ("GenFuelCost"     , str, False),            
             "sbase"        : ("GenMVABase"      , float, False),          
         },
-        Load: {
+        GridType.Load: {
             "id"           : ("LoadID"      ,  int, False),              
             "container_id" : ("BusNum"      ,  int, False),              
             "status"       : ("LoadStatus"  ,  pw_bool, False),          
@@ -140,7 +142,7 @@ class PowerWorldIO(IO):
             "qs"           : ("LoadSMVR"    ,  float, False),            
             "benefit"      : ("GenBidMWHR"  ,  float, False),            
         },
-        Shunt: {
+        GridType.Shunt: {
             "id"           : ("ShuntID"         ,  str, False),            
             "container_id" : ("BusNum"          ,  str, False),           
             "status"       : ("SSStatus"        ,  pw_bool, False),        
@@ -148,7 +150,7 @@ class PowerWorldIO(IO):
             "q"            : ("SSAMVR"          ,  float, False),          
             "availability" : ("CustomInteger"   ,  str, False),            
         },
-        Branch: {
+        GridType.Line: {
             "id"           : ("LineCircuit"     ,  int, False),              
             "from_bus_num" : ("BusNum"          ,  int, False),              
             "to_bus_num"   : ("BusNum:1"        ,  int, False),              
@@ -167,7 +169,8 @@ class PowerWorldIO(IO):
             "length"       : ("GICLineDistance" ,  float, False),            
             "availability" : ("CustomInteger"   ,  float, False),            
         },
-        TSContingency: {
+        # TODO Make Transient
+        GridType.Contingency: {
             "name"         : ("TSCTGName"               ,  str, False),            
             "duration"     : ("TSTimeInSeconds"         ,  float, False),          
             "timestep"     : ("TimeStep"                ,  float, False),          
@@ -177,24 +180,159 @@ class PowerWorldIO(IO):
             "mw_tripped"   : ("TSTotalLoadMWTripped"    ,  float, False),          
             "mw_islanded"  : ("TSTotalLoadMWIslanded"   ,  float, False),          
         },
-        TSContingencyAction: {
+        # TODO Make Transient
+        GridType.ContingencyAction: {
             "ctgname"     : ("TSCTGName"        ,  str, True),            
             "action"      : ("TSEventString"    ,  str, False),            
             "objectDesc"  : ("WhoAmI"           ,  str, False),            
             "time"        : ("TSTimeInSeconds"  ,  float, False),          
         },
-        Contingency: {
+        GridType.Contingency: {
             "name"         : ("CTGLabel" , str, True),            
             "skip"         : ("CTGSkip"  , pw_bool, False),            
             "violations"   : ("CTGViol"  , int, False),            
         },
-        ContingencyAction: {
+        GridType.ContingencyAction: {
             "ctgname"   : ("CTGLabel" , str, True),            
             "action"    : ("Action"   , str, False),            
             "objectDesc": ("Object"   , str, False),            
             "actionDesc": ("WhoAmI"   , str, False),            
         }
         
+    }
+
+    # Attibute Name: (PWName, DataType, KeyField)
+    fieldMap: dict[GridObject, Any] = {
+        GridType.Region: [
+            "SAName"
+        ],
+        GridType.Area: [
+            "AreaNum"         , 
+            "SAName"          , 
+            "AreaName"        , 
+        ],
+        GridType.Sub: [
+            "SubNum"          ,             
+            "AreaNum"         ,             
+            "SubName"         ,             
+            "Latitude"        ,         
+            "Longitude"       ,         
+        ],
+        GridType.Bus: [
+            "BusNum"          ,          
+            "SubNum"          ,             
+            "BusName"         ,             
+            "BusNomVolt"      ,         
+            "BusPUVolt"       ,         
+            "BusAngle"        ,         
+            "BusStatus"       ,      
+            "ZoneNum"         ,             
+        ],
+        GridType.Gen: [
+            "GenID"           ,             
+            "BusNum"          ,             
+            "GenStatus"       ,         
+            "GenMW"           ,         
+            "GenMVR"          ,         
+            "GenMWSetPoint"   ,         
+            "GenMvrSetPoint"  ,         
+            "GenMWMax"        ,             
+            "GenMWMin"        ,             
+            "GenMVRMax"       ,             
+            "GenMVRMin"       ,             
+            "GenRegNum"       ,             
+            "GenVoltSet"      ,             
+            "GenAGCAble"      ,       
+            "GenAVRAble"      ,        
+            "GenMWRampLimit"  ,             
+            "CustomFloat"     ,             
+            "CustomFloat:1"   ,             
+            "CustomFloat:2"   ,             
+            "GenFuelType"     ,             
+            "GenFuelCost"     ,             
+            "GenMVABase"      ,         
+        ],
+        GridType.Load: [
+            "LoadID"      ,                
+            "BusNum"      ,                
+            "LoadStatus"  ,           
+            "LoadMW"      ,            
+            "LoadMVR"     ,            
+            "LoadSMW"     ,            
+            "LoadSMVR"    ,            
+            "GenBidMWHR"  ,            
+        ],
+        GridType.Shunt: [
+            "ShuntID"         ,              
+            "BusNum"          ,             
+            "SSStatus"        ,         
+            "SSNMVR"          ,          
+            "SSAMVR"          ,          
+            "CustomInteger"   ,              
+        ],
+        GridType.Line: [
+            "LineCircuit"     ,                
+            "BusNum"          ,                
+            "BusNum:1"        ,                
+            "LineStatus"      ,          
+            "LineR"           ,            
+            "LineX"           ,            
+            "LineC"           ,            
+            "LineG"           ,            
+            "LineAMVA"        ,            
+            "LineAMVA:1"      ,            
+            "LineAMVA:2"      ,            
+            "LineMW"          ,            
+            "LineMVR"         ,            
+            "LineMW:1"        ,            
+            "LineMVR:1"       ,             
+            "GICLineDistance" ,          
+            "CustomInteger",           
+        ],
+        # TODO Make Transient
+        GridType.Contingency: [
+            "TSCTGName",        
+            "TSTimeInSeconds",         
+            "TimeStep",          
+            "Category",           
+            "CTGSkip",       
+            "CTGViol",         
+            "TSTotalLoadMWTripped",      
+            "TSTotalLoadMWIslanded"         
+        ],
+        # TODO Make Transient
+        GridType.ContingencyAction: [
+            "TSCTGName"        ,          
+            "TSEventString"    ,           
+            "WhoAmI"           ,           
+            "TSTimeInSeconds"  ,         
+        ],
+        GridType.Contingency: [
+            "CTGLabel",           
+            "CTGSkip",           
+            "CTGViol"         
+        ],
+        GridType.ContingencyAction: [
+            "CTGLabel" ,           
+            "Action"   ,           
+            "Object"   ,            
+            "WhoAmI"          
+        ]
+        
+    }
+
+    otypemap = {
+        GridType.Region : 'superarea',
+        GridType.Area   : 'area',
+        GridType.Sub    : 'substation',
+        GridType.Bus    : 'bus',
+        GridType.Gen    : 'gen',
+        GridType.Load   : 'load',
+        GridType.Shunt  : 'shunt',
+        GridType.Line   : 'branch',
+        GridType.XFMR   : 'xfmr',
+        GridType.Contingency       : 'contingency',
+        GridType.ContingencyAction : 'contingencyelement',
     }
 
     # Establish Connection to PW  TODO json & aux support
@@ -213,18 +351,31 @@ class PowerWorldIO(IO):
 
     @timing
     def read(self, case:Case):
+       
+        allobjs: list[GridObject] = []
 
         # For each object type (e.g. Region, Sub, Load, etc.)
         for otype, fields in self.iomap.items():
 
-            # Request Data & Rename
-            df = self.esa.GetParametersMultipleElement(otype.text, [v[0] for v in fields.values()])
-            df.columns = list(fields)
+            df = self.esa.GetParametersMultipleElement(
+                self.otypemap[otype],
+                self.fieldMap[otype]
+            )
+
+            # Rename fields here
+
+            allobjs += ObjectFactory.make(otype, df)
+
+            #df.columns = list(fields)
             
             # Add Each Instance to Case
-            for record in df.to_dict('records'):
-                r = {f: fields[f][1](v) for f, v in record.items()} # Type Cast
-                case.add(otype(**r))
+            #for record in df.to_dict('records'):
+                #r = {f: fields[f][1](v) for f, v in record.items()} # Type Cast
+                #o = ObjectFactory.make(otype.text, **r)
+                #objs.append(o)
+                #case.add(otype(**r))
+        
+        return allobjs
 
     def write(self, case:Case):
         pass

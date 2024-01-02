@@ -1,5 +1,6 @@
 from abc import ABC, abstractproperty
-from ..grid.components import *
+
+from gridwb.workbench.grid.parts import GridType
 
 class Metric(ABC):
 
@@ -8,15 +9,15 @@ class Metric(ABC):
         pass
 
     @abstractproperty
-    def Static(self) -> dict[GridObject, str]: 
+    def Static(self) -> dict[GridType, str]: 
         pass
     
     @abstractproperty
-    def Dynamic(self)-> dict[GridObject, str]: 
+    def Dynamic(self)-> dict[GridType, str]: 
         pass
     
     @abstractproperty
-    def RAM(self) -> dict[GridObject, str]: 
+    def RAM(self) -> dict[GridType, str]: 
         pass
     
 class Voltage(Metric):
@@ -24,15 +25,15 @@ class Voltage(Metric):
     units = "V p.u."
     
     Static = {
-        Bus: "BusPUVolt"
+        GridType.Bus: "BusPUVolt"
     }
 
     Dynamic = {
-        Bus: "TSBusVPU"
+        GridType.Bus: "TSBusVPU"
     }
 
     RAM = {
-        Bus: "TSSaveBusVPU"
+        GridType.Bus: "TSSaveBusVPU"
     }
 
 class Freq(Metric):
@@ -40,15 +41,15 @@ class Freq(Metric):
     units = "Freq p.u."
     
     Static = {
-        Bus: "TBD"
+        GridType.Bus: "TBD"
     }
 
     Dynamic = {
-        Bus: "TSFrequencyinPU"
+        GridType.Bus: "TSFrequencyinPU"
     }
 
     RAM = {
-        Bus: "TSSaveBusFreq"
+        GridType.Bus: "TSSaveBusFreq"
     }
 
 """

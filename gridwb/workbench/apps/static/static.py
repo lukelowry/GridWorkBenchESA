@@ -1,7 +1,10 @@
 
 # Data Structure Imports
+import warnings
 import pandas 	as pd
 from numpy import NaN
+
+from gridwb.workbench.grid.parts import GridType
 
 # WorkBench Imports
 from ...grid import GridObject
@@ -10,36 +13,41 @@ from ...io.pwb import PowerWorldIO
 from ...utils.metric import Metric
 from ..app import PWApp, griditer
 
+# Annoying FutureWarnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 # Dynamics App (Simulation, Model, etc.)
 class Statics(PWApp):
+
+    io: PowerWorldIO
 
     # Configuration Extraction TODO Way to Prevent Mis-Type Errors
     @PWApp.configuration.setter
     def configuration(self, config):
         self._configuration       = config
-        self.objType: GridObject  = config["Object"]
+        self.objType: GridType  = config["Object"]
         self.metric : Metric      = config["Metric"] 
 
     @griditer
-    def solve(self, ctgs: Contingency | list[Contingency]=None):
+    def solve(self, ctgs: list[GridType.Contingency]=None):
 
         # Cast to List
-        if not isinstance(ctgs, list): ctgs: list[Contingency] = [ctgs]
+        if not isinstance(ctgs, list): ctgs: list[GridType.Contingency] = [ctgs]
 
         # Prepare Data Fields
-        otype = self.objType.text
-        keyFields  = self.esa.get_key_field_list(otype)
+        otype = self.io.otypemap[self.objType]
+        keyFields  = self.io.esa.get_key_field_list(otype)
         field = self.metric.Static[self.objType]
 
         # Get Keys OR Values
         def get(field:str=None) -> pd.DataFrame:
             
             if field is None:
-                df = self.esa.GetParametersMultipleElement(otype, keyFields)
+                df = self.io.esa.GetParametersMultipleElement(otype, keyFields)
             else:
-                self.esa.SolvePowerFlow()
-                df = self.esa.GetParametersMultipleElement(otype, keyFields+[field])
+                self.io.esa.SolvePowerFlow()
+                df = self.io.esa.GetParametersMultipleElement(otype, keyFields+[field])
                 df = df.rename(columns={field: "Value"})
                 df = df.drop(columns=keyFields)
 
@@ -57,12 +65,12 @@ class Statics(PWApp):
                 'ID-A'       : keys.iloc[:,0],
                 'ID-B'       : keys.iloc[:,1] if len(keys.columns)>1 else NaN,
                 'Metric'     : self.metric.units,
-                'Contingency': ctg.name
+                'Contingency': ctg.CTGLabel
             })
             meta = pd.concat([meta,ctgMeta], ignore_index=True)
 
         # Set Reference (i.e. No CTG) and Solve
-        self.esa.RunScriptCommand(f'CTGSetAsReference;')
+        self.io.esa.RunScriptCommand(f'CTGSetAsReference;')
 
         # If Base Case Does not Solve, Return N/A vals
         try:
@@ -78,7 +86,7 @@ class Statics(PWApp):
             data = pd.DataFrame(columns=["Value", "Reference"])
 
             # Apply CTG 
-            self.esa.RunScriptCommand(f'CTGApply({ctg.name})')
+            self.io.esa.RunScriptCommand(f'CTGApply({ctg.CTGLabel})')
 
             # Solve, Drop Keys
             try:
@@ -93,6 +101,6 @@ class Statics(PWApp):
             df = pd.concat([df,data], ignore_index=True)
 
             # Un-Apply CTG
-            self.esa.RunScriptCommand(f'CTGRestoreReference;')
+            self.io.esa.RunScriptCommand(f'CTGRestoreReference;')
 
         return (meta, df.T)

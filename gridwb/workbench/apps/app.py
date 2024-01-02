@@ -4,6 +4,8 @@ from typing import Any
 import pandas 	as pd
 from itertools 	import product
 
+from gridwb.workbench.interfaces.model import IModelIO
+
 from ..grid.case import Case
 from ..utils.conditions import *
 
@@ -16,10 +18,10 @@ from ..utils.conditions import *
 # Application Base Class
 class PWApp:
 
-    def __init__(self, case: Case) -> None:
+    def __init__(self, io: IModelIO) -> None:
 
         # Application Interface
-        self.case = case
+        self.io = io
 
         # Conditions for griditer feature
         self.conditions: dict[Condition, list[Any]] = None
@@ -39,14 +41,21 @@ class PWApp:
     def configuration(self, config):
         self._configuration = config
 
-    @property
-    def esa(self):
-        # We define Application ESA this way so that it always references up-to-date case ESA
-        return self.case.esa
-
     # Define Condition ranges for Grid Iter Feature
     def rotate(self, conditions: dict[Condition, list[Any]]):
         self.conditions = conditions
+
+     # Define Condition ranges for Grid Iter Feature
+    def r(
+            self, 
+            baseload = float | list[float],
+            **kwargs
+        ):
+        
+        self.conditions = {
+            BaseLoad: baseload,
+            **kwargs
+        }
 
 
     # Sub-Classes that want an application feature to be 'grid iterated' will use decorator @griditer
@@ -93,7 +102,7 @@ def griditer(func):
 
         # App Regerence
         app = self
-        esa = app.esa
+        esa = app.io.esa
 
         # Act as normal App Function if no conditions
         if app.conditions is None:
@@ -112,8 +121,8 @@ def griditer(func):
             # Apply Each Condition in Grid Scenario
             scenario = dict(zip(app.conditions.keys(), scenarioVals))
             for condition, value in scenario.items():
-                print(condition.text+ " : " + str(value))
-                condition.apply(app.esa, scenario)
+                print(condition.text+ " : " + str(round(value,2)))
+                condition.apply(esa, scenario)
 
             # Retrieve Application Dataframe
             inner_meta, inner_df = func(app, *args, **kwargs)

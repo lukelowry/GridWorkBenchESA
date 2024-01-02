@@ -65,6 +65,11 @@ class Case:
                 return branch
         raise GridObjDNE
     
+
+    # For A PF CTG, find Transient CTG, and vice versa
+    def findSisterCTG(self, ctg: Contingency | TSContingency):
+        pass
+    
     # Get Grid Obj from contingency string
     def findCTGObject(self, findObjText: str):
 
