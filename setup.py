@@ -41,13 +41,12 @@ with open(about_path, 'w') as fh:
 setuptools.setup(
     name='gridwb',
     version=__version__,
-    description='Easy SimAuto (ESA): An easy-to-use Python connector to '
-                'PowerWorld Simulator Automation Server (SimAuto).',
+    description='Grid Work Bench (GWB) is a platform-agnostic power-grid toolkit.',
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    author='Zeyu Mao, Brandon Thayer, Yijing Liu',
-    author_email='zeyumao2@tamu.edu, blthayer@tamu.edu, yiji21@tamu.edu',
-    url='https://github.com/mzy2240/ESA',
+    author='Adam Birchfield, Luke Lowery',
+    author_email='abirchfield@tamu.edu, wyattluke.lowery@tamu.edu',
+    url='GITLINKHERE',
     packages=setuptools.find_packages(),
     include_package_data=True,
     classifiers=[
@@ -74,12 +73,12 @@ setuptools.setup(
               'Automation', 'Power Systems', 'Electric Power', 'Power',
               'Easy SimAuto', 'ESA', 'Smart Grid', 'Numpy', 'Pandas'],
     install_requires=['pandas >= 0.25', 'numpy >= 1.19.5', 'scipy', 'pywin32',
-                      'pypiwin32', 'toolz', 'networkx', 'tqdm'],
+                      'pypiwin32', 'toolz', 'networkx', 'tqdm', 'matplotlib'],
     python_requires='>=3.7',
     # There are a couple tests that use networkx, and we use the magic
     # of sphinx for documentation. Coverage is necessary to keep the
     # coverage report up to date.
-    extras_require={'test': ['networkx', 'coverage', 'matplotlib'],
+    extras_require={'test': ['networkx', 'coverage'],
                     'doc': ['sphinx', 'tabulate', 'sphinx_press_theme'],
                     'dev': ['pythran', 'numba']},
     license='Apache License 2.0',
