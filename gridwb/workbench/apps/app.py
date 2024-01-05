@@ -4,9 +4,7 @@ from typing import Any
 import pandas 	as pd
 from itertools 	import product
 
-from gridwb.workbench.interfaces.model import IModelIO
-
-from ..grid.case import Case
+from ..io.model import IModelIO
 from ..utils.conditions import *
 
 # TODO App Features
@@ -135,9 +133,17 @@ def griditer(func):
                 inner_meta[condition.text] = value
 
             # Append to Main
-            outer_meta  = pd.concat([inner_meta] if outer_meta is None else[outer_meta, inner_meta], axis=0, ignore_index=True)
-            outer_df    = pd.concat([inner_df] if outer_df is None else[outer_df, inner_df], axis=1, ignore_index=True)
-        
+            if outer_meta is None:
+                outer_meta = inner_meta
+                outer_df = inner_df
+            else:
+                # Catch failed simulation, note: problems if first sim is bad
+                if len(inner_df.index) != len(outer_df.index):
+                    inner_df = pd.DataFrame(np.NaN, columns=inner_df.columns, index=outer_df.index)
+                
+                outer_meta  = pd.concat([outer_meta, inner_meta], axis=0, ignore_index=True)
+                outer_df    = pd.concat([outer_df, inner_df], axis=1, ignore_index=True)
+                
         # Safely reset grid to original state
         gridexit(esa)
 

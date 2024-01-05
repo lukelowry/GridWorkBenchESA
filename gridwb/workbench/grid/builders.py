@@ -1,9 +1,10 @@
 
 
-from ..interfaces.model import IModelIO
+from ..io.model import IModelIO
 from .parts import GridObject, GridType
 from pandas import DataFrame
 
+# Builds Objects
 class ObjectBuilder:
 
     # Initialize Production List
@@ -24,7 +25,7 @@ class ObjectBuilder:
     def attr(self, name: str, value, iskey=False) -> None:
 
         # TODO idk why but pandas wont convert to numeric so doing it here
-        try: value = int(value)
+        try: value = float(value)
         except: pass
         
         setattr(self._obj, name, value)

@@ -4,13 +4,12 @@ import pandas 	as pd
 from typing import Any, Type
 
 from gridwb.workbench.grid.parts import GridObject, GridType
-from gridwb.workbench.plugins.powerworld.powerworld import PowerWorldIO
+from gridwb.workbench.plugins.powerworld import PowerWorldIO
 
 # WorkBench Imports
-from ....saw 	import CommandNotRespectedError
-from ...utils.metric import Metric
-from ..app import PWApp, griditer
-
+from ...saw 	import CommandNotRespectedError
+from ..utils.metric import Metric
+from .app import PWApp, griditer
 
 # Dynamics App (Simulation, Model, etc.)
 class Dynamics(PWApp):
@@ -132,9 +131,15 @@ class Dynamics(PWApp):
             metaSim['Contingency'] = ctg.TSCTGName
             meta = pd.concat([metaSim] if meta is None else[meta, metaSim], axis = 0, ignore_index=True)
 
-            # Trim Data Size, Index by Time, Append to Main
-            dfSim = dfSim.astype(np.float32)
-            dfSim.set_index('time', inplace=True)
+            # Won't work if first result is bad
+            if len(dfSim.columns)<2:
+                dfSim = pd.DataFrame(np.NaN, columns=metaSim.index, index=[0])
+                dfSim.index.name = 'time'
+            else:
+                # Trim Data Size, Index by Time, Append to Main
+                dfSim = dfSim.astype(np.float32)
+                dfSim.set_index('time', inplace=True)
+            
             df = pd.concat([dfSim] if df is None else[df, dfSim], axis=1, ignore_index=True)
 
         # Clean Up -------------------------------------------------------

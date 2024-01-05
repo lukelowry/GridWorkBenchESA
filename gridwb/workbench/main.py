@@ -12,10 +12,10 @@
 #
 
 # Imports
-from gridwb.workbench.grid.builders import GridType, ObjectFactory
-from .plugins.powerworld.powerworld import PowerWorldIO
-from .apps.dyn import Dynamics
-from .apps.static import Statics
+import shlex
+from .grid.builders import GridType, ObjectFactory
+from .plugins.powerworld import PowerWorldIO
+from .apps import Dynamics, Statics
 
 
 class GridWorkBench:
@@ -76,6 +76,10 @@ class GridWorkBench:
     @property
     def tsctgs(self):
         return [*self.of_type(GridType.TSContingency)]
+    
+    @property
+    def lines(self):
+        return [*self.of_type(GridType.Line)]
 
     def find(self, otype: GridType, *keyvals):
         for o in self.objs:
@@ -103,3 +107,40 @@ class GridWorkBench:
 
     def shunt(self, id, bus):
         return self.find(GridType.Shunt, id, bus)
+    
+    # This could potentially miss a connection
+    def branch(self, from_bus: GridType.Bus, to_bus: GridType.Bus):
+        for branch in self.branches:
+            if branch.from_bus is from_bus and branch.to_bus is to_bus:
+                return branch
+            
+    # Get Grid Obj from contingency string
+    def findCTGObject(self, findObjText: str):
+
+        #Try and Cast to int for key fields
+        keys = []
+        for part in shlex.split(findObjText):
+            try: keys += [int(part)]
+            except: keys += [part]
+
+        # Try and find Type
+        try:
+            oType = self.textToType[keys[0].capitalize()]
+        except:
+            print(f"WARNING: CTG Obj not supported {findObjText}")
+            return None
+        
+        # Find from id or branch
+        try:
+            if len(keys) == 2:
+                id    = keys[1]
+                return self.H.get(oType, id)
+            
+            if len(keys) == 4:
+                from_bus = self.H.get(GridType.Bus, keys[1])
+                to_bus   = self.H.get(GridType.Bus, keys[2])
+                return self.branch(from_bus, to_bus)
+        except:
+            print(f"Warning: CTG Unassigned {findObjText}")
+
+        return None

@@ -4,14 +4,11 @@ import warnings
 import pandas 	as pd
 from numpy import NaN
 
-from gridwb.workbench.grid.parts import GridType
-
 # WorkBench Imports
-from ...grid import GridObject
-from ...grid.components.contingency import Contingency
-from ...io.pwb import PowerWorldIO
-from ...utils.metric import Metric
-from ..app import PWApp, griditer
+from ..plugins.powerworld import PowerWorldIO
+from ..grid.parts import GridType
+from ..utils.metric import Metric
+from .app import PWApp, griditer
 
 # Annoying FutureWarnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -61,7 +58,7 @@ class Statics(PWApp):
         # Add All Meta Records
         for ctg in ctgs:
             ctgMeta = pd.DataFrame({
-                'Object'     : otype,
+                'Object'     : self.objType.name,
                 'ID-A'       : keys.iloc[:,0],
                 'ID-B'       : keys.iloc[:,1] if len(keys.columns)>1 else NaN,
                 'Metric'     : self.metric.units,
@@ -69,13 +66,14 @@ class Statics(PWApp):
             })
             meta = pd.concat([meta,ctgMeta], ignore_index=True)
 
-        # Set Reference (i.e. No CTG) and Solve
-        self.io.esa.RunScriptCommand(f'CTGSetAsReference;')
-
         # If Base Case Does not Solve, Return N/A vals
         try:
             refSol = get(field)
+
+            # Set Reference (i.e. No CTG) and Solve
+            self.io.esa.RunScriptCommand(f'CTGSetAsReference;')
         except:
+            print('Loading Does Not Converge.')
             df = pd.DataFrame(NaN, index=["Value", "Reference"], columns=range(len(ctgs)))
             return (meta, df)
 
@@ -97,10 +95,11 @@ class Statics(PWApp):
             # Set Reference Values    
             data["Reference"] = refSol
 
-            # Add Data to Main
-            df = pd.concat([df,data], ignore_index=True)
-
+            
             # Un-Apply CTG
             self.io.esa.RunScriptCommand(f'CTGRestoreReference;')
+
+            # Add Data to Main
+            df = pd.concat([df,data], ignore_index=True)
 
         return (meta, df.T)

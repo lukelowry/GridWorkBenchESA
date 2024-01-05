@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from pandas import DataFrame
 
+from gridwb.workbench.utils.decorators import timing
+
 # Standard Interface for model interaction
 class IModelIO(ABC):
 

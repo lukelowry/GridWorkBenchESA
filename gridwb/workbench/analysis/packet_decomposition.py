@@ -214,9 +214,9 @@ def packet_decomposition(wb, output_fname=None):
     for branch in wb.branches:
         branch.packets = []
     for packet in packets:
-        if type(packet.orig) in [Bus, Load, Gen, Branch]:
+        if type(packet.orig) in [GridType.Bus, GridType.Load, GridType.Gen, GridType.Line]:
             packet.orig.packets.append(packet)
-        if type(packet.dest) in [Bus, Load, Gen, Branch]:
+        if type(packet.dest) in [GridType.Bus, GridType.Load, GridType.Gen, GridType.Line]:
             packet.dest.packets.append(packet)
         for branch in packet.path:
             branch.packets.append(packet)

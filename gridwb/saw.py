@@ -2912,6 +2912,7 @@ class SAW(object):
 
         # Attempt to convert all columns to numeric.
         data = self._to_numeric(data, errors='ignore')
+        meta = self._to_numeric(meta, errors='ignore')
 
         # Return.
         return meta, data

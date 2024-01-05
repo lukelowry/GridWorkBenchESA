@@ -95,7 +95,7 @@ class RampRate(Condition):
         '''
         pass
 
-    def apply(esa, conditions):
+    def apply(esa: SAW, conditions):
 
         rate = conditions[RampRate]
 
