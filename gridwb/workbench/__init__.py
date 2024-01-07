@@ -2,6 +2,5 @@
 from .main import GridWorkBench
 
 # Utility Classes
-from .utils.conditions import *
-from .utils.metric import *
+from .utils import *
 

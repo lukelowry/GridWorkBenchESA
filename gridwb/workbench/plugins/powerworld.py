@@ -36,8 +36,6 @@ fieldMap: dict[GridType, list[str]] = {
         "BranchNum"       ,
         "BusNetMW"        ,
         "BusNetMVR"       , 
-        "LineMVR"         ,
-        "LineMW"          ,
     ],
     GridType.Gen: [
         "GenID"           ,             
@@ -198,18 +196,34 @@ class PowerWorldIO(IModelIO):
 
         return data
 
+    @timing
     def upload(self, df) -> bool:
 
-        #TODO Put df in PW format
+        #TODO not useful atm
 
         self.esa.change_and_confirm_params_multiple_element(
             ObjectType = 'TSContingency',
-            command_df = DataFrame({'TSCTGName': ['SimOnly']})#, 'SchedValue': [baseLoad]})
+            command_df = DataFrame({'TSCTGName': ['SimOnly']})
         )
         
-        # TODO return success
         return True
     
+    @timing
+    def update(self, otype: GridType, df: DataFrame | dict) -> bool:
+
+        stat = self.esa.change_and_confirm_params_multiple_element(
+            ObjectType = self.otypemap[otype],
+            command_df = DataFrame(df)
+        )
+        
+        return stat
+    
+    
+    # Will Save all Open Changes
+    def save(self):
+
+        return self.esa.SaveCase()
+
     def skipallbut(self, ctgs):
 
 
