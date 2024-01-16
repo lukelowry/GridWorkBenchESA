@@ -33,53 +33,67 @@ class GridWorkBench:
         # Read Data into Case
         if fname is not None:
             self.io.open()
-            self.objs = ObjectFactory.makeFrom(self.io)
+            self.objs = self.io.down()
+            #self.objs = ObjectFactory.makeFrom(self.io)
 
     def of_type(self, otype: GridType):
         for o in self.objs:
             if o._type is otype:
                 yield o
 
+    
     # Return All of Type
     @property
+    def ieeeg1(self):
+        return self.objs[GridType.IEEEG1]
+    
+    @property
+    def ggov1(self):
+        return self.objs[GridType.GGOV1]
+    
+    @property
+    def reeca1(self):
+        return self.objs[GridType.REECA1]
+
+    @property
     def regions(self):
-        return [*self.of_type(GridType.Region)]
+        return self.objs[GridType.Region]
 
     @property
     def areas(self):
-        return [*self.of_type(GridType.Area)]
+        return self.objs[GridType.Area]
 
     @property
     def subs(self):
-        return [*self.of_type(GridType.Sub)]
+        return self.objs[GridType.Sub]
 
     @property
     def buses(self):
-        return [*self.of_type(GridType.Bus)]
+        return self.objs[GridType.Bus]
 
     @property
     def loads(self):
-        return [*self.of_type(GridType.Load)]
+        return self.objs[GridType.Load]
 
     @property
     def gens(self):
-        return [*self.of_type(GridType.Gen)]
+        return self.objs[GridType.Gen]
 
     @property
     def shunts(self):
-        return [*self.of_type(GridType.Shunt)]
+        return self.objs[GridType.Shunt]
 
     @property
     def ctgs(self):
-        return [*self.of_type(GridType.Contingency)]
+        return self.objs[GridType.Contingency]
 
     @property
     def tsctgs(self):
-        return [*self.of_type(GridType.TSContingency)]
+        return self.objs[GridType.TSContingency]
     
     @property
     def lines(self):
-        return [*self.of_type(GridType.Line)]
+        return self.objs[GridType.Line]
 
     def find(self, otype: GridType, *keyvals):
         for o in self.objs:
@@ -113,6 +127,9 @@ class GridWorkBench:
         for branch in self.branches:
             if branch.from_bus is from_bus and branch.to_bus is to_bus:
                 return branch
+    
+    def tsctg(self, name):
+        return self.find(GridType.TSContingency, name)
             
     # Get Grid Obj from contingency string
     def findCTGObject(self, findObjText: str):

@@ -2,7 +2,6 @@
 from typing import Callable
 from pandas import DataFrame, MultiIndex
 
-
 def flat(meta: DataFrame, data: DataFrame, copy=True) -> DataFrame:
 
     if copy:

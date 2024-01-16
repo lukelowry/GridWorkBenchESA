@@ -96,16 +96,20 @@ class RampRate(Condition):
         pass
 
     def apply(esa: SAW, conditions):
-
-        rate = conditions[RampRate]
-
-        # At T=0, LoadMult MUST be 1 for DSTimeSched
+		
+        baseLF = conditions[BaseLoad]
+        ramprate = conditions[RampRate] # MW per min
+		
+        ramptime = 100000
+        end = (baseLF*1136 + ramprate/60*ramptime)/(baseLF*1136) 
+		
+        # At T=0, LoadMult MUST be 1 for DSTimeSched, scale is relative to baseload
         sched = "WB_SCHED"
-        time = 1000
-        endLF = 1 + rate*time # Rate = Increase of load by (% of BaseLoad) per second
-        data = {'DSTimeSchedName': [sched, sched], 'DSTimeSchedTime': [0, time], 'DSTimeSchedValue': [1, endLF]}
-        data = pd.DataFrame(data)
         esa.change_and_confirm_params_multiple_element(
             ObjectType='DSTimeScheduleTimePoint',
-            command_df=data
+            command_df=pd.DataFrame({
+				'DSTimeSchedName': [sched, sched],
+				'DSTimeSchedTime': [0, ramptime],
+				'DSTimeSchedValue': [1, end]
+			})
         )

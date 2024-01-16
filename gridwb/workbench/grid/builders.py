@@ -62,7 +62,7 @@ class ObjectBuilder:
                     candidate._associatedObjs.append(obj)
     
 # Class to Generate Objects for Grid
-class ObjectFactory:
+class ObjectFactory: 
 
     @staticmethod
     def makeFrom(io: IModelIO) -> list[GridObject]:
@@ -90,7 +90,7 @@ class ObjectFactory:
                 builder.attr(name, value, isKey)
 
         # Match objects (e.g. Identify Sub Data)
-        builder.tie()
+        #builder.tie()
 
         # Return all built objects
         return builder.collect()

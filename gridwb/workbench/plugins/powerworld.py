@@ -1,4 +1,5 @@
 
+import numpy as np
 from ..utils.decorators import timing
 from ..grid.builders import GridType
 from ..io.model import IModelIO
@@ -126,6 +127,25 @@ fieldMap: dict[GridType, list[str]] = {
         "Action"   ,           
         "Object"   ,            
         "WhoAmI"          
+    ],
+    GridType.IEEEG1: [
+        "BusNum",
+        "GenID",
+        "TSPmax",
+        "TSPmin",
+        "TSGovRespLimit",
+        "TSTrate"
+    ],
+    GridType.GGOV1: [
+        "BusNum",
+        "GenID",
+        "TSLdref",
+        "TSTrate"
+    ],
+    GridType.REECA1: [
+        "BusNum",
+        "GenID",
+        "TSMWCap"
     ]
     
 }
@@ -137,17 +157,20 @@ class PowerWorldIO(IModelIO):
     otypemap: dict[GridType, str] = {
         GridType.Region : 'superarea',
         GridType.Area   : 'area',
-        GridType.Sub    :'substation',
-        GridType.Bus    :'bus',
-        GridType.Gen    :'gen',
-        GridType.Load   :'load',
-        GridType.Shunt  :'shunt',
-        GridType.Line   :'branch',
-        GridType.XFMR   :'xfmr',
+        GridType.Sub    : 'substation',
+        GridType.Bus    : 'bus',
+        GridType.Gen    : 'gen',
+        GridType.Load   : 'load',
+        GridType.Shunt  : 'shunt',
+        GridType.Line   : 'branch',
+        GridType.XFMR   : 'xfmr',
         GridType.Contingency         : 'contingency',
         GridType.ContingencyAction   : 'contingencyelement',
         GridType.TSContingency       : 'tscontingency',
         GridType.TSContingencyAction : 'tscontingencyelement',
+        GridType.IEEEG1              : 'Governor_IEEEG1',
+        GridType.GGOV1               : 'Governor_GGOV1',
+        GridType.REECA1              : 'Exciter_REECA1'
     }
 
     @timing
@@ -197,13 +220,11 @@ class PowerWorldIO(IModelIO):
         return data
 
     @timing
-    def upload(self, df) -> bool:
-
-        #TODO not useful atm
+    def upload(self, type, df) -> bool:
 
         self.esa.change_and_confirm_params_multiple_element(
-            ObjectType = 'TSContingency',
-            command_df = DataFrame({'TSCTGName': ['SimOnly']})
+            ObjectType = type,
+            command_df = df
         )
         
         return True
@@ -211,21 +232,48 @@ class PowerWorldIO(IModelIO):
     @timing
     def update(self, otype: GridType, df: DataFrame | dict) -> bool:
 
-        stat = self.esa.change_and_confirm_params_multiple_element(
+        status = self.esa.change_and_confirm_params_multiple_element(
             ObjectType = self.otypemap[otype],
             command_df = DataFrame(df)
         )
         
-        return stat
+        return status
     
+    # TODO Use this instead of Above
+    def down(self) -> dict[GridType, DataFrame]:
+
+        objs = {}
+
+        for otype in fieldMap:
+
+            objectType  = self.otypemap[otype]
+            fields      = fieldMap[otype]
+
+            objs[otype] = self.get(objectType, fields)
+        
+        return objs
+
     
+    # Get All Objects of Given Type (Key fields only), with added fields if requested
+    def get(self, objstr, fields=None):
+
+        # Keys for Obj
+        keys = self.esa.get_key_field_list(objstr)
+
+        # Add Fields
+        if fields is not None:
+            keys += fields
+
+        # Return Records for all
+        return self.esa.GetParametersMultipleElement(objstr, np.unique(keys))
+    
+
     # Will Save all Open Changes
     def save(self):
 
         return self.esa.SaveCase()
 
     def skipallbut(self, ctgs):
-
 
         df = self.esa.GetParametersMultipleElement(
             'tscontingency',
@@ -241,6 +289,8 @@ class PowerWorldIO(IModelIO):
             ObjectType = 'TSContingency',
             command_df = df
         )
+    
+
 
 def pw_bool(val):
         v = str(val).lower()

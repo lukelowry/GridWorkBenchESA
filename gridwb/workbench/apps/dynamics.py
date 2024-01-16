@@ -24,7 +24,7 @@ class Dynamics(PWApp):
         self._configuration = config
 
     # Helper Functions for Transient Object-Field Formats
-    def field(self, obj: GridObject, field: str): return f"{PowerWorldIO.otypemap[obj._type]} '{list(obj._keys.values())[0]}' | {field}"
+    def field(self, obj: GridObject, field: str): return f"{PowerWorldIO.otypemap[obj._type]} '{int(list(obj._keys.values())[0])}' | {field}"
     def fields(self, obj, fields): return [self.field(obj,f) for f in fields]
 
     def changeCTGs(self, ctgs: list[GridType.TSContingency], param: Any, val: Any):
@@ -51,13 +51,15 @@ class Dynamics(PWApp):
 
         for obj in objs:
 
+            
             ramField = {metric.RAM[obj._type]: 'YES'}
 
             # Enable RAM Storage
-            self.io.esa.change_and_confirm_params_multiple_element(
+            conf = self.io.esa.change_and_confirm_params_multiple_element(
                 ObjectType = PowerWorldIO.otypemap[obj._type],
                 command_df = pd.DataFrame(dict(**obj._keys, **ramField), index=[0])
             )
+
 
     # Set Run Time for list of contingencies
     def setRuntime(self, ctgs, sec):
@@ -130,7 +132,7 @@ class Dynamics(PWApp):
             metaSim['Metric'] = metric.units
             metaSim['Contingency'] = ctg.TSCTGName
             meta = pd.concat([metaSim] if meta is None else[meta, metaSim], axis = 0, ignore_index=True)
-
+            
             # Won't work if first result is bad
             if len(dfSim.columns)<2:
                 dfSim = pd.DataFrame(np.NaN, columns=metaSim.index, index=[0])

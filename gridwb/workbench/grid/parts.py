@@ -16,11 +16,20 @@ class GridType(Enum):
     Line    = auto()
     XFMR    = auto()
 
+    # Contingnecy
     Contingency = auto()
     ContingencyAction = auto()
 
     TSContingency = auto()
     TSContingencyAction = auto()
+
+    # Governers
+    IEEEG1 = auto()
+    GGOV1 = auto()
+
+    #Exciter
+    REECA1 = auto()
+
 
 class GridObject:
 

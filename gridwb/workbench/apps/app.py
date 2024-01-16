@@ -119,8 +119,10 @@ def griditer(func):
             # Apply Each Condition in Grid Scenario
             scenario = dict(zip(app.conditions.keys(), scenarioVals))
             for condition, value in scenario.items():
-                print(condition.text+ " : " + str(round(value,2)))
+                
                 condition.apply(esa, scenario)
+
+                print(condition.text+ " : " + str(value))
 
             # Retrieve Application Dataframe
             inner_meta, inner_df = func(app, *args, **kwargs)
@@ -130,7 +132,10 @@ def griditer(func):
 
             # Add Scenario Info
             for condition, value in scenario.items():
-                inner_meta[condition.text] = value
+                try:
+                    inner_meta[condition.text] = value
+                except:
+                    inner_meta[condition.text] = str(value)
 
             # Append to Main
             if outer_meta is None:
