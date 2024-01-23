@@ -1,6 +1,5 @@
 import numpy as np
 import quaternion
-import cmath
 
 
 # Formats Complex Phasor as Quaternion
@@ -10,9 +9,9 @@ def quat(a, b):
 
 # HV/LV Conversion
 def lv(v, e) -> complex:
-    vq = np.quaternion(0, v.real, v.imag, 0)
-    eq = np.quaternion(0, e.real, e.imag, 0)
-    eqt = np.quaternion(0, -e.imag, e.real, 0) / np.abs(e)
+    vq = quat(v.real, v.imag)
+    eq = quat(e.real, e.imag)
+    eqt = quat(-e.imag, e.real) / np.abs(e)
 
     c = vq + eq / 2
     rot = eqt.conjugate() * c * eqt
