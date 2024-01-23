@@ -1,4 +1,3 @@
-
 import numpy as np
 from ..utils.decorators import timing
 from ..grid.builders import GridType
@@ -10,172 +9,162 @@ from pandas import DataFrame, concat, to_numeric
 
 # PW Fields to Retrieve
 fieldMap: dict[GridType, list[str]] = {
-    GridType.Region: [
-        "SAName"
-    ],
+    GridType.Region: ["SAName"],
     GridType.Area: [
-        "AreaNum"         , 
-        "SAName"          , 
-        "AreaName"        , 
+        "AreaNum",
+        "SAName",
+        "AreaName",
     ],
     GridType.Sub: [
-        "SubNum"          ,             
-        "AreaNum"         ,             
-        "SubName"         ,             
-        "Latitude"        ,         
-        "Longitude"       ,         
+        "SubNum",
+        "AreaNum",
+        "SubName",
+        "Latitude",
+        "Longitude",
     ],
     GridType.Bus: [
-        "BusNum"          ,          
-        "SubNum"          ,             
-        "BusName"         ,             
-        "BusNomVolt"      ,         
-        "BusPUVolt"       ,         
-        "BusAngle"        ,         
-        "BusStatus"       ,      
-        "ZoneNum"         ,
-        "BranchNum"       ,
-        "BusNetMW"        ,
-        "BusNetMVR"       , 
+        "BusNum",
+        "SubNum",
+        "BusName",
+        "BusNomVolt",
+        "BusPUVolt",
+        "BusAngle",
+        "BusStatus",
+        "ZoneNum",
+        "BranchNum",
+        "BusNetMW",
+        "BusNetMVR",
     ],
     GridType.Gen: [
-        "GenID"           ,             
-        "BusNum"          ,             
-        "GenStatus"       ,         
-        "GenMW"           ,         
-        "GenMVR"          ,         
-        "GenMWSetPoint"   ,         
-        "GenMvrSetPoint"  ,         
-        "GenMWMax"        ,             
-        "GenMWMin"        ,             
-        "GenMVRMax"       ,             
-        "GenMVRMin"       ,             
-        "GenRegNum"       ,             
-        "GenVoltSet"      ,             
-        "GenAGCAble"      ,       
-        "GenAVRAble"      ,        
-        "GenMWRampLimit"  ,             
-        "CustomFloat"     ,             
-        "CustomFloat:1"   ,             
-        "CustomFloat:2"   ,             
-        "GenFuelType"     ,             
-        "GenFuelCost"     ,             
-        "GenMVABase"      ,         
+        "GenID",
+        "BusNum",
+        "GenStatus",
+        "GenMW",
+        "GenMVR",
+        "GenMWSetPoint",
+        "GenMvrSetPoint",
+        "GenMWMax",
+        "GenMWMin",
+        "GenMVRMax",
+        "GenMVRMin",
+        "GenRegNum",
+        "GenVoltSet",
+        "GenAGCAble",
+        "GenAVRAble",
+        "GenMWRampLimit",
+        "CustomFloat",
+        "CustomFloat:1",
+        "CustomFloat:2",
+        "GenFuelType",
+        "GenFuelCost",
+        "GenMVABase",
     ],
     GridType.Load: [
-        "LoadID"      ,                
-        "BusNum"      ,                
-        "LoadStatus"  ,           
-        "LoadMW"      ,            
-        "LoadMVR"     ,            
-        "LoadSMW"     ,            
-        "LoadSMVR"    ,            
-        "GenBidMWHR"  ,            
+        "LoadID",
+        "BusNum",
+        "LoadStatus",
+        "LoadMW",
+        "LoadMVR",
+        "LoadSMW",
+        "LoadSMVR",
+        "GenBidMWHR",
     ],
     GridType.Shunt: [
-        "ShuntID"         ,              
-        "BusNum"          ,             
-        "SSStatus"        ,         
-        "SSNMVR"          ,          
-        "SSAMVR"          ,          
-        "CustomInteger"   ,              
+        "ShuntID",
+        "BusNum",
+        "SSStatus",
+        "SSNMVR",
+        "SSAMVR",
+        "CustomInteger",
     ],
     GridType.Line: [
-        "LineCircuit"     ,                
-        "BusNum"          ,                
-        "BusNum:1"        ,                
-        "LineStatus"      ,          
-        "LineR"           ,            
-        "LineX"           ,            
-        "LineC"           ,            
-        "LineG"           ,            
-        "LineAMVA"        ,            
-        "LineAMVA:1"      ,            
-        "LineAMVA:2"      ,            
-        "LineMW"          ,            
-        "LineMVR"         ,            
-        "LineMW:1"        ,            
-        "LineMVR:1"       ,             
-        "GICLineDistance" ,          
-        "CustomInteger"   ,    
-        "PartOfCkt"       
+        "LineCircuit",
+        "BusNum",
+        "BusNum:1",
+        "LineStatus",
+        "LineR",
+        "LineX",
+        "LineC",
+        "LineG",
+        "LineAMVA",
+        "LineAMVA:1",
+        "LineAMVA:2",
+        "LineMW",
+        "LineMVR",
+        "LineMW:1",
+        "LineMVR:1",
+        "GICLineDistance",
+        "CustomInteger",
+        "PartOfCkt",
     ],
     # TODO Find way to Standardize
     GridType.TSContingency: [
-        "TSCTGName",        
-        "TSTimeInSeconds",         
-        "TimeStep",          
-        "Category",           
-        "CTGSkip",       
-        "CTGViol",         
-        "TSTotalLoadMWTripped",      
-        "TSTotalLoadMWIslanded"         
+        "TSCTGName",
+        "TSTimeInSeconds",
+        "TimeStep",
+        "Category",
+        "CTGSkip",
+        "CTGViol",
+        "TSTotalLoadMWTripped",
+        "TSTotalLoadMWIslanded",
     ],
     GridType.TSContingencyAction: [
-        "TSCTGName"        ,          
-        "TSEventString"    ,           
-        "WhoAmI"           ,           
-        "TSTimeInSeconds"  ,         
+        "TSCTGName",
+        "TSEventString",
+        "WhoAmI",
+        "TSTimeInSeconds",
     ],
-    GridType.Contingency: [
-        "CTGLabel",           
-        "CTGSkip",           
-        "CTGViol"         
-    ],
-    GridType.ContingencyAction: [
-        "CTGLabel" ,           
-        "Action"   ,           
-        "Object"   ,            
-        "WhoAmI"          
-    ],
+    GridType.Contingency: ["CTGLabel", "CTGSkip", "CTGViol"],
+    GridType.ContingencyAction: ["CTGLabel", "Action", "Object", "WhoAmI"],
     GridType.IEEEG1: [
         "BusNum",
         "GenID",
         "TSPmax",
         "TSPmin",
         "TSGovRespLimit",
-        "TSTrate"
+        "TSTrate",
     ],
-    GridType.GGOV1: [
+    GridType.GGOV1: ["BusNum", "GenID", "TSLdref", "TSTrate", "TSKturb"],
+    GridType.REECA1: ["BusNum", "GenID", "TSMWCap"],
+    GridType.IEEEST: [
         "BusNum",
         "GenID",
-        "TSLdref",
-        "TSTrate"
+        "TSLsmin",
+        "TSLsmax",
+        "TSIcs",
+        "FilterName",
+        "WhoAmI",
     ],
-    GridType.REECA1: [
-        "BusNum",
-        "GenID",
-        "TSMWCap"
-    ]
-    
+    GridType.WT4T: ["BusNum", "GenID", "TSMWCap"],
 }
+
 
 # Power World Read/Write
 class PowerWorldIO(IModelIO):
-
     # Map GWB Types to PW Obj Type
     otypemap: dict[GridType, str] = {
-        GridType.Region : 'superarea',
-        GridType.Area   : 'area',
-        GridType.Sub    : 'substation',
-        GridType.Bus    : 'bus',
-        GridType.Gen    : 'gen',
-        GridType.Load   : 'load',
-        GridType.Shunt  : 'shunt',
-        GridType.Line   : 'branch',
-        GridType.XFMR   : 'xfmr',
-        GridType.Contingency         : 'contingency',
-        GridType.ContingencyAction   : 'contingencyelement',
-        GridType.TSContingency       : 'tscontingency',
-        GridType.TSContingencyAction : 'tscontingencyelement',
-        GridType.IEEEG1              : 'Governor_IEEEG1',
-        GridType.GGOV1               : 'Governor_GGOV1',
-        GridType.REECA1              : 'Exciter_REECA1'
+        GridType.Region: "superarea",
+        GridType.Area: "area",
+        GridType.Sub: "substation",
+        GridType.Bus: "bus",
+        GridType.Gen: "gen",
+        GridType.Load: "load",
+        GridType.Shunt: "shunt",
+        GridType.Line: "branch",
+        GridType.XFMR: "xfmr",
+        GridType.Contingency: "contingency",
+        GridType.ContingencyAction: "contingencyelement",
+        GridType.TSContingency: "tscontingency",
+        GridType.TSContingencyAction: "tscontingencyelement",
+        GridType.IEEEG1: "Governor_IEEEG1",
+        GridType.GGOV1: "Governor_GGOV1",
+        GridType.REECA1: "Exciter_REECA1",
+        GridType.IEEEST: "Stabilizer_IEEEST",
+        GridType.WT4T: "Governor_WT4T",
     }
 
     @timing
     def open(self):
-        
         # Validate Path Name
         if not path.isabs(self.fname):
             self.fname = path.abspath(self.fname)
@@ -185,78 +174,67 @@ class PowerWorldIO(IModelIO):
 
     @timing
     def download(self):
-
         # Create Empty DF
         data = super().Template.copy()
 
         # For Each GridObject
         for otype in fieldMap:
-
             # TODO might not need field list aabove with this
             keys = self.esa.get_key_field_list(self.otypemap[otype])
 
             # Get & Format Data for Objs of Specific Type
-            df = self.esa.GetParametersMultipleElement(
-                self.otypemap[otype],
-                fieldMap[otype]
-            ).stack(dropna=False).reset_index().rename(columns={
-                'level_0' : 'ObjectID',
-                'level_1' : 'Field',
-                0         : 'Value'
-            })
+            df = (
+                self.esa.GetParametersMultipleElement(
+                    self.otypemap[otype], fieldMap[otype]
+                )
+                .stack(dropna=False)
+                .reset_index()
+                .rename(columns={"level_0": "ObjectID", "level_1": "Field", 0: "Value"})
+            )
 
             # Added/Modify Fields
             if len(data) > 0:
-                df['ObjectID'] += data['ObjectID'].max() + 1
-            df['ObjectType'] = otype
-            df['IsKey'] = df['Field'].isin(keys)
+                df["ObjectID"] += data["ObjectID"].max() + 1
+            df["ObjectType"] = otype
+            df["IsKey"] = df["Field"].isin(keys)
 
             # Merge With Previous Request
-            data = concat([data,df], ignore_index=True)
+            data = concat([data, df], ignore_index=True)
 
         # PW Sucks
-        data = data.apply(to_numeric, errors = 'ignore')
+        data = data.apply(to_numeric, errors="ignore")
 
         return data
 
     @timing
     def upload(self, type, df) -> bool:
-
         self.esa.change_and_confirm_params_multiple_element(
-            ObjectType = type,
-            command_df = df
+            ObjectType=type, command_df=df
         )
-        
-        return True
-    
-    @timing
-    def update(self, otype: GridType, df: DataFrame | dict) -> bool:
 
+        return True
+
+    def update(self, otype: GridType, df: DataFrame | dict) -> bool:
         status = self.esa.change_and_confirm_params_multiple_element(
-            ObjectType = self.otypemap[otype],
-            command_df = DataFrame(df)
+            ObjectType=self.otypemap[otype], command_df=DataFrame(df)
         )
-        
+
         return status
-    
+
     # TODO Use this instead of Above
     def down(self) -> dict[GridType, DataFrame]:
-
         objs = {}
 
         for otype in fieldMap:
-
-            objectType  = self.otypemap[otype]
-            fields      = fieldMap[otype]
+            objectType = self.otypemap[otype]
+            fields = fieldMap[otype]
 
             objs[otype] = self.get(objectType, fields)
-        
+
         return objs
 
-    
     # Get All Objects of Given Type (Key fields only), with added fields if requested
     def get(self, objstr, fields=None):
-
         # Keys for Obj
         keys = self.esa.get_key_field_list(objstr)
 
@@ -266,40 +244,33 @@ class PowerWorldIO(IModelIO):
 
         # Return Records for all
         return self.esa.GetParametersMultipleElement(objstr, np.unique(keys))
-    
 
     # Will Save all Open Changes
     def save(self):
-
         return self.esa.SaveCase()
 
     def skipallbut(self, ctgs):
-
-        df = self.esa.GetParametersMultipleElement(
-            'tscontingency',
-            ['TSCTGName'],
-        )
-        
-        # Assign
-        names = [ctg.TSCTGName for ctg in ctgs]
-        df['CTGSkip'] = 'YES'
-        df.loc[df['TSCTGName'].isin(names), 'CTGSkip'] = 'NO'
+        df = self.get("tscontingency")
+        df["CTGSkip"] = "YES"
+        df.loc[df["TSCTGName"].isin(ctgs), "CTGSkip"] = "NO"
 
         self.esa.change_and_confirm_params_multiple_element(
-            ObjectType = 'TSContingency',
-            command_df = df
+            ObjectType="TSContingency", command_df=df
         )
-    
+
+    def pflow(self):
+        self.esa.SolvePowerFlow()
 
 
 def pw_bool(val):
-        v = str(val).lower()
-        a = v == "connected"
-        b = v == "closed"
-        c = v == "yes"
-        return a or b or c
+    v = str(val).lower()
+    a = v == "connected"
+    b = v == "closed"
+    c = v == "yes"
+    return a or b or c
 
-r'''
+
+r"""
 def pwb_write_all(self, s=None):
     if s is None:
         s = self.esa
@@ -459,4 +430,4 @@ elif isinstance(fname, str) and len(fname) >= 5 and \
     self.json_open(fname)
 elif fname is not None:
     raise NameError(f'Do not understand {fname} to open')
-'''
+"""

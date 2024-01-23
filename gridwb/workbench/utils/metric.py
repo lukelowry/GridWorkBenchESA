@@ -2,55 +2,32 @@ from abc import ABC, abstractproperty
 
 from gridwb.workbench.grid.parts import GridType
 
+
 class Metric(ABC):
-
     @abstractproperty
-    def units(self): 
+    def units(self):
         pass
 
-    @abstractproperty
-    def Static(self) -> dict[GridType, str]: 
-        pass
-    
-    @abstractproperty
-    def Dynamic(self)-> dict[GridType, str]: 
-        pass
-    
-    @abstractproperty
-    def RAM(self) -> dict[GridType, str]: 
-        pass
-    
+
 class Voltage(Metric):
-
-    units = "V p.u."
-    
-    Static = {
-        GridType.Bus: "BusPUVolt"
+    Bus = {
+        "Type": GridType.Bus,
+        "Units": "V p.u",
+        "Static": "BusPUVolt",
+        "Dynamic": "TSBusVPU",
+        "RAM": "TSSaveBusVPU",
     }
 
-    Dynamic = {
-        GridType.Bus: "TSBusVPU"
-    }
-
-    RAM = {
-        GridType.Bus: "TSSaveBusVPU"
-    }
 
 class Freq(Metric):
-
     units = "Freq p.u."
-    
-    Static = {
-        GridType.Bus: "TBD"
-    }
 
-    Dynamic = {
-        GridType.Bus: "TSFrequencyinPU"
-    }
+    Static = {GridType.Bus: "TBD"}
 
-    RAM = {
-        GridType.Bus: "TSSaveBusFreq"
-    }
+    Dynamic = {GridType.Bus: "TSFrequencyinPU"}
+
+    RAM = {GridType.Bus: "TSSaveBusFreq"}
+
 
 """
 TSSaveBusDeg
@@ -65,6 +42,3 @@ TSSaveBusStates
 TSSaveBusStatus
 TSSaveBusVPU
 """
-
-
-

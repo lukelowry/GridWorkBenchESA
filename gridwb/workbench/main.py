@@ -12,7 +12,10 @@
 #
 
 # Imports
+import cmath
 import shlex
+
+import numpy as np
 from .grid.builders import GridType, ObjectFactory
 from .plugins.powerworld import PowerWorldIO
 from .apps import Dynamics, Statics
@@ -23,9 +26,6 @@ class GridWorkBench:
         # PW Interface
         self.io = PowerWorldIO(fname)
 
-        # Main Model
-        # self.case = Case(self.io)
-
         # Applications
         self.dyn = Dynamics(self.io)
         self.statics = Statics(self.io)
@@ -34,26 +34,34 @@ class GridWorkBench:
         if fname is not None:
             self.io.open()
             self.objs = self.io.down()
-            #self.objs = ObjectFactory.makeFrom(self.io)
+            # self.objs = ObjectFactory.makeFrom(self.io)
 
-    def of_type(self, otype: GridType):
-        for o in self.objs:
-            if o._type is otype:
-                yield o
+    def pflow(self):
+        self.io.pflow()
 
-    
+        # Update all static params after solve
+        self.objs = self.io.down()
+
     # Return All of Type
     @property
     def ieeeg1(self):
         return self.objs[GridType.IEEEG1]
-    
+
     @property
     def ggov1(self):
         return self.objs[GridType.GGOV1]
-    
+
     @property
     def reeca1(self):
         return self.objs[GridType.REECA1]
+
+    @property
+    def ieeest(self):
+        return self.objs[GridType.IEEEST]
+
+    @property
+    def wt4t(self):
+        return self.objs[GridType.WT4T]
 
     @property
     def regions(self):
@@ -90,7 +98,7 @@ class GridWorkBench:
     @property
     def tsctgs(self):
         return self.objs[GridType.TSContingency]
-    
+
     @property
     def lines(self):
         return self.objs[GridType.Line]
@@ -121,24 +129,45 @@ class GridWorkBench:
 
     def shunt(self, id, bus):
         return self.find(GridType.Shunt, id, bus)
-    
+
     # This could potentially miss a connection
     def branch(self, from_bus: GridType.Bus, to_bus: GridType.Bus):
         for branch in self.branches:
             if branch.from_bus is from_bus and branch.to_bus is to_bus:
                 return branch
-    
-    def tsctg(self, name):
-        return self.find(GridType.TSContingency, name)
-            
+
+    # Secondary Field Helpers
+    @property
+    def volts(self):
+        vmags = self.buses["BusPUVolt"]
+        angs = np.deg2rad(self.buses["BusAngle"])
+        rectv = [cmath.rect(v, ang) for v, ang in zip(vmags, angs)]
+
+        return np.array(rectv)
+
+    @volts.setter
+    def volts(self, vals):
+        mags = [cmath.polar(v)[0] for v in vals]
+        angs = np.rad2deg([cmath.polar(v)[1] for v in vals])
+
+        self.buses["BusPUVolt"] = mags
+        self.buses["BusAngle"] = angs
+
+        self.io.update(GridType.Bus, self.buses[["BusNum", "BusPUVolt", "BusAngle"]])
+
+    @property
+    def ybus(self):
+        return self.io.esa.get_ybus(True)
+
     # Get Grid Obj from contingency string
     def findCTGObject(self, findObjText: str):
-
-        #Try and Cast to int for key fields
+        # Try and Cast to int for key fields
         keys = []
         for part in shlex.split(findObjText):
-            try: keys += [int(part)]
-            except: keys += [part]
+            try:
+                keys += [int(part)]
+            except:
+                keys += [part]
 
         # Try and find Type
         try:
@@ -146,16 +175,16 @@ class GridWorkBench:
         except:
             print(f"WARNING: CTG Obj not supported {findObjText}")
             return None
-        
+
         # Find from id or branch
         try:
             if len(keys) == 2:
-                id    = keys[1]
+                id = keys[1]
                 return self.H.get(oType, id)
-            
+
             if len(keys) == 4:
                 from_bus = self.H.get(GridType.Bus, keys[1])
-                to_bus   = self.H.get(GridType.Bus, keys[2])
+                to_bus = self.H.get(GridType.Bus, keys[2])
                 return self.branch(from_bus, to_bus)
         except:
             print(f"Warning: CTG Unassigned {findObjText}")
