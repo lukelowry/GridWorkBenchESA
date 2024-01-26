@@ -1,5 +1,5 @@
 import functools
-from typing import Any
+from typing import Any, Iterable
 import pandas as pd
 from itertools import product
 
@@ -20,12 +20,13 @@ class PWApp:
         self.io = io
 
         # Conditions for griditer feature
-        self.conditions: dict[Condition, list[Any]] = None
+        self.conditions: dict[Condition, list[Any]] = {}
 
         # Default Grid Iteration Values TODO Remove
         self.defaultConditions = {
             BaseLoad: BaseLoad.default,
-            RampRate: RampRate.default,  #'step size' next
+            RampRate: RampRate.default,
+            TimeStep: TimeStep.default,
         }
 
     # Configuration Property
@@ -39,11 +40,11 @@ class PWApp:
 
     # Define Condition ranges for Grid Iter Feature
     def rotate(self, conditions: dict[Condition, list[Any]]):
-        self.conditions = conditions
-
-    # Define Condition ranges for Grid Iter Feature
-    def r(self, baseload=float | list[float], **kwargs):
-        self.conditions = {BaseLoad: baseload, **kwargs}
+        for c, v in conditions.items():
+            if not isinstance(v, Iterable):
+                self.conditions[c] = [v]
+            else:
+                self.conditions[c] = v
 
     # Sub-Classes that want an application feature to be 'grid iterated' will use decorator @griditer
 
@@ -65,21 +66,21 @@ in other contexts.
 
 
 # Enter Grid Pre-Iteration
-def gridenter(esa: SAW):
+def gridenter(io: IModelIO):
     # Save gridstate
-    if not esa.SaveState():
+    if not io.esa.SaveState():
         print("Case backup saved for restoration.")
     else:
         print("Failed to save case state. Investigate before continuing.")
 
 
 # Exit Grid Post-Iteration
-def gridexit(esa: SAW):
+def gridexit(io: IModelIO):
     print("\nSimulations Finished.")
 
     # Revert to original state
     print("Reverting to original PF state.")
-    esa.LoadState()
+    io.esa.LoadState()
 
 
 # Decorator for PWApp Instance Methods
@@ -89,14 +90,15 @@ def griditer(func):
     def wrapper(self: PWApp, *args, **kwargs):
         # App Regerence
         app = self
-        esa = app.io.esa
 
         # Act as normal App Function if no conditions
         if app.conditions is None:
             return func(app, *args, **kwargs)
 
         # Prepare Grid for many changes
-        gridenter(esa)
+        gridenter(app.io)
+
+        # TODO Apply default Conditions for Non-Passed?
 
         # Outer Dataframe to save iterated application data
         outer_meta: pd.DataFrame = None
@@ -105,9 +107,11 @@ def griditer(func):
         # For every scenario
         for scenarioVals in product(*app.conditions.values()):
             # Apply Each Condition in Grid Scenario
-            scenario = dict(zip(app.conditions.keys(), scenarioVals))
+            scenario: dict[Condition, Any] = dict(
+                zip(app.conditions.keys(), scenarioVals)
+            )
             for condition, value in scenario.items():
-                condition.apply(esa, scenario)
+                condition.apply(app.io, scenario)
 
                 print(condition.text + " : " + str(value))
 
@@ -141,7 +145,7 @@ def griditer(func):
                 outer_df = pd.concat([outer_df, inner_df], axis=1, ignore_index=True)
 
         # Safely reset grid to original state
-        gridexit(esa)
+        gridexit(app.io)
 
         return (outer_meta, outer_df)
 

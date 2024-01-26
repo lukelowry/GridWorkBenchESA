@@ -1,9 +1,8 @@
-
 from typing import Callable
 from pandas import DataFrame, MultiIndex
 
-def flat(meta: DataFrame, data: DataFrame, copy=True) -> DataFrame:
 
+def flat(meta: DataFrame, data: DataFrame, copy=True) -> DataFrame:
     if copy:
         flatData = data.copy()
         flatData.columns = MultiIndex.from_frame(meta.copy())
@@ -13,8 +12,8 @@ def flat(meta: DataFrame, data: DataFrame, copy=True) -> DataFrame:
 
     return flatData.T.reset_index()
 
-def select(df: DataFrame, cols: list[str], newcols: list[str] = None) -> DataFrame:
 
+def select(df: DataFrame, cols: list[str], newcols: list[str] = None) -> DataFrame:
     # Get Cols & Copy
     sel = df[cols].copy()
 
@@ -22,14 +21,16 @@ def select(df: DataFrame, cols: list[str], newcols: list[str] = None) -> DataFra
     if newcols:
         sel.columns = newcols
 
-    # Freshen index 
+    # Freshen index
     sel.reset_index(drop=True, inplace=True)
 
     return sel
 
-# Add Fields to Data Frame
-def addFields(df: DataFrame, mapper: Callable[[str],object], fields: list[str], copy=True) -> DataFrame:
 
+# Add Fields to Data Frame
+def addFields(
+    df: DataFrame, mapper: Callable[[str], object], fields: list[str], copy=True
+) -> DataFrame:
     if copy:
         df = df.copy()
 
@@ -47,15 +48,12 @@ def addFields(df: DataFrame, mapper: Callable[[str],object], fields: list[str], 
 
     return df
 
-def dropFields(df: DataFrame, fields: list[str] | str):
 
+def dropFields(df: DataFrame, fields: list[str] | str):
     if not isinstance(fields, list):
         fields = [fields]
 
     try:
         df.drop(columns=fields, inplace=True)
     except KeyError:
-        print('Field DNE, no change made.')
-    
-
-
+        print("Field DNE, no change made.")

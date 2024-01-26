@@ -29,8 +29,8 @@ class Plot(ABC):
         data: tuple[DataFrame, DataFrame] = (None, None),
         colorkey: str = None,
         framkey: str = None,
-        sizekey = None,
-        connectObjs = False,
+        sizekey=None,
+        connectObjs=False,
         xkey: str = None,
         ykey: str = None,
         cmap: str = "cool",
@@ -41,13 +41,12 @@ class Plot(ABC):
         dark: bool = True,
         **kwargs,
     ) -> None:
-        
         # Access Args
         self.metaMaster = data[0].copy()
         self.dfMaster = data[1].copy()
         self.framekey = framkey
         self.colorkey = colorkey
-        self.sizekey  = sizekey
+        self.sizekey = sizekey
         self.connectObjs = connectObjs
         self.xkey = xkey
         self.ykey = ykey
@@ -66,11 +65,13 @@ class Plot(ABC):
         self.df = self.dfMaster
 
         # Flat Index
-        self.dataMaster = self.metaMaster.merge(self.dfMaster.T, left_index=True, right_index=True)
+        self.dataMaster = self.metaMaster.merge(
+            self.dfMaster.T, left_index=True, right_index=True
+        )
         self.data = self.dataMaster
 
         # Units (if more than 1, delimeted string)
-        #self.units = ",".join(self.metaMaster["Metric"].unique())
+        # self.units = ",".join(self.metaMaster["Metric"].unique())
 
         # Theme
         textColor = "black"
@@ -87,7 +88,6 @@ class Plot(ABC):
 
     @abstractmethod
     def plot(self, ax: Axes) -> Axes:
-
         if ax is None:
             fig, ax = plt.subplots()
 
@@ -103,9 +103,8 @@ class Plot(ABC):
         ax.set_title(self.title)
 
         return ax
-    
-    def animate(self, framekey):
 
+    def animate(self, framekey):
         # Interactive Animation Settings (Jupyer or IPython)
         plt.rcParams["animation.html"] = "jshtml"
         plt.rcParams["figure.dpi"] = 100
@@ -119,12 +118,11 @@ class Plot(ABC):
         frameCount = len(frameVals)
 
         def frames(i):
-
             ax.clear()
 
             # Get Data for this frame
             frameVal = frameVals[i]
-            self.data = self.dataMaster[self.dataMaster[framekey]==frameVals[i]]
+            self.data = self.dataMaster[self.dataMaster[framekey] == frameVals[i]]
 
             # Frame Value as Title, Round if Num
             try:
@@ -140,13 +138,12 @@ class Plot(ABC):
         anim = FuncAnimation(fig, frames, frameCount, interval=1000)
 
         return anim
- 
-class Scatter(Plot):
 
+
+class Scatter(Plot):
     cb = None
 
     def plot(self, ax: Axes = None):
-
         # Plot Text
         self.title = "Transient vs. Power Flow"
         self.xlabel = self.xkey
@@ -155,32 +152,37 @@ class Scatter(Plot):
         # Standard Formats
         ax = super().plot(ax)
 
+        if self.colorkey == "ID-A":
+            keys = np.unique(self.data[self.colorkey])
+            idmap = {key: id for id, key in enumerate(keys)}
+            self.cdata = self.data[self.colorkey].apply(lambda x: idmap[x])
+        else:
+            self.cdata = self.data[self.colorkey]
+
         # Quantile Color Range
-        low =  self.data[self.colorkey].quantile(.05)
-        high = self.data[self.colorkey].quantile(.95)
+        low = self.cdata.quantile(0.05)
+        high = self.cdata.quantile(0.95)
 
         # Plot Scatter
         sc = ax.scatter(
-            x = self.data[self.xkey],
-            y = self.data[self.ykey],
-            c = self.data[self.colorkey],
-            s = self.sizekey,
-            cmap = self.cmap,
-            norm = Normalize(vmin=low, vmax=high),
-            zorder = 3
+            x=self.data[self.xkey],
+            y=self.data[self.ykey],
+            c=self.cdata,
+            s=self.sizekey,
+            cmap=self.cmap,
+            norm=Normalize(vmin=low, vmax=high),
+            zorder=3,
         )
 
         if self.connectObjs:
-
             # Lines Connecting Scatter Indicating Objects
-            for o, key in self.data.groupby(['Object','ID-A']).size().index:
-                isObj = self.data['Object']==o
-                isKey = self.data['ID-A']==key
+            for o, key in self.data.groupby(["Object", "ID-A"]).size().index:
+                isObj = self.data["Object"] == o
+                isKey = self.data["ID-A"] == key
                 objPoints: DataFrame = self.data[isObj & isKey]
 
                 x = objPoints[self.xkey].tolist()
                 y = objPoints[self.ykey].tolist()
-                #colors = objPoints[self.colorkey].tolist()[1:]
                 segments = []
 
                 i = 0
@@ -188,7 +190,7 @@ class Scatter(Plot):
                     segments.append([(x1, y1), (x2, y2)])
                     i += 1
 
-                lc = LineCollection(segments, color='grey', linewidths=1, zorder=2)
+                lc = LineCollection(segments, color="grey", linewidths=1, zorder=2)
                 ax.add_collection(lc)
 
         # Color Bar Once
@@ -197,11 +199,12 @@ class Scatter(Plot):
             self.cb.set_label(self.colorkey)
 
         return
-    
-r'''
+
+
+r"""
 # 'No Change' Line
         line = lines.Line2D([0, 2], [0, 2], color="red")
         ax.add_line(line)
 
 
-''' 
+"""

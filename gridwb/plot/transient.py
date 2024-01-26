@@ -1,4 +1,3 @@
-
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.axes import Axes
@@ -14,11 +13,11 @@ Input: (meta, data)
 :data - DF of time series (each column is time series)
 
 """
-class TimeSeries(Plot):
 
+
+class TimeSeries(Plot):
     # Time Series is only one with custom animate
     def animate(self, frameKey):
-        
         # Interactive Animation Settings (Jupyer or IPython)
         plt.rcParams["animation.html"] = "jshtml"
         plt.rcParams["figure.dpi"] = 100
@@ -33,7 +32,6 @@ class TimeSeries(Plot):
         frameCount = len(frameVals)
 
         def frames(i):
-
             ax.clear()
 
             # Get Data for this frame
@@ -56,25 +54,27 @@ class TimeSeries(Plot):
 
         return anim
 
-    def plot(self, ax = None):
-
+    def plot(self, ax=None):
         # Plot Text
         self.title = "Transient Simulations"
         self.xlabel = "Time (s)"
-        self.ylabel = self.meta['Metric'].values[0]
+        self.ylabel = self.meta["Metric"].values[0]
 
         ax = super().plot(ax)
 
-        norm = Normalize(
-            vmin=self.meta[self.colorkey].min(),
-            vmax=self.meta[self.colorkey].max()
-        )
+        # Numeric Vs Discrete Fields for Color
+        try:
+            float(self.data[self.colorkey].loc[0])
+        except:
+            norm = Normalize(0, len(self.data))
+            c = [self.cmap(norm(i)) for i in self.data.index]
+        else:
+            norm = Normalize(
+                self.meta[self.colorkey].min(), self.meta[self.colorkey].max()
+            )
+            c = [self.cmap(norm(v)) for v in self.meta[self.colorkey]]
 
-        c=[self.cmap(norm(v)) for v in self.meta[self.colorkey]]
-        self.df.plot(legend=False, color=c,ax=ax)
-        
-
-        
+        self.df.plot(legend=False, color=c, ax=ax)
 
         # Standard Formats
         return ax
