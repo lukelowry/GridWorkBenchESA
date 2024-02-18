@@ -11,8 +11,11 @@ from ..utils.metric import Metric
 from .app import PWApp, griditer
 
 
+
+
 # Dynamics App (Simulation, Model, etc.)
 class Dynamics(PWApp):
+
     io: PowerWorldIO
 
     @PWApp.configuration.setter
@@ -21,22 +24,19 @@ class Dynamics(PWApp):
         self.metric: Type[Metric] = config["Field"]
         self._configuration = config
 
-    # TODO Everything works, just make it so you can select some objs of type not all
     def fields(self, metric):
-        objs = self.io.get(metric["Type"])
-        flist = []
-        for i in objs.index:
-            keys = [str(objs.loc[i, key]) for key in objs]
-            keys = " ".join(keys)
-            flist.append(f"{objs.gtype} {keys} | {metric['Dynamic']}")
+        '''Get TS Formatted Fields for Requested Objects'''
+        objs = self.io.get(metric["Type"]) # TODO I don't need to retrieve from PW I have it local. Will Speed up
+        os = objs['ObjectID']
+        flist = [f"{str(os.loc[i])} | {metric['Dynamic']}" for i in range(len(os))]
         return flist
 
     # Set Run Time for list of contingencies
     def setRuntime(self, sec):
-        ctgs = self.io.get(TSContingency)
+        ctgs = self.io.get(TSContingency, keysonly=True)
         ctgs["StartTime"] = 0
         ctgs["EndTime"] = sec
-        self.io.update(ctgs)
+        self.io.upload({TSContingency: ctgs})
 
     # Create 'SimOnly' contingency if it does not exist
     # TODO Add TSCtgElement that closes an already closed gen at t=0
@@ -112,6 +112,9 @@ class Dynamics(PWApp):
                 dfSim = dfSim.astype(np.float32)
                 dfSim.set_index("time", inplace=True)
 
+            #if df is not None:
+                #print(df.join(dfSim,how='outer'))
+            #TODO only working for same types of ctgs
             df = pd.concat(
                 [dfSim] if df is None else [df, dfSim], axis=1, ignore_index=True
             )

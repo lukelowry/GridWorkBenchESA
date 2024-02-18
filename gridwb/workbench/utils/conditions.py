@@ -138,4 +138,4 @@ class TimeStep(Condition):
         ctgs = io.get(TSContingency)
         ctgs["UseCyclesForTimeStep"] = "YES"
         ctgs["TimeStep"] = tstep
-        io.update(ctgs)
+        io.upload({TSContingency: ctgs})

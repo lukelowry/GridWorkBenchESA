@@ -19,7 +19,7 @@ from dataclasses import astuple
 from typing import Any, Generic, Iterable, Self, Type, TypeVar
 from .grid.components import *
 from .plugins.powerworld import PowerWorldIO
-from .apps import Dynamics, Statics
+from .apps import Dynamics, Statics, GIC
 
 
 class GridSet:
@@ -30,7 +30,9 @@ class GridSet:
     """Very Fast Download Speed. Bare Minimum Elements for Power System Analysis. """
     Optimal = Light + [Substation, Area, SuperArea]
     """Acceptable Download Speed. All Basic Data & Meta Data"""
-    Dynamic = Optimal + [
+    CTG = [Contingency, ContingencyElement, TSContingency, TSContingencyElement]
+    """Static and Dynamic Contingency Info"""
+    Dynamic = Optimal + CTG + [
         AGCController_AGCBradley,
         AGCController_AGCPulseRate,
         AGCController_AGCSetpoint,
@@ -429,7 +431,15 @@ class GridSet:
         UserDefinedGovernor,
     ]
     """Slow Download if Many Models Exist. All Dynamic Model Data"""
-
+    GIC = Optimal + [GICGeographicRegion,
+        GICInputVoltObject,
+        GICMagLatScalarFunction,
+        GICResistivityLayerObject,
+        GICXFormer,
+        GIC_Options_Value,
+        RemovedGICXFormer
+    ]
+    """Standard Download + GIC Data, Slower"""
 
 T = TypeVar("T", bound=GObject)
 
@@ -443,7 +453,11 @@ class GridList(list[T]):
         for obj in self:
             for key in locs:
                 if hasattr(obj, key) and locs[key] == getattr(obj, key):
-                    results.append(obj)
+                    continue
+                else:
+                    break
+            else:
+                results.append(obj)
 
         if len(results) == 0:
             return None
@@ -458,9 +472,13 @@ class GridWorkBench:
         # PW Interface
         self.io = PowerWorldIO(fname)
 
+        # Data Groups
+        self.set = set
+
         # Applications
         self.dyn = Dynamics(self.io)
         self.statics = Statics(self.io)
+        self.gic = GIC(self.io)
 
         # Read Data into Case
         if fname is not None:
@@ -510,6 +528,9 @@ class GridWorkBench:
     def sudos(self):
         self.commit()
         self.save()
+
+    def updatelocal(self):
+        self.all = self.io.download(self.set)
 
     # Secondary Field Helpers
     @property

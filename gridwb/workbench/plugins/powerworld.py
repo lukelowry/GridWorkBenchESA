@@ -10,7 +10,6 @@ from ...saw import SAW
 
 from os import path
 
-
 # Power World Read/Write
 class PowerWorldIO(IModelIO):
     esa: SAW
@@ -24,29 +23,41 @@ class PowerWorldIO(IModelIO):
         # ESA Object & Transient Sim
         self.esa = SAW(self.fname, CreateIfNotFound=True, early_bind=True)
 
+        # Attempt and Initialize TS so we get initial values
+        try:
+            self.esa.RunScriptCommand("TSInitialize()")
+        except:
+            print("Failed to Initialize TS Values")
+
     @timing
     def download(self, set: list[Type[GObject]]) -> dict[Type[GObject], DataFrame]:
-        return {gclass: self.getallof(gclass) for gclass in set}
+        '''Get all Data from PW. What data is downloaded
+        depends on the selected Set'''
+        return {gclass: self.get(gclass) for gclass in set}
 
     def upload(self, model: dict[Type[GObject], DataFrame]) -> bool:
+        '''Send All WB DataFrame Data to PW'''
         self.esa.RunScriptCommand("EnterMode(EDIT);")
         for gclass, gset in model.items():
             # Only Pass Params That are Editable
-            df = gset[gset.columns.intersection(gclass.editable)].copy()
-            self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
+            #df = gset[gset.columns.intersection(gclass.editable)].copy()
+            df = gset[gset.columns].copy()
             try:
                 self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
             except:
                 print(f"Failed to Write Data for {gclass.TYPE}")
 
-    # Save all Open Changes to PWB File
     def save(self):
+        '''Save all Open Changes to PWB File'''
         return self.esa.SaveCase()
 
-    def getallof(self, gtype: Type[GObject]):
-        # Formatting Outlier
+    def get(self, gtype: Type[GObject], keysonly=False):
+        '''Get all Objects of Respective Type from PW'''
         fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
-        fields = [fexcept(f) for f in gtype.fields]
+        if keysonly:
+            fields = [fexcept(f) for f in gtype.keys]
+        else:
+            fields = [fexcept(f) for f in gtype.fields]
 
         # Get Data from SimAuto
         df = None
@@ -55,11 +66,9 @@ class PowerWorldIO(IModelIO):
         except:
             print(f"Failed to read {gtype.TYPE} data.")
 
-        # I chose to Drop Data that is NaN for all Objects,
-        # since Volume of Fields is generally High
+        # Empty DF Otherwise
         if df is None:
             df = DataFrame(columns=fields)
-        df.dropna(axis=1, how="all", inplace=True)
 
         return df
 
@@ -75,7 +84,7 @@ class PowerWorldIO(IModelIO):
         ctgset["CTGSkip"] = "YES"
         ctgset.loc[ctgset["TSCTGName"].isin(ctgs), "CTGSkip"] = "NO"
 
-        self.update(ctgset)
+        self.upload({TSContingency: ctgset})
 
     # Execute Dynamic Simulation for Non-Skipped Contingencies
     def TSSolveAll(self):
@@ -87,11 +96,17 @@ class PowerWorldIO(IModelIO):
         self.esa.RunScriptCommand("TSClearResultsFromRAM(ALL,YES,YES,YES,YES,YES)")
 
     def saveinram(self, metric: Metric):
-        o = self.get(metric["Type"])
-        o[metric["RAM"]] = "YES"
+        '''Save Specified Metric for TS'''
 
-        # Enable RAM Storage in PW
+        # Get Respective Data
+        gtype = metric['Type']
+        cfg = self.get(gtype, keysonly=True) # TODO Use local IDs
+
+        # Set TSSave to Yes
+        cfg[metric["RAM"]] = "YES"
+
+        # Write to PW
         self.esa.change_and_confirm_params_multiple_element(
-            ObjectType=metric["Type"],
-            command_df=o,
+            ObjectType=gtype.TYPE,
+            command_df=cfg,
         )
