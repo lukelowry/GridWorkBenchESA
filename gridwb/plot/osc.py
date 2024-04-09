@@ -199,7 +199,11 @@ def plot_spatial(data, mapping, shape='Texas', ax=None, title='Texas Contour', i
 
         # Load
         _DIRNAME = dirname(abspath(__file__))
-        shapepath = _DIRNAME + sep + 'shapes' + sep + shape + sep + 'State.shp'
+
+        if shape=='US':
+            shapepath = _DIRNAME + sep + 'shapes' + sep + shape + sep + 'tl_2023_us_state.shp'
+        else:
+            shapepath = _DIRNAME + sep + 'shapes' + sep + shape + sep + 'State.shp'
         shapeobj = gpd.read_file(shapepath)
 
         # Mask

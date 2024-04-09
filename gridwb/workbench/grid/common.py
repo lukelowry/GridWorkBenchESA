@@ -159,7 +159,7 @@ def rlc_line(lines, buses):
     '''
     Returns LC parameters of lines as well 
     as Assigned Bus Shunt Capacitance and
-    and Adjacency Matrix
+    and Incidence Matrix
      (Re, Le, Cbus, A)
     '''
 
@@ -191,10 +191,11 @@ def rlc_line(lines, buses):
 
         # In Reality all lines have shunt suseptance
         # If '0' we approximate as really small value
+        # TODO HOLY SHIT THIS IS WRONG
         if B !=0:
-            C = 1/B/(2*pi*60)
+            C = B/(2*pi*60)
         else:
-            C = 0.001 # Was 0.0001
+            C = 0.0000001 # Was 0.0001
 
         # Add to List of Values
         Re[i] = R
