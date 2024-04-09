@@ -21,7 +21,7 @@ class Dynamics(PWApp):
     @PWApp.configuration.setter
     def configuration(self, config):
         self.runtime: int = config["Time"]
-        self.metric: Type[Metric] = config["Field"]
+        self.retrieve = config['Fields']
         self._configuration = config
 
     def fields(self, metric):
@@ -54,11 +54,18 @@ class Dynamics(PWApp):
     @griditer
     def solve(self, ctgs: list[str] = None):
         # Unique List of Fields to Request From PW
-        objFields = self.fields(self.metric)
 
         # Prepare Memory
         self.io.clearram()
-        self.io.saveinram(self.metric)
+
+        # Gen Obj Field list and Mark Fields for RAM storage
+        objFields = []
+        flatFields = []
+        for objects, fields in self.retrieve:
+            self.io.saveinram(objects, fields)
+            for id in objects['ObjectID']:
+                objFields += [f"{id} | {f}" for f in fields]
+                flatFields += fields
 
         # Sim Only (No Contingency)
         if ctgs is None:
@@ -83,19 +90,24 @@ class Dynamics(PWApp):
             # Extract incoming Dataframe
             metaSim, dfSim = self.io.esa.TSGetContingencyResults(ctg, objFields)
             # Weird ESA bug where if items at end are open, they don't return data :(
+            # Happened Again, if last column is zero valued it removes the column. Awful
+
+            # Proposed Fix: Will Fill in any floating columns not present in data but in meta
+            fillIdx = metaSim.index[~metaSim.index.isin(dfSim.columns)]
+            dfSim[fillIdx] = 0.0
 
             # Custom Fields, Add CTG, Append to Main
-            metaSim.drop(columns=["Label", "VariableName"], inplace=True)
+            metaSim.drop(columns=["Label", "ColHeader"], inplace=True)
             metaSim.rename(
                 columns={
                     "ObjectType": "Object",
-                    "ColHeader": "Metric",
                     "PrimaryKey": "ID-A",
                     "SecondaryKey": "ID-B",
+                    'VariableName': "Metric"
                 },
                 inplace=True,
             )
-            metaSim["Metric"] = self.metric["Units"]
+            metaSim['Metric'] = flatFields
             metaSim["Contingency"] = ctg
             meta = pd.concat(
                 [metaSim] if meta is None else [meta, metaSim],

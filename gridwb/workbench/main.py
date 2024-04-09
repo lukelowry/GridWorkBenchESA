@@ -429,6 +429,7 @@ class GridSet:
         RelayModel_VTGTPAT,
         UserDefinedExciter,
         UserDefinedGovernor,
+        Stabilizer_IEEEST,
     ]
     """Slow Download if Many Models Exist. All Dynamic Model Data"""
     GIC = Optimal + [GICGeographicRegion,
@@ -518,7 +519,10 @@ class GridWorkBench:
 
     # Send to Remote Model (PW)
     def commit(self, gclass=None):
-        self.io.upload(self.all)
+        if gclass is None:
+            self.io.upload(self.all)
+        else:
+            self.io.upload(self.all[gclass])
 
     # Save Remote Model (PW)
     def save(self):

@@ -70,6 +70,9 @@ class PowerWorldIO(IModelIO):
         if df is None:
             df = DataFrame(columns=fields)
 
+        # Set Name of DF to datatype
+        df.Name = gtype.TYPE
+
         return df
 
     # Solve Power Flow
@@ -95,8 +98,9 @@ class PowerWorldIO(IModelIO):
         self.esa.RunScriptCommand("TSResultStorageSetAll(ALL, NO)")
         self.esa.RunScriptCommand("TSClearResultsFromRAM(ALL,YES,YES,YES,YES,YES)")
 
+    '''
+    Depricated
     def saveinram(self, metric: Metric):
-        '''Save Specified Metric for TS'''
 
         # Get Respective Data
         gtype = metric['Type']
@@ -109,4 +113,45 @@ class PowerWorldIO(IModelIO):
         self.esa.change_and_confirm_params_multiple_element(
             ObjectType=gtype.TYPE,
             command_df=cfg,
+        )
+    '''
+
+    savemap = {
+        'TSGenDelta': 'TSSaveGenDelta',
+        'TSGenMachineState:1': 'TSSaveGenMachine', # Delta
+        'TSGenMachineState:2': 'TSSaveGenMachine', # Speed Deviation
+        'TSGenMachineState:3': 'TSSaveGenMachine', # Eqp
+        'TSGenMachineState:4': 'TSSaveGenMachine', # Psidp
+        'TSGenMachineState:5': 'TSSaveGenMachine', # Psippq
+        'TSGenExciterState:1': 'TSSaveGenExciter', # Efd
+        'TSGenExciterState:2': 'TSSaveGenExciter', # ?
+        'TSGenExciterState:3': 'TSSaveGenExciter', # Vr
+        'TSGenExciterState:4': 'TSSaveGenExciter', # Vf
+        'TSBusRad': 'TSSaveBusDeg',
+    }
+
+    def saveinram(self, objdf, datafields):
+        '''Save Specified Fields for TS'''
+
+        # Get Respective Data
+        savefields = []
+        for field in datafields:
+            if field in self.savemap: 
+                savefield = self.savemap[field]
+            else:
+                savefield = 'TSSave' + field[2:]
+            
+            objdf[savefield] = 'YES'
+            savefields.append(savefield)
+
+        # First three 
+        keys = list(objdf.columns[:2])
+
+        # Unique Save Fields
+        savefields = np.unique(savefields)
+
+        # Write to PW
+        self.esa.change_and_confirm_params_multiple_element(
+            ObjectType=objdf.Name,
+            command_df=objdf[np.concatenate([keys,savefields])].copy(),
         )

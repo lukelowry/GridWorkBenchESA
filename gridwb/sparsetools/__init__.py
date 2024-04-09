@@ -1,2 +1,2 @@
-from .dll import structs, SparseDLL
+from .dll import structs, KLUDLL
 from .klu import KLU

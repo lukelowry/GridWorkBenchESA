@@ -92,7 +92,7 @@ def griditer(func):
         app = self
 
         # Act as normal App Function if no conditions
-        if app.conditions is None:
+        if app.conditions is None or len(app.conditions)==0:
             return func(app, *args, **kwargs)
 
         # Prepare Grid for many changes

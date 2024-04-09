@@ -1,2 +1,2 @@
-from .sparse import SparseDLL
+from .kludll import KLUDLL
 from .structs import KLUCommon, KLUNumeric, KLUSymbolic

@@ -1,41 +1,45 @@
+
 from scipy.sparse import csr_matrix
 from ctypes import POINTER, c_int, c_double
 from numpy import int32, float64
+from numpy import iscomplexobj, empty
 from numpy.ctypeslib import as_array as c_to_np
 
-from .dll import SparseDLL
+from .dll import KLUDLL
+
+from gridwb.workbench.utils.decorators import timing
 
 class KLU:
-    '''Structural Sparse LU Decomposition'''
+    '''Structural Sparse LU Decomposition for Real and Complex Systems'''
 
     sym = None
     common = None
 
-    def __init__(self, A: csr_matrix) -> None:
-        '''Input a Scipy CSR matrix to perfrom LU'''
+    def __init__(self, A: csr_matrix, cmplx: bool = False) -> None:
+        '''Input a Scipy CSR matrix to perfrom LU
+        Cmplx form -> Ap and Ai to remain same. Ax must be 2*n where (2i, 2i+1) is an index cmplx number'''
 
-        # Transpose, Assuming user wants form Ax = b, DLL is xA = b
-        #csr = csr.transpose() ?
+        # dim(A) -> Assumed Square
         self.n = A.shape[0]
 
-        # Convert to C-Compatible Arrays for DLL Use
-        self.Ap, self.Ai, self.Ax = self.csr_to_c(A)
+        # Determine if Complex
+        self.isCmplx = cmplx
 
+        # Convert to C-Compatible Arrays for DLL Use
+        self.Ap = self.idx_to_c(A.indptr)
+        self.Ai = self.idx_to_c(A.indices)
+        self.Ax = A.data    #self.vals_to_c(Acsr.data)
+        # TODO the above only works with my special format, make works for generic matrix
+        
         # DLL object to interface with dll
-        self.klu = SparseDLL()
+        self.klu = KLUDLL(cmplx)
+
+        # Pre-Do Common Matrix
+        self.common = self.klu.common()
 
         # Pre-Factor Symbolic Matrix
-        self.prefactor()
+        self.sym = self.klu.symbolic(self.n, self.Ap, self.Ai, self.common)
 
-    def csr_to_c(self, Acsr: csr_matrix):
-        '''Convert a Numpy CSR Array to a CType Passable array Set'''
-
-        # Convert to C-Compatible Arrays for DLL Use
-        Ap = self.idx_to_c(Acsr.indptr)
-        Ai = self.idx_to_c(Acsr.indices)
-        Ax = self.vals_to_c(Acsr.data)
-
-        return (Ap, Ai, Ax)
     
     def idx_to_c(self, v):
         '''Convert an index-array to C-Compatible Array for DLL Use'''
@@ -45,52 +49,34 @@ class KLU:
         '''Convert array Values to C-Compatible Array for DLL Use'''
         return v.astype(float64).ctypes.data_as(POINTER(c_double))
 
-    def prefactor(self):
-        '''Perform a Symbolic LU, which will be remebered and used
-        if the resolve() function is used'''
-
-        # Common Matrix
-        self.common = self.klu.common()
-
-        # Symbolic Matrix - Compute if not Givven
-        self.sym = self.klu.symbolic(self.n, self.Ap, self.Ai, self.common)
-
-    def resolve(self, A, b_dense):
-        '''Re-solve with different non-zero values for A
-        The Sparsity structure of A must not change.'''
-
-        # C-Compatible
-        Ap, Ai, Ax = self.csr_to_c(A)
-        b = self.vals_to_c(b_dense)
-
-        # Numeric LU Matrix
-        num = self.klu.numeric(Ap, Ai, Ax, self.sym, self.common)
-
-        # Solve Linear System
-        self.klu.solve(self.sym, num, self.common, b, self.n, 1)
-
-        # Free Only Numeric
-        self.klu.free_numeric()
-
-        # Return np array of result
-        return c_to_np(b, shape=(1, self.n))
-
-
     def solve(self, b_dense):
-        '''KLU Solve with integrated symbolic and numeric phase'''
+        '''KLU Solve with integrated symbolic and numeric phase.
+        B Vector in Shape Nx(VecCount)
         
-        # Convert to C-Compatible Array for DLL Use
-        b = b_dense.astype(float64).ctypes.data_as(POINTER(c_double))
+        Re-solve with different non-zero values for the A Matrix.
+        The Sparsity structure of A must not change.
 
-        # Numeric LU Matrix
+        For a concurrent solve (i.e. Many b vectors) b should have the form
+        NxM where N is the rows (N=dim of Matrix) and M is the vector count
+        '''
+
+        # Number of Concurrent Solves
+        nvecs = b_dense.shape[1]
+
+        # Flatten and C-Compatible
+        b = self.vals_to_c(b_dense.flatten('F')) # TODO this may cause some compute time, do this beforehand?
+
+        # Numeric LU Decomp
         num = self.klu.numeric(self.Ap, self.Ai, self.Ax, self.sym, self.common)
 
         # Solve Linear System
-        self.klu.solve(self.sym, num, self.common, b, self.n, 2)
+        self.klu.solve(self.sym, num, self.common, b, self.n, nvecs) # Last Argument is number of RHS vectos -> can solve many at once!
 
         # Free Only Numeric
         self.klu.free_numeric()
 
         # Return np array of result
-        return c_to_np(b, shape=(1, self.n))
-    
+        if self.isCmplx:
+            return c_to_np(b, shape=(nvecs, self.n*2))
+        else:
+            return c_to_np(b, shape=(nvecs, self.n))
