@@ -20,6 +20,7 @@ from typing import Any, Generic, Iterable, Self, Type, TypeVar
 from .grid.components import *
 from .plugins.powerworld import PowerWorldIO
 from .apps import Dynamics, Statics, GIC
+from .grid.common import arc_incidence
 
 
 class GridSet:
@@ -519,6 +520,8 @@ class GridWorkBench:
 
     # Send to Remote Model (PW)
     def commit(self, gclass=None):
+        '''Send ALL local data to remote model.
+        Not recommended.'''
         if gclass is None:
             self.io.upload(self.all)
         else:
@@ -555,11 +558,38 @@ class GridWorkBench:
 
         self.io.update(Bus, self.buses[["BusNum", "BusPUVolt", "BusAngle"]])
 
-    def pflow(self):
+    def change(self, gtype, data: DataFrame):
+        '''
+        Inteded for a Quick data update to external model.
+
+        Parameters: 
+        gtype: Object Type (GWB Class)
+        data: DF of fields with keys and (preferably only) fields to be updated.
+        '''
+        self.io.upload({
+            gtype: data
+        })
+
+    def pflow(self, getvolts=True) -> DataFrame | None:
+        '''Solve Power Flow in external system.
+        By default bus voltages will be returned.'''
+
+        # Solve Power Flow through External Tool
         self.io.pflow()
 
-        # Update all static params after solve
-        self.all = self.io.download()
+        # Request Voltages if needed
+        if getvolts:
+            return self.io.get_quick(Bus, 'BusPUVolt')
+
 
     def ybus(self):
+        '''Returns the full y-bus as a dense Numpy Matrix'''
         return self.io.esa.get_ybus(True)
+    
+    def incidence(self):
+
+        busmap = {b: i for i, b in enumerate(self.all[Bus]['BusNum'])}
+        linedata = self.all[Branch][['BusNum', 'BusNum:1']].to_records()
+        ft = [(busmap[FB], busmap[TB])for i, FB, TB in linedata]
+
+        return arc_incidence(ft)

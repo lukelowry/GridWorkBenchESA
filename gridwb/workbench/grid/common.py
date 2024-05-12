@@ -1,4 +1,4 @@
-from numpy import zeros, pi, diagflat, block, eye, all, reciprocal, array
+from numpy import zeros, pi, diagflat, block, eye, all, reciprocal, array, max
 from numpy.linalg import inv
 from cmath import rect
 
@@ -85,6 +85,24 @@ def double_cmplx_ybus(Y):
     YC[l:2*l, l:2*l] = Y
 
     return YC.real
+
+def arc_incidence(fromto):
+    '''Returns Arc-Node Incidence Matrix.
+
+    Given a list of line objects and bus objects,
+    return incidence matrix. Column/Row Position is determined
+    by order of objects in the list'''
+
+    node_cnt = max(fromto)+1
+    edge_cnt = len(fromto)
+    A = zeros((edge_cnt, node_cnt))
+
+    # Create Incidence Matrix
+    for i, buses in enumerate(fromto):
+        A[i, buses[0]] = 1
+        A[i, buses[1]] = -1
+
+    return A
 
 def rlc_bus(buses, loads, gens):
     '''

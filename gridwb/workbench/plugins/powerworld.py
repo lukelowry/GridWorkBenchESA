@@ -10,9 +10,19 @@ from ...saw import SAW
 
 from os import path
 
+# Helper Function to parse Python Syntax/Field Syntax outliers
+# Example: fexcept('ThreeWindingTransformer') -> '3WindingTransformer
+fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
+
 # Power World Read/Write
 class PowerWorldIO(IModelIO):
     esa: SAW
+
+    def TSInit(self):
+        try:
+            self.esa.RunScriptCommand("TSInitialize()")
+        except:
+            print("Failed to Initialize TS Values")
 
     @timing
     def open(self):
@@ -24,19 +34,25 @@ class PowerWorldIO(IModelIO):
         self.esa = SAW(self.fname, CreateIfNotFound=True, early_bind=True)
 
         # Attempt and Initialize TS so we get initial values
-        try:
-            self.esa.RunScriptCommand("TSInitialize()")
-        except:
-            print("Failed to Initialize TS Values")
+        self.TSInit()
 
     @timing
     def download(self, set: list[Type[GObject]]) -> dict[Type[GObject], DataFrame]:
-        '''Get all Data from PW. What data is downloaded
-        depends on the selected Set'''
+        '''
+        Get all Data from PW. What data is downloaded
+        depends on the selected Set.
+        '''
         return {gclass: self.get(gclass) for gclass in set}
 
     def upload(self, model: dict[Type[GObject], DataFrame]) -> bool:
-        '''Send All WB DataFrame Data to PW'''
+        '''
+        Send All WB DataFrame Data to PW
+        WARNING: Be careful what is passed to this function.
+
+        Parameters:
+        model: A dictionary with Object Types as keys. The dat associated with this key
+            is a Dataframe holding data with atleast respective keys.
+        '''
         self.esa.RunScriptCommand("EnterMode(EDIT);")
         for gclass, gset in model.items():
             # Only Pass Params That are Editable
@@ -48,12 +64,20 @@ class PowerWorldIO(IModelIO):
                 print(f"Failed to Write Data for {gclass.TYPE}")
 
     def save(self):
-        '''Save all Open Changes to PWB File'''
+        '''Save all Open Changes to PWB File.
+        Note: only data/settings written back to PowerWorld will be saved.'''
         return self.esa.SaveCase()
 
     def get(self, gtype: Type[GObject], keysonly=False):
-        '''Get all Objects of Respective Type from PW'''
-        fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
+        '''
+        Get all Objects of specified type from PowerWorld.
+        
+        Parameters:
+        gtype: Object type to retrieve data,
+        keysonly: Specifiy if GWB should retrieve just key data or ALL data of object type.
+        '''
+
+        # Option Handling (.fields includes keys)
         if keysonly:
             fields = [fexcept(f) for f in gtype.keys]
         else:
@@ -62,22 +86,66 @@ class PowerWorldIO(IModelIO):
         # Get Data from SimAuto
         df = None
         try:
+            # Successful retrieval of data and requested fields as DataFrame
             df = self.esa.GetParametersMultipleElement(gtype.TYPE, fields)
         except:
+            # Failure. Create empty dataframe with expected indecies.
             print(f"Failed to read {gtype.TYPE} data.")
-
-        # Empty DF Otherwise
+        
+        # Creates Empty DF is PW has done of specified object.
         if df is None:
             df = DataFrame(columns=fields)
 
-        # Set Name of DF to datatype
+        # Set Name of DF to datatype TODO remove this weird implementation. I think I use .Name for transient data retrieval?
         df.Name = gtype.TYPE
 
         return df
+    
+    def get_quick(self, gtype: Type[GObject], fieldname: str):
+        '''Helper Function that will retrieve one field from all objects of specified type.
+        Intended for repeated data retrieval.
+        
+        Parameters:
+        gtype: Object type to retrieve data,
+        fieldname: Power-World Compatible Field Name (string)
+
+        Example: get_quick(Bus, 'BusPUVolt')
+        '''
+
+        # Keys of Object type are required to get data
+        request = [fexcept(f) for f in gtype.keys]
+
+        # Add field to search index if not already a key..
+        if fieldname not in request:
+            request.append(fieldname)
+
+        # Get Data from Power World 
+        df = None
+        try:
+            df = self.esa.GetParametersMultipleElement(gtype.TYPE, request)
+        except:
+            print(f"Failed to read {gtype.TYPE} data.")
+        
+        return df
 
     # Solve Power Flow
-    def pflow(self):
-        self.esa.SolvePowerFlow()
+    def pflow(self, retry=True):
+        '''
+        Executes Power Flow in PowerWorld. 
+        
+        If retry is set True, it will reset PF and try one additional time.
+        '''
+        try:
+            self.esa.SolvePowerFlow()
+        except:
+            if retry:
+                self.flatstart()
+                self.esa.SolvePowerFlow()
+
+    def flatstart(self):
+        '''Call to reset PF to a flat start.'''
+        self.esa.RunScriptCommand("ResetToFlatStart()")
+
 
     # Skip Contingencies
     def skipallbut(self, ctgs):
