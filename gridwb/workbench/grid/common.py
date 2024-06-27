@@ -1,6 +1,7 @@
-from numpy import zeros, pi, diagflat, block, eye, all, reciprocal, array, max
+from numpy import zeros, pi, diagflat, block, eye, all, reciprocal, array, max, sum
 from numpy.linalg import inv
 from cmath import rect
+from pandas import DataFrame
 
 from scipy.sparse import lil_matrix 
 
@@ -306,3 +307,40 @@ def transient_network_matrix(lines, buses, loads, gens, f_ref=60):
                       [Lei@A       , ZRO3    , -Lei@Re+W3]])
 
     return ode_form
+
+class InjectionVector:
+
+    def __init__(self, loaddf: DataFrame, losscomp=0.05) -> None:
+        '''An Instance Representing an Injection Vector
+        params:
+        - loaddf: Poor Naming but should just be df with 'BusNum' Column for all buses
+        - losscomp: For an increased injection, generation will be increased to compensate losses
+        '''
+        self.loaddf = loaddf.copy()
+
+        self.loaddf['Alpha'] = 0
+        self.loaddf = self.loaddf.set_index('BusNum')
+
+        self.losscomp = losscomp
+    
+    @property
+    def vec(self):
+        return self.loaddf['Alpha'].to_numpy()
+    
+    def supply(self, *busids):
+        self.loaddf.loc[busids, 'Alpha'] = 1
+        self.norm()
+
+    def demand(self, *busids):
+        self.loaddf.loc[busids, 'Alpha'] = -1
+        self.norm()
+    
+    def norm(self):
+
+        # Normalize Positive
+        isPos = self.vec>0
+        posSum = sum(self.vec[isPos])
+        negSum = -sum(self.vec[~isPos])
+
+        self.loaddf.loc[isPos,'Alpha'] /= posSum/(1+self.losscomp) if posSum>0 else 1
+        self.loaddf.loc[~isPos,'Alpha'] /= negSum if negSum>0 else 1

@@ -3,6 +3,7 @@ from typing import Any, Iterable
 import pandas as pd
 from itertools import product
 
+from ..core import Context
 from ..io.model import IModelIO
 from ..utils.conditions import *
 
@@ -15,9 +16,10 @@ from ..utils.conditions import *
 
 # Application Base Class
 class PWApp:
-    def __init__(self, io: IModelIO) -> None:
+    def __init__(self, context: Context) -> None:
         # Application Interface
-        self.io = io
+        self.io = context.getIO()
+        self.dm = context.getDataMaintainer()
 
         # Conditions for griditer feature
         self.conditions: dict[Condition, list[Any]] = {}

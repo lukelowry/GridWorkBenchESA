@@ -1,3 +1,4 @@
+from itertools import product
 import numpy as np
 import pandas as pd
 from typing import Any, Type
@@ -8,7 +9,8 @@ from enum import Enum, auto
 # WorkBench Imports
 from .app import PWApp, griditer
 from gridwb.workbench.grid.components import GIC_Options_Value, GICInputVoltObject, TSContingency
-from gridwb.workbench.plugins.powerworld import PowerWorldIO
+from gridwb.workbench.grid.components import GICXFormer, Branch, Substation, Bus
+from gridwb.workbench.core.powerworld import PowerWorldIO
 
 fcmd = lambda obj, fields, data: f"SetData({obj}, {fields}, {data})".replace("'","")
 gicoption = lambda option, choice: fcmd("GIC_Options_Value",['VariableName', 'ValueField'], [option, choice])
@@ -16,6 +18,17 @@ gicoption = lambda option, choice: fcmd("GIC_Options_Value",['VariableName', 'Va
 # Dynamics App (Simulation, Model, etc.)
 class GIC(PWApp):
     io: PowerWorldIO
+
+    def gictool(self):
+        '''Returns a new instance of GICTool, which creates various matricies and metrics regarding GICs'''
+
+        gicxfmrs = self.dm.get_df(GICXFormer)
+        branches = self.dm.get_df(Branch)
+        subs = self.dm.get_df(Substation)
+        buses = self.dm.get_df(Bus)
+
+        return GICTool(gicxfmrs, branches, subs, buses)
+
 
 
     def storm(self, maxfield: float, direction: float, solvepf=True) -> None:
@@ -172,10 +185,10 @@ class GICTool:
     def __init__(self, gicxfmrs, branches, substations, buses) -> None:
         
         # Now Return Incidence and branch info
-        self.gicxfmrs = gicxfmrs
-        self.branches = branches
-        self.subs = substations
-        self.buses = buses
+        self.gicxfmrs: pd.DataFrame = gicxfmrs
+        self.branches: pd.DataFrame = branches
+        self.subs: pd.DataFrame = substations
+        self.buses: pd.DataFrame = buses
 
         # Bus mapping only for final loss assignment
         busmap = {n: i for i, n in enumerate(buses['BusNum'])}
@@ -337,14 +350,14 @@ class GICTool:
         self.mapFrom = mapFrom
 
         # Branch Information
-        branches = branches[~isXFMR]
-        gic_branch_data = branches[['BusNum', 'BusNum:1', 'GICConductance']]
+        self.lines = branches[~isXFMR]
+        gic_branch_data = self.lines[['BusNum', 'BusNum:1', 'GICConductance']]
 
         fromBus = gic_branch_data['BusNum'].to_numpy()
         toBus = gic_branch_data['BusNum:1'].to_numpy()
         Gbranch = gic_branch_data['GICConductance'].to_numpy()
 
-        self.nlines = len(branches)
+        self.nlines = len(self.lines)
 
         return (fromBus, toBus, Gbranch)
     
@@ -469,3 +482,186 @@ class GICTool:
             H = H[:,-self.nlines:]
 
         return H.A
+    
+    def corners(self):
+        '''Return a GICCorner Object that parses possible Efields'''
+
+        H = self.Hmat()
+
+        # Line Lengths
+        line_km = self.lines['GICLineDistance:1'].fillna(0)
+        L = np.diagflat(line_km)
+
+        # Line Angles
+        #line_ang = gictool.lines['GICLineAngle'].fillna(0)*np.pi/180 # North 0 Degrees
+        #ANG = line_ang.to_numpy()
+
+        E = np.eye(L.shape[0])
+
+        return GICCorners(H, L, E)
+
+
+class GICCorners:
+
+    def __init__(self, H, L, E) -> None:
+        '''
+        H: GIC matrix mapping line voltage to transformer currents
+        L: Line Lengths in km (Diagonal Matrix)
+        E: Electric Field Magnitude Max per line (Diagonal Matrix)
+        '''
+
+        # Needed GIC Matricies
+        self.H = H
+        self.L = L
+        self.E = E
+        self.HLE = H@L@E
+
+        # Signs of H
+        zero_tol = 1e-15
+        signH = np.sign(H)
+        signH[np.abs(H)<zero_tol] = 0 # Level of tolerance to be considered zero
+
+
+        # Find unique Sign Groups of Columns of H
+        PGROUPS = self.find_equivalent_columns(self.HLE)
+        nPgroups = len(PGROUPS)
+
+        # CRNR - Group Combinations (Maps Permutation to Sign Group)
+        CRNR = np.zeros((nPgroups,2**nPgroups)) 
+
+        # JOIN - Assigns Combinations to Lines (Maps Sign Group to Lines)
+        nlines = L.shape[0]
+        JOIN = np.zeros((nlines, nPgroups))
+
+        ''' FILL CORNER DATA '''
+
+        # Creating +- polarity matrix (Columns = Different Possibilities, Rows = Group Sign)
+        for i, perm in enumerate(product(*[(1,-1)]*nPgroups)):
+            CRNR[:, i] = np.array(perm)
+
+        # Removing SECOND half of these permutations removes exact negative:
+        CRNR = self.remove_negative_columns(CRNR)
+
+        # Creating JOIN - Mapping Group to a Line or leaving out entirely
+        for grp, lineIDs in enumerate(PGROUPS):
+            refLine = signH[:,lineIDs[0]]
+            JOIN[lineIDs, grp] = 1
+
+            # Re-Polarize anti-columns
+            for id in lineIDs:
+                if (refLine==-signH[:,id]).all():
+                    JOIN[id, grp] *= -1
+
+
+        self.corner_matrix = JOIN@CRNR
+
+        nCRNR = CRNR.shape[1]
+        print(f'Corners: {nCRNR}')
+
+    def asmatrix(self):
+        return self.corner_matrix
+
+    def get_topology(self, remove_strictly_small = False, top_losses_only = False):
+        '''
+        Calculates the XFMR losses of every corner
+        params:
+        - remove_strictly_small: Removes any corners that have strictly less losses than some other corner
+        - top_losses_only: Returns only corners in the top 10% of net losses
+        returns: 
+            Matrix (nXFMR x nCorners)
+
+
+        '''
+
+        HLE = self.HLE
+        C = self.corner_matrix
+        TOPOLOGY = (HLE@C).T
+
+        # Determine if remove corners that are obviously obsolete
+        # Remove Corners that are absolutely less than another
+        if remove_strictly_small:
+            toremove = set()
+            TA = np.abs(TOPOLOGY)
+            for i, corner in enumerate(TA):
+                isLessThan = np.all(corner <= TA, axis=1)
+                isLessThan[i] = False
+
+                # If there is a corner strictly greater than this one
+                if np.any(isLessThan):
+                    toremove.update([i])
+
+            CRNR = np.delete(CRNR,list(toremove),axis=1)
+            TOPOLOGY = np.delete(TOPOLOGY, list(toremove), axis=0)
+            nCRNR = len(TOPOLOGY)
+
+        # Top Percentile
+        if top_losses_only:
+            NET = np.sum(np.abs(TOPOLOGY),axis=1)
+            TOP = np.percentile(NET, q=90)
+            TOPI = NET>TOP
+            TOPOLOGY = TOPOLOGY[TOPI]
+
+        return TOPOLOGY
+
+
+    def remove_negative_columns(self, matrix):
+        # Transpose the matrix to make it easier to compare columns
+        transposed_matrix = matrix.T
+        
+        # List to keep columns that are not negatives of others
+        columns_to_keep = []
+        
+        # Set to keep track of indices of columns to be removed
+        columns_to_remove = set()
+        
+        # Iterate over the columns of the transposed matrix
+        for i, col in enumerate(transposed_matrix):
+            if i not in columns_to_remove:
+                for j in range(i + 1, transposed_matrix.shape[0]):
+                    if np.array_equal(col, -transposed_matrix[j]):
+                        columns_to_remove.add(j)
+        
+        # Collect columns that are not in the remove set
+        for i in range(transposed_matrix.shape[0]):
+            if i not in columns_to_remove:
+                columns_to_keep.append(transposed_matrix[i])
+        
+        # Reconstruct the matrix from the columns to keep
+        new_matrix = np.array(columns_to_keep).T
+        
+        return new_matrix
+
+
+    def find_equivalent_columns(self, matrix, tolerance=1e-10):
+        '''Tolerance is for identifying zero columns so they are not added'''
+
+        # Transpose the matrix to make it easier to compare columns
+        transposed_matrix = matrix.T
+        
+        # Create a list to store sets of equivalent columns
+        equivalent_columns_sets = []
+        
+        # Create a set to track columns that have already been identified
+        identified_columns = set()
+        
+        # Iterate over the columns of the transposed matrix
+        for i, col in enumerate(transposed_matrix):
+            if i not in identified_columns and not np.all(np.abs(col) < tolerance):
+        
+                # Find all columns that are identical to the current column and not negatives
+                colI = transposed_matrix[i]
+                equivalent_columns = []
+                
+                for j in range(transposed_matrix.shape[0]):
+                    colJ = transposed_matrix[j]
+            
+                    if (colI == colJ).all() or  (colI == -colJ).all():
+                        equivalent_columns.append(j)
+
+                # Add the set of equivalent columns to the list
+                equivalent_columns_sets.append(equivalent_columns)
+                # Mark these columns as identified
+                identified_columns.update(equivalent_columns)
+        
+        return equivalent_columns_sets
+

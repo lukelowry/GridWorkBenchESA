@@ -1,7 +1,8 @@
 from dataclasses import fields as dcfields
 from typing import Type
 from pandas import DataFrame
-from gridwb.workbench.grid.components import *
+from .datamaintainer import GridDataMaintainer
+from ..grid.components import *
 
 from ..utils.decorators import timing
 from ..io.model import IModelIO
@@ -16,6 +17,7 @@ fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
 # Power World Read/Write
 class PowerWorldIO(IModelIO):
     esa: SAW
+    dm: DataMaintainer
 
     def TSInit(self):
         ''' Initialize Transient Stability Parameters '''
@@ -37,12 +39,13 @@ class PowerWorldIO(IModelIO):
         self.TSInit()
 
     @timing
-    def download(self, set: list[Type[GObject]]) -> dict[Type[GObject], DataFrame]:
+    def download(self, set: list[Type[GObject]]) -> GridDataMaintainer:
         '''
         Get all Data from PW. What data is downloaded
         depends on the selected Set.
         '''
-        return {gclass: self.get(gclass) for gclass in set}
+        self.dm = GridDataMaintainer({gclass: self.get(gclass) for gclass in set})
+        return self.dm
 
     def upload(self, model: dict[Type[GObject], DataFrame]) -> bool:
         '''
@@ -211,3 +214,17 @@ class PowerWorldIO(IModelIO):
             ObjectType=objdf.Name,
             command_df=objdf[np.concatenate([keys,savefields])].copy(),
         )
+
+    def set_mva_tol(self, tol=0.1):
+        '''Sets the MVA Tolerance for NR Convergence'''
+        settings = self.dm.get_df(Sim_Solution_Options)
+        settings['ConvergenceTol:2'] = tol
+        self.upload({
+            Sim_Solution_Options: settings
+        })
+
+    def get_min_volt(self):
+        '''Retrieve the active minmimum bus voltage in p.u.'''
+        return self.get_quick(PWCaseInformation,'BusPUVolt:1').iloc[0,0]
+
+

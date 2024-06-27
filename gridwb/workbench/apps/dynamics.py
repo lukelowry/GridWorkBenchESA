@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Any, Type
 from gridwb.workbench.grid.components import TSContingency
 
-from gridwb.workbench.plugins.powerworld import PowerWorldIO
+from gridwb.workbench.core.powerworld import PowerWorldIO
 
 # WorkBench Imports
 from ...saw import CommandNotRespectedError
