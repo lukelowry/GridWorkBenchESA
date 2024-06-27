@@ -511,14 +511,15 @@ class GridWorkBench:
 
     # Add An Object to Local Database
     def add(self, *gobjs: GObject):
+        '''Add a new object to the grid. Must instantiate correctly.'''
         for gobj in gobjs:
             gset = self[gobj.__class__]
             gset.loc[len(gset)] = dict(zip(gobj.fields, astuple(gobj)))
 
-    def joint(self, type1: GObject, type2):
-        return self[type1].merge(self[type2], on="BusNum")
+    def joint(self, type1: GObject, type2, key='BusNum'):
+        '''Merges Two Component Sets (Used to map data)'''
+        return self[type1].merge(self[type2], on=key)
 
-    # Send to Remote Model (PW)
     def commit(self, gclass=None):
         '''Send ALL local data to remote model.
         Not recommended.'''
@@ -527,36 +528,14 @@ class GridWorkBench:
         else:
             self.io.upload(self.all[gclass])
 
-    # Save Remote Model (PW)
     def save(self):
+        '''Save the Power World File'''
         self.io.save()
 
-    # Dangerous! Commit and Save.
     def sudos(self):
+        '''DANGEROUS. Uploads all local data to power world and saves the file.'''
         self.commit()
         self.save()
-
-    def updatelocal(self):
-        self.all = self.io.download(self.set)
-
-    # Secondary Field Helpers
-    @property
-    def volts(self):
-        vmags = self.buses["BusPUVolt"]
-        angs = np.deg2rad(self.buses["BusAngle"])
-        rectv = [cmath.rect(v, ang) for v, ang in zip(vmags, angs)]
-
-        return np.array(rectv)
-
-    @volts.setter
-    def volts(self, vals):
-        mags = [cmath.polar(v)[0] for v in vals]
-        angs = np.rad2deg([cmath.polar(v)[1] for v in vals])
-
-        self.buses["BusPUVolt"] = mags
-        self.buses["BusAngle"] = angs
-
-        self.io.update(Bus, self.buses[["BusNum", "BusPUVolt", "BusAngle"]])
 
     def change(self, gtype, data: DataFrame):
         '''
@@ -579,17 +558,32 @@ class GridWorkBench:
 
         # Request Voltages if needed
         if getvolts:
-            return self.io.get_quick(Bus, 'BusPUVolt')
+            vpu = self.io.get_quick(Bus, 'BusPUVolt')
+            rad = self.io.get_quick(Bus, 'BusAngle')['BusAngle']*np.pi/180
 
+            vpu['BusPUVolt'] *= np.exp(1j*rad)
+            vpu.columns = ['Bus Number', 'Voltage']
+            return vpu
 
     def ybus(self):
         '''Returns the full y-bus as a dense Numpy Matrix'''
         return self.io.esa.get_ybus(True)
-    
-    def incidence(self):
 
+    def incidence(self):
+        '''Returns the Incidence Matrix (In BusNum Order)'''
         busmap = {b: i for i, b in enumerate(self.all[Bus]['BusNum'])}
         linedata = self.all[Branch][['BusNum', 'BusNum:1']].to_records()
         ft = [(busmap[FB], busmap[TB])for i, FB, TB in linedata]
 
         return arc_incidence(ft)
+    
+    def ybranch(self):
+        '''Return Admittance of Lines in Complex Form'''
+
+        branches = self.all[Branch]
+        R = branches['LineR:2']
+        X = branches['LineX:2']
+        Z = R + 1j*X 
+        Y = 1/Z
+
+        return Y

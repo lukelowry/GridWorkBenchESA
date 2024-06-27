@@ -12,26 +12,48 @@ from cmath import polar
 from scipy.stats import gaussian_kde
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 from os.path import dirname, abspath, sep
+from numpy import histogram, diff, arange
 
-def formatPlot(ax: Axes, plotarea='gainsboro', spineColor='black', xlabel='Damping (%)', ylabel="Frequency Hz",title='Eigen Values / Modes', xlim=None, ylim=None):
+
+def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
+    '''Plot the frequency distribution in Hz of a set of Eigen Values'''
+
+    # Formatting
+    fig, ax = plt.subplots(figsize=(18,5))
+    formatPlot(ax, xlim=rng, xlabel='Frequency (Hz)', ylabel='Count', title='Frequency Occurance Histogram', tstep=tstep)
+
+    # Data
+    freqs = evals.imag/2/pi
+    freqs = freqs[(freqs < rng[1]) & (freqs>rng[0])]
+    hist, bin_edges = histogram(freqs, bins=bins)
+
+    # Plot
+    ax.bar(bin_edges[:-1], hist, width=diff(bin_edges), edgecolor='black', align='edge', zorder=4)
+
+def formatPlot(ax: Axes, plotarea='linen', spineColor='black', xlabel='Damping (%)', ylabel="Frequency Hz",title='Eigen Values / Modes', xlim=None, ylim=None, tstep=0.1):
+    '''Generic Axes Formatter'''
     ax.set_facecolor(plotarea)
     ax.grid(zorder=0)
+    ax.set_axisbelow(True)
+
     ax.tick_params(color=spineColor, labelcolor=spineColor)
     for spine in ax.spines.values():
         spine.set_edgecolor(spineColor)
 
     if xlim:
         ax.set_xlim(xlim)
+        ax.set_xticks(arange(*xlim,0.1))
     if ylim:
         ax.set_ylim(ylim)
-    ax.vlines([0], ax.get_ylim()[0],ax.get_ylim()[1], zorder=1, colors='r')
-    ax.hlines([0], ax.get_xlim()[0],ax.get_xlim()[1], zorder=1, colors='r')
+    
+    
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xlabel(xlabel)
 
 def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
     '''
+    Plots the complex eigen values in two panes: standard and damped format.
     plotFunc is a function that should return true or false
     indicating if that eigenvalue should be plotted
     '''
@@ -52,7 +74,7 @@ def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
     density = log(gaussian_kde(xy)(xy))
 
     # Plotting
-    fig, ax = plt.subplots(1,2, figsize=figsize, facecolor='linen')
+    fig, ax = plt.subplots(1,2, figsize=figsize)
     ax[0].scatter(alpha, freq, c =  density, zorder=2)
     ax[1].scatter(damp, freq, c =  density, zorder=2)
     formatPlot(ax[0], xlabel='Alpha Decay')

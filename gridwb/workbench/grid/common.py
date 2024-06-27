@@ -19,8 +19,6 @@ def ybus_with_loads(Y, buses: list[Bus], loads: list[Load], gens=None):
     # TODO Do a sort by Bus Num to gaurentee order
     busPosY = {b.BusNum: i for i, b in enumerate(buses)}
 
-    #Bus.LoadMW
-
     # For Per-Unit Conversion
     basemva = 100
 
@@ -69,7 +67,6 @@ def ybus_with_loads(Y, buses: list[Bus], loads: list[Load], gens=None):
 
                 # Negative Admittance
                 Y[busidx][busidx] -= constAdmit
-
 
     return Y
 

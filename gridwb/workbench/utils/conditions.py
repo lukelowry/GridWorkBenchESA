@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 
 from abc import ABC, abstractmethod
+from itertools import product
+
+from functools import partial
 from gridwb.workbench.grid.components import TSContingency
 
 from gridwb.workbench.io.model import IModelIO
@@ -21,6 +24,26 @@ Conditions to Implement:
  - Control System Parameters
  
 """
+
+def mix(func, **kwargs):
+    '''Pass a function and kwargs that you want every combination as an input.
+    When the returned function is called, the function will loop through every combination.
+    Iterate through the yields and perform an action.
+    
+    Used in the context of different permutations of settings.'''
+    
+    keys = kwargs.keys()
+    values = product(*kwargs.values())
+    kwargs_mix = [dict(zip(keys, vals)) for vals in values]
+                     
+    def wrapper(**kwargs_in):
+        
+        for kmix in kwargs_mix:
+            func(**kmix, **kwargs_in)
+            yield kmix.values()
+        
+    
+    return wrapper
 
 
 # Inclusive Version of np.arange
@@ -139,3 +162,20 @@ class TimeStep(Condition):
         ctgs["UseCyclesForTimeStep"] = "YES"
         ctgs["TimeStep"] = tstep
         io.upload({TSContingency: ctgs})
+
+
+
+# Default Base Load & Implmentation Method
+class GICStorm(Condition):
+    text = "GIC Storm"
+    default = [(1,0)] # (Mag, Degree)
+
+    # TODO Make Sure Zone exists and is all-encompassing
+    def prepare(io: IModelIO):
+        pass
+
+    def apply(io: IModelIO, conditions):
+        efield = conditions[GICStorm]
+
+
+        

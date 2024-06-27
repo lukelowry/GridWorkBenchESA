@@ -1,9 +1,10 @@
 # Data Structure Imports
 import warnings
 import pandas as pd
-from numpy import NaN
+from numpy import NaN, exp
+from numpy.random import random
 
-from gridwb.workbench.grid.components import Contingency
+from gridwb.workbench.grid.components import Contingency, Load
 
 # WorkBench Imports
 from ..plugins.powerworld import PowerWorldIO
@@ -23,6 +24,20 @@ class Statics(PWApp):
     def configuration(self, config):
         self._configuration = config
         self.metric: Metric = config["Field"]
+
+    load_nom = None
+    load_df = None
+
+    def randload(self, scale=1, sigma=0.1):
+        '''Temporarily Change the Load with random variation and scale'''
+
+        if self.load_nom is None or self.load_df is None:
+            self.load_df = self.io.get_quick(Load, 'LoadMW')
+            self.load_nom = self.load_df['LoadMW']
+            
+        self.load_df['LoadMW'] = scale*self.load_nom* exp(sigma*random(len(self.load_nom)))
+        self.io.upload({Load: self.load_df})
+
 
     @griditer
     def solve(self, ctgs: list[Contingency] = None):

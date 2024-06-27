@@ -3,7 +3,6 @@ from typing import Type
 from pandas import DataFrame
 from gridwb.workbench.grid.components import *
 
-from gridwb.workbench.utils.metric import Metric
 from ..utils.decorators import timing
 from ..io.model import IModelIO
 from ...saw import SAW
@@ -19,6 +18,7 @@ class PowerWorldIO(IModelIO):
     esa: SAW
 
     def TSInit(self):
+        ''' Initialize Transient Stability Parameters '''
         try:
             self.esa.RunScriptCommand("TSInitialize()")
         except:
@@ -101,7 +101,7 @@ class PowerWorldIO(IModelIO):
 
         return df
     
-    def get_quick(self, gtype: Type[GObject], fieldname: str):
+    def get_quick(self, gtype: Type[GObject], fieldname: str | list[str]):
         '''Helper Function that will retrieve one field from all objects of specified type.
         Intended for repeated data retrieval.
         
@@ -115,9 +115,14 @@ class PowerWorldIO(IModelIO):
         # Keys of Object type are required to get data
         request = [fexcept(f) for f in gtype.keys]
 
+        # transformer field name to list if single given
+        if type(fieldname) is str: 
+            fieldname = [fieldname]
+
         # Add field to search index if not already a key..
-        if fieldname not in request:
-            request.append(fieldname)
+        for fn in fieldname:
+            if fn not in request:
+                request.append(fn)
 
         # Get Data from Power World 
         df = None
@@ -166,23 +171,6 @@ class PowerWorldIO(IModelIO):
         self.esa.RunScriptCommand("TSResultStorageSetAll(ALL, NO)")
         self.esa.RunScriptCommand("TSClearResultsFromRAM(ALL,YES,YES,YES,YES,YES)")
 
-    '''
-    Depricated
-    def saveinram(self, metric: Metric):
-
-        # Get Respective Data
-        gtype = metric['Type']
-        cfg = self.get(gtype, keysonly=True) # TODO Use local IDs
-
-        # Set TSSave to Yes
-        cfg[metric["RAM"]] = "YES"
-
-        # Write to PW
-        self.esa.change_and_confirm_params_multiple_element(
-            ObjectType=gtype.TYPE,
-            command_df=cfg,
-        )
-    '''
 
     savemap = {
         'TSGenDelta': 'TSSaveGenDelta',
