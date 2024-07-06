@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 from pandas import DataFrame
 
 
-# Standard Interface for model interaction
 class IModelIO(ABC):
+    '''Standard Interface for Model Interaction'''
+
     # Data Structure Template
     Template = DataFrame(columns=["ObjectID", "ObjectType", "Field", "IsKey", "Value"])
 

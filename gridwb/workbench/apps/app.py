@@ -64,6 +64,9 @@ all combinations of these grid states without any hasle.
 
 Currently implmented with dynamics in mind. Could be easily used
 in other contexts.
+- Statics (Power flow, CPF, QV & PV Analysis)
+- GICS
+- OPF
 """
 
 

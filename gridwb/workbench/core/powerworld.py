@@ -228,3 +228,29 @@ class PowerWorldIO(IModelIO):
         return self.get_quick(PWCaseInformation,'BusPUVolt:1').iloc[0,0]
 
 
+    def save_state(self, statename="GWB"):
+        '''Store a state under an alias and restore it later.'''
+        self.esa.RunScriptCommand('EnterMode(RUN);')
+        self.esa.RunScriptCommand(f'StoreState({statename});')
+
+    def restore_state(self, statename="GWB"):
+        '''Restore a saved state.'''
+        self.esa.RunScriptCommand('EnterMode(RUN);')
+        self.esa.RunScriptCommand(f'RestoreState(USER,{statename});')
+                
+    def __set_sol_opts(self, name, value):
+        settings = self.dm.get_df(Sim_Solution_Options)
+        settings['name'] = value
+        self.upload({
+            Sim_Solution_Options: settings
+        })
+
+    '''Sim Solution Options'''
+
+    def max_iterations(self, n: int):
+        self.__set_sol_opts('MaxItr', n)
+
+    def zbr_threshold(self, v: float):
+        self.__set_sol_opts('ZBRThreshold', v)
+
+    

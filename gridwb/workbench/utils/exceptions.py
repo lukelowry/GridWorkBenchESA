@@ -16,3 +16,23 @@ class AuxParseException(Exception):
 
 class ContainerDeletedException(Exception):
     pass
+
+'''Observable Exceptions'''
+
+class PowerFlowException(Exception):
+    pass
+
+class BifurcationException(PowerFlowException):
+    pass 
+
+class DivergenceException(PowerFlowException):
+    pass 
+
+class GeneratorLimitException(PowerFlowException):
+    pass 
+
+''' GIC Exceptions '''
+
+class GICException(Exception):
+    pass 
+
