@@ -827,7 +827,8 @@ class GICCorners:
             NEIGHBIR_LOSSES = np.sum(np.abs(self.HLE@p_n),axis=0)
             maxidx = np.argmax(NEIGHBIR_LOSSES)
 
-            if lss > (lss := NEIGHBIR_LOSSES[maxidx]):
+            # NOTE I changed this from > to >= - verify it works
+            if lss >= (lss := NEIGHBIR_LOSSES[maxidx]):
                 break
 
             #print(NEIGHBIR_LOSSES, end='  ')
@@ -852,7 +853,7 @@ class GICCorners:
         pmaxs = np.zeros_like(self.signHUnique)
 
         for i, p in enumerate(self.signHUnique):
-            
+
             *_,sol = self.find_local_max_hist(p.reshape((-1,1)))
             lss, pmax = sol 
 

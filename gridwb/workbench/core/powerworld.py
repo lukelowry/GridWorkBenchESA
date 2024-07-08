@@ -237,6 +237,11 @@ class PowerWorldIO(IModelIO):
         '''Restore a saved state.'''
         self.esa.RunScriptCommand('EnterMode(RUN);')
         self.esa.RunScriptCommand(f'RestoreState(USER,{statename});')
+
+    def delete_state(self, statename="GWB"):
+        '''Restore a saved state.'''
+        self.esa.RunScriptCommand('EnterMode(RUN);')
+        self.esa.RunScriptCommand(f'DeleteState(USER,{statename});')
                 
     def __set_sol_opts(self, name, value):
         settings = self.dm.get_df(Sim_Solution_Options)

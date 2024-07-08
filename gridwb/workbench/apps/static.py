@@ -155,65 +155,60 @@ class Statics(PWApp):
 
         return (meta, df.T)
     
-    def resetgens(self, G0 = None):
-        ''' Reset All Gen values to initial values'''
-        self.io.upload({Gen:self.G0 if G0 is None else G0})
-
-    def resetV(self,B0 = None):
-        '''Set Bus Voltage Magnitudes'''
-        self.io.upload({Bus: self.B0 if B0 is None else B0})
-
     def gensAtMaxQ(self, q=None, tol=0.1):
-        '''Returns wether or not gens is at or above Q limits (args =False ignore up or low violation)'''
+        '''Returns True if any gens are outside Q limits. Active function.'''
         if q is None:
             q = self.io.get_quick(Gen, 'GenMVR')['GenMVR']
         return any(q > self.genqmax + tol) or any(q < self.genqmin - tol)
 
-
-    # Slightly Updated Continutation PF function - if it does not work use previous file (Continutation Power Flow.ipynb)
-    # TODO upper bound should be able to 'slide' up
-    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, qdrop=0.1, nrtol=0.0001, backstepPercent=0.25,return_hist=False, verbose=False):
+    
+    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, qdrop=0.1, nrtol=0.0001, backstepPercent=0.25, verbose=False):
         ''' 
-        Continuation Power Flow. Will Find the maximum INjection MW through an interface alpha.
+        Continuation Power Flow. Will Find the maximum INjection MW through an interface. As an iterator, the last element will be the boundary value.
         The continuation will begin from the state
-        minstep: Accuracy in Max Injection MW
-        maxstep: largest jump in MW
-        return_hist: return final answer or history of solution process
-        initial_mw: starting interface MW. Could speed up convergence if you know a lower limit
-        nrtol: Newton rhapston MVA tolerance
-        qdrop: Detection in MVAR/MW where a >0 countss as collapse detection '''
+        params:
+        -minstep: Accuracy in Max Injection MW
+        -maxstep: largest jump in MW
+        -initial_mw: starting interface MW. Could speed up convergence if you know a lower limit
+        -nrtol: Newton rhapston MVA tolerance
+        -qdrop: Detection of Q sensitivities for bifurcation 
+        returns:
+        - iterator with elements being the magnitude of interface injection. The last element is the CPF solution.
+        '''
 
         if qdrop < nrtol:
-            print('UNACCEPTABLE Q. MUST BE LARGER THAN NRTOL')
+            print('Unacceptable Q Bifurcation Value. This must be larger than newton rhapson tolerance so Q differences are meaningful.')
             return
         
         # Helper Function since this is common
         def getq():
             return self.io.get_quick(Gen, 'GenMVR')['GenMVR']
-
+        
         # Base Case PF
         self.io.pflow()
 
-        # Last-Change backup of state
+        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
+        self.chain(2)
+
+        # Last-Change backup of state and prime state chain
         self.io.save_state('BACKUP')
+        self.pushstate()
 
         # Set NR Tolerance in MVA
         self.io.set_mva_tol(nrtol)
 
-        # Aggregate History
-        QSumHist,TotalInj = [], []
-        Qmax, Pmax = (0, initialmw)
+        # Misc Iteration Tracking
         Pinj = initialmw # Current Interface MW
+        step = maxstep # Step Size in MW
+        qprev, pstable = None, None # Previous Iterations Objective Value
 
-        i = 0
-        step = maxstep
-        qprev = None #self.io.get_quick(Gen, 'GenMVR')['GenMVR'].sum()
-        qstable = None
+        # Sweep One
+        for i in arange(maxiter):
 
-        while  step>=minstep and i<maxiter:
+            if step<=minstep: break
             
             # Set Injection for this iteration
-            self.setload(self.P0 - Pinj*interface)
+            self.setload(self.P0 - Pinj*interface) #TODO P0 should be updated at the call of this function, since load could be changed before this :(
             
             try:
                 # Do Power Flow
@@ -224,79 +219,55 @@ class Statics(PWApp):
                 qnowsum = qnow.sum()
 
                 # 'Effective' Non-Convergence
-                if  self.gensAtMaxQ(qnow):
+                if  self.gensAtMaxQ(qnow): # Uncommon but necessary
                     if verbose: print('Gen Q Limits Breached')
                     raise GeneratorLimitException 
+                
+                # TODO if dy/dx is >qdrop cancel immediatly and go back to STABLE state 
                 if qprev is not None and (qprev-qnowsum)/step>qdrop: # TODO only valid if |qprev-qnowsum| < tol
                     if verbose: print('Bifurcation Suspected')
                     raise BifurcationException
 
-
-                # IF INCREASED
+                # IF INCREASED, Save previous sol as stable, IF DECREASED keep stable as-is
                 if qprev is not None and qprev < qnowsum:
-                    # Current > Prev > Stable
-                    # Save Current State in TEMP
-                    # Restore PREV
-                    # Store in STABLE
-                    # Restore TEMP
-                    # Store in PREV
-                    self.io.save_state('TEMP')
-                    self.io.restore_state('PREV')
-                    self.io.save_state('STABLE')
-
-                    # Store Stable Injection MW and Qtotal for comparison
+                    # Current > Prev > Stable 
+                    self.pushstate()
                     pstable = pprev
-                    qstable = getq().sum()
-
-                    self.io.restore_state('TEMP')
-                    self.io.save_state('PREV')
-
-                # IF DECREASE (Sign of birfurcation)
                 else:
                     # Current > Prev
-                    self.io.save_state('PREV')
+                    self.storenth(0) 
 
                 # Store 'Last' iterations valid solution
                 pprev = Pinj
                 qprev = qnowsum 
 
-                print(Pinj)
+                if verbose: print(f'PF: {Pinj:.4f} MW')
 
-                # Store Data
-                if return_hist:
-                    QSumHist.append(qprev) # qnowsum
-                    TotalInj.append(pprev)
-                
-                Qmax = qprev
-                Pmax = pprev
+                yield pprev, qprev
 
                 
             # Catch Power Flow Failure, All Gens at Limit, and 'Fake' continutations
-            except Exception as e: 
+            except: 
 
                 Pinj -= step 
                 step *= backstepPercent
 
-                # Load previous state
-                self.io.restore_state('PREV')
+                # Load previous solved state
+                self.restorenth()
                 
-            
+            # Advance Injection
             Pinj += step
-            i += 1
 
-        # TODO once complete, start again from the STABLE save and move with minstep
-        print(f'Last Stable: {pstable:.4f} MW')
-        print(f'Absolute Max: {Pmax:.4f} MW')
+        # Restore from last stable and continue search with minstep 
+        if verbose:
+            print(f'Secondary Search Range: [{pstable:.4f}, {pprev:.4f}] MW')
 
-        # Load Stable
-        self.io.restore_state('STABLE')
+        # Load previous STABLE state
+        self.restorenth(1)
 
-        # TODO i should be able to integrate this into the above while loop
-        # Assuming no collapse errors since we have been above this val
-        for ppp in arange(pstable, Pmax, minstep):
+        # Sweep Two TODO integrate this into the above while loop
+        for ppp in arange(pstable, pprev, minstep): # TODO bad naming cmon integrate this with above
 
-            print(f'Stable Search: {ppp:.4f} MW')
-            
             # Set Injection for this iteration
             self.setload(self.P0 - ppp*interface)
             
@@ -304,43 +275,148 @@ class Statics(PWApp):
             try:
                 self.io.pflow() 
             except:
+                if verbose: print('Boundary Found via Convergence Failure.')
                 break
 
             # Fail if all gens at max or Q decreases on any gen within tolerance
             qnowsum = getq().sum()
+
+            if verbose: print(f'PF: {ppp:.4f} MW')
             
             # Found boundary within tolerance
-            if qprev-qnowsum > nrtol:
+            if ppp!=pstable and qprev-qnowsum > nrtol:
+                if verbose: print('Boundary Found via Bifurcation.')
                 break
 
             qprev = qnowsum
 
-            # Store Data
-            if return_hist:
-                QSumHist.append(qnowsum)
-                TotalInj.append(ppp)
-            Qmax = qprev
-            Pmax = ppp
+            yield ppp, qnowsum
 
         # Restore to before CPF
         self.io.restore_state('BACKUP')
-        
-        if return_hist:
-            # Return up to point that has maximum Q
-            #maxidx = argmax(QSumHist)
-            return array(TotalInj), array(QSumHist)
-            #return array(TotalInj)[:maxidx+1], array(QSumHist)[:maxidx+1]
-        
-        return Pmax, Qmax
-    
-    def setload(self, P=None, Q=None):
-        '''Set constant power loads by bus. Must include full vector.'''
 
-        if P is not None:
-            self.DispatchPQ.loc[:,'LoadSMW'] = P
-        if Q is not None:
-            self.DispatchPQ.loc[:,'LoadSMVR'] = Q
+    '''
+    The following functions probably deserve their own object or atleast be relocated
+    '''
+    
+    def chain(self, maxstates=2):
+        '''Initiate a state-chain for iterative functions that require state restoration. The data of n states will be tracked and
+        managed as a queue.
+        '''
+        self.maxstates = maxstates
+        self.stateidx = -1
+
+        # TODO delete old states when this is called
+
+
+    def pushstate(self, verbose=True):
+        '''Update the PF chain queue with the current state. The n-th state will be forgotten.'''
+
+        # Each line represents a call to push() with nmax = 3
+        # 0*          <- push()  State 0 added (sidx = 0)
+        # 0 1*        <- push()  State 1 added (sidx = 1)
+        # 0 1 2*      <- push()  State 2 added (sidx = 2)
+        #   1 2  3*    <- push()  State 3 added (sidx = 3) and 0 was deleted
+        #     2  3  4* <- push()  State 4 added (sidx = 4) and 1 was deleted
+
+        # Save current state on the right of the queue
+        self.stateidx += 1
+        self.io.save_state(f'GWBState{self.stateidx}')
+
+        if verbose: print(f'Pushed States -> {self.stateidx},  Delete -> {self.stateidx-self.maxstates}')
+
+        # Try and delete the state (nmax) behind this one
+        if self.stateidx >= self.maxstates:
+            self.io.delete_state(f'GWBState{self.stateidx-self.maxstates}')
+
+    def storenth(self, n:int=0, verbose=False):
+        '''
+        Instead of pushing a new state to the save chain, this will update the nth state in the chain.
+
+        # Each line represents a call to push() with nmax = 3
+        # 0*             <- push()  State 0 added (sidx = 0)
+        # 0 1*           <- push()  State 1 added (sidx = 1)
+        # 0 1 2*         <- push()  State 2 added (sidx = 2)
+        #   1 2  3*      <- push()  State 3 added (sidx = 3) and 0 was deleted
+        #     2  3  4*   <- push()  State 4 added (sidx = 4) and 1 was deleted
+        #     2  3  4'   <- assign(0) modifies State 4
+        #        3  4' 5 <- push() State 5 added (sidx = 5)
+        '''
+
+        # Can only go back number of states
+        if n > self.maxstates or n > self.stateidx:
+            raise Exception
+        
+        if verbose: print(f'Restore -> {self.stateidx-n}')
+        
+        # Restore
+        self.io.save_state(f'GWBState{self.stateidx-n}')
+        
+    def restorenth(self, n:int=1, verbose=False):
+        '''
+        Regress backward in the saved states. Consecutive calls do not affect which state is restored.
+        Example:
+        back(1) # Loads 2 states ago
+        back(1) # Will load the same state
+
+        # Each line represents a call to push() with nmax = 3
+        # 0*          <- push()  State 0 added (sidx = 0)
+        # 0 1*        <- push()  State 1 added (sidx = 1)
+        # 0 1 2*      <- push()  State 2 added (sidx = 2)
+        #   1 2  3*    <- push()  State 3 added (sidx = 3) and 0 was deleted
+        #     2  3  4* <- push()  State 4 added (sidx = 4) and 1 was deleted
+        #     2  3* 4  <- back(1) State 3 is restored
+        #     2* 3  4  <- back(2) State 2 is restored
+        #     2  3  4* <- back(0) State 4 is restored
+
+        '''
+        # Can only go back number of states
+        if n > self.maxstates or n > self.stateidx:
+            raise Exception
+        
+        if verbose: print(f'Restore -> {self.stateidx-n}')
+        
+        # Restore
+        self.io.restore_state(f'GWBState{self.stateidx-n}')
+        
+    def setload(self, SP=None, SQ=None, IP=None, IQ=None, ZP=None, ZQ=None):
+        '''Set ZIP loads by bus. Vector of loads must include every bus.
+        The loads set by this function are independent of existing loads.
+        This serves as a functional and fast way to apply 'deltas' to base case bus loads.
+        Load ID 99 is used so that it does not interfere with existing loads.
+        params:
+        SP: Constant Active Power
+        SQ: Constant Reactive Power
+        IP: Constant Real Current
+        IQ: Constant Reactive Current
+        ZP: Constant Resistance
+        ZQ: Constant Reactance'''
+
+        if SP is not None:
+            self.DispatchPQ.loc[:,'LoadSMW'] = SP
+        if SQ is not None:
+            self.DispatchPQ.loc[:,'LoadSMVR'] = SQ
+        '''
+        if IP is not None:
+            self.DispatchPQ.loc[:,'LoadIMW'] = IP
+        if IQ is not None:
+            self.DispatchPQ.loc[:,'LoadIMVR'] = IQ
+        if ZP is not None:
+            self.DispatchPQ.loc[:,'LoadZMW'] = ZP
+        if ZQ is not None:
+            self.DispatchPQ.loc[:,'LoadZMVR'] = ZQ
+        '''
+
+        # TODO Only send off changed/present values
+        # drop rows with all zeros
+        #df = df.loc[(df!=0).any(axis=1)]
+        #
+        #drop cols with all zeros?
+        # xxx
+        # Rather, select all where change is present
+        # df.loc[df!=df]
+
+        # df.loc[:] = [SP, SQ, IP, IQ, ZP, ZQ]  ??
+        # I want more efficient way 
 
         self.io.upload({Load:self.DispatchPQ})
-
-    # TODO Overloaded Functions that take Const Z, I, etc.
