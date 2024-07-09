@@ -162,7 +162,7 @@ class Statics(PWApp):
         return any(q > self.genqmax + tol) or any(q < self.genqmin - tol)
 
     
-    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, qdrop=0.1, nrtol=0.0001, backstepPercent=0.25, verbose=False):
+    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False):
         ''' 
         Continuation Power Flow. Will Find the maximum INjection MW through an interface. As an iterator, the last element will be the boundary value.
         The continuation will begin from the state
@@ -171,26 +171,19 @@ class Statics(PWApp):
         -maxstep: largest jump in MW
         -initial_mw: starting interface MW. Could speed up convergence if you know a lower limit
         -nrtol: Newton rhapston MVA tolerance
-        -qdrop: Detection of Q sensitivities for bifurcation 
         returns:
         - iterator with elements being the magnitude of interface injection. The last element is the CPF solution.
         '''
-
-        if qdrop < nrtol:
-            print('Unacceptable Q Bifurcation Value. This must be larger than newton rhapson tolerance so Q differences are meaningful.')
-            return
         
         # Helper Function since this is common
         def getq():
             return self.io.get_quick(Gen, 'GenMVR')['GenMVR']
         
-        # Base Case PF
-        self.io.pflow()
-
         # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
         self.chain(2)
-
-        # Last-Change backup of state and prime state chain
+        
+        # Base Case PF, then Last-Change backup of state and prime the state chain
+        self.io.pflow()
         self.io.save_state('BACKUP')
         self.pushstate()
 
@@ -198,99 +191,92 @@ class Statics(PWApp):
         self.io.set_mva_tol(nrtol)
 
         # Misc Iteration Tracking
-        Pinj = initialmw # Current Interface MW
-        step = maxstep # Step Size in MW
-        qprev, pstable = None, None # Previous Iterations Objective Value
+        backstepPercent=0.25
+        pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
+        pprev, qprev = 0, 0
+        pstable, qstable = None, None 
+        qconsec_decr, sweepone = 0, True
 
-        # Sweep One
+        # Continuation Loop
         for i in arange(maxiter):
 
-            if step<=minstep: break
-            
             # Set Injection for this iteration
-            self.setload(self.P0 - Pinj*interface) #TODO P0 should be updated at the call of this function, since load could be changed before this :(
+            self.setload(self.P0 - pnow*interface) #TODO P0 should be updated at the call of this function, since load could be changed before this :(
             
-            try:
+            try: 
+
                 # Do Power Flow
                 self.io.pflow() 
 
                 # Fail if all gens at max or Q decreases on any gen within tolerance
-                qnow = getq()
-                qnowsum = qnow.sum()
+                qall = getq()
+                qnow = qall.sum()
 
-                # 'Effective' Non-Convergence
-                if  self.gensAtMaxQ(qnow): # Uncommon but necessary
-                    if verbose: print('Gen Q Limits Breached')
-                    raise GeneratorLimitException 
                 
-                # TODO if dy/dx is >qdrop cancel immediatly and go back to STABLE state 
-                if qprev is not None and (qprev-qnowsum)/step>qdrop: # TODO only valid if |qprev-qnowsum| < tol
-                    if verbose: print('Bifurcation Suspected')
-                    raise BifurcationException
+                # Stage One Sweep
+                if sweepone:
 
-                # IF INCREASED, Save previous sol as stable, IF DECREASED keep stable as-is
-                if qprev is not None and qprev < qnowsum:
-                    # Current > Prev > Stable 
-                    self.pushstate()
-                    pstable = pprev
+                    # 'Effective' Non-Convergence, Uncommon but necessary due to power world slack overloading
+                    if  self.gensAtMaxQ(qall): 
+                        if verbose: print('Gen Q Limits Breached')
+                        raise GeneratorLimitException 
+
+                    # Detect decreases in Q output
+                    if qprev > qnow: 
+                        qconsec_decr += 1
+                        if qconsec_decr >= 3:
+                            step = 0 
+                            raise BifurcationException
+                        self.istore() 
+
+                    # Push Stable Solutions
+                    elif qprev != 0: 
+                        self.pushstate()
+                        qconsec_decr = 0
+                        pstable, qstable = pprev, qprev
+                    
+                    # Push Solved Solutions
+                    else: self.istore() 
+
+                # Stage Two Sweep - Detect decrease in net Q
                 else:
-                    # Current > Prev
-                    self.storenth(0) 
+                    
+                    if qprev-qnow>nrtol:
+                        raise BifurcationException
+                    
+                    self.istore() # Don't push, we don't want to override the stable sol
 
-                # Store 'Last' iterations valid solution
-                pprev = Pinj
-                qprev = qnowsum 
+                if verbose: print(f'PF: {pnow:.4f} MW')
 
-                if verbose: print(f'PF: {Pinj:.4f} MW')
+                # Yield and save
+                yield pnow, qnow
+                pprev, qprev = pnow, qnow
 
-                yield pprev, qprev
+            except (Exception, GeneratorLimitException, BifurcationException): 
 
-                
-            # Catch Power Flow Failure, All Gens at Limit, and 'Fake' continutations
-            except: 
+                # Either Gen Limits reached or PF Divergence
+                if verbose: print(f'PFlow: {pnow:.4f} MW   -   Failed')
 
-                Pinj -= step 
-                step *= backstepPercent
+                # Set new injection, decrease stepsize, and load previous solution
+                if step !=0:
+                    pnow -= step 
+                    step *= backstepPercent
+                    self.irestore()
+            
+            # Convergence Detection
+            if step<minstep:
 
-                # Load previous solved state
-                self.restorenth()
-                
+                if not sweepone: break 
+
+                # Restore Stable solution and become granular
+                sweepone, step = False, 2*minstep
+                pnow, qprev = pstable, qstable
+                self.irestore(1) # Load Stable Solution
+
+                if verbose: print(f'Searching: [{pstable:.4f}, {pprev:.4f}] -> Step {step:.4f} MW')
+
             # Advance Injection
-            Pinj += step
-
-        # Restore from last stable and continue search with minstep 
-        if verbose:
-            print(f'Secondary Search Range: [{pstable:.4f}, {pprev:.4f}] MW')
-
-        # Load previous STABLE state
-        self.restorenth(1)
-
-        # Sweep Two TODO integrate this into the above while loop
-        for ppp in arange(pstable, pprev, minstep): # TODO bad naming cmon integrate this with above
-
-            # Set Injection for this iteration
-            self.setload(self.P0 - ppp*interface)
-            
-            # Do Power Flow (somehow its diverging in this region)
-            try:
-                self.io.pflow() 
-            except:
-                if verbose: print('Boundary Found via Convergence Failure.')
-                break
-
-            # Fail if all gens at max or Q decreases on any gen within tolerance
-            qnowsum = getq().sum()
-
-            if verbose: print(f'PF: {ppp:.4f} MW')
-            
-            # Found boundary within tolerance
-            if ppp!=pstable and qprev-qnowsum > nrtol:
-                if verbose: print('Boundary Found via Bifurcation.')
-                break
-
-            qprev = qnowsum
-
-            yield ppp, qnowsum
+            pnow += step
 
         # Restore to before CPF
         self.io.restore_state('BACKUP')
@@ -309,7 +295,7 @@ class Statics(PWApp):
         # TODO delete old states when this is called
 
 
-    def pushstate(self, verbose=True):
+    def pushstate(self, verbose=False):
         '''Update the PF chain queue with the current state. The n-th state will be forgotten.'''
 
         # Each line represents a call to push() with nmax = 3
@@ -329,7 +315,7 @@ class Statics(PWApp):
         if self.stateidx >= self.maxstates:
             self.io.delete_state(f'GWBState{self.stateidx-self.maxstates}')
 
-    def storenth(self, n:int=0, verbose=False):
+    def istore(self, n:int=0, verbose=False):
         '''
         Instead of pushing a new state to the save chain, this will update the nth state in the chain.
 
@@ -352,7 +338,7 @@ class Statics(PWApp):
         # Restore
         self.io.save_state(f'GWBState{self.stateidx-n}')
         
-    def restorenth(self, n:int=1, verbose=False):
+    def irestore(self, n:int=1, verbose=False):
         '''
         Regress backward in the saved states. Consecutive calls do not affect which state is restored.
         Example:
