@@ -57,3 +57,16 @@ def dropFields(df: DataFrame, fields: list[str] | str):
         df.drop(columns=fields, inplace=True)
     except KeyError:
         print("Field DNE, no change made.")
+
+def jac_decomp(jac):
+    '''Returns the sub-matricies of the jacobian in the following order:
+    (dP/dTheta, dP/dV, dQ/dTheta, dQ/dV)
+    '''
+
+    dim = jac.shape[0]
+    nbus = int(dim/2)
+
+    yield jac[:nbus, :nbus] # dP/dT
+    yield jac[:nbus, nbus:] # dP/dV
+    yield jac[nbus:, :nbus] # dQ/dT
+    yield jac[nbus:, nbus:] # dQ/dV

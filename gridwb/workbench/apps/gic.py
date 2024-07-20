@@ -5,12 +5,16 @@ from typing import Any, Type
 from scipy.sparse import coo_matrix, lil_matrix
 from enum import Enum, auto
 
+from gridwb.workbench.utils.datawiz import jac_decomp
+
 
 # WorkBench Imports
 from .app import PWApp, griditer
 from gridwb.workbench.grid.components import GIC_Options_Value, GICInputVoltObject, TSContingency
 from gridwb.workbench.grid.components import GICXFormer, Branch, Substation, Bus, Gen
 from gridwb.workbench.core.powerworld import PowerWorldIO
+
+from scipy.sparse.linalg import inv as sinv 
 
 fcmd = lambda obj, fields, data: f"SetData({obj}, {fields}, {data})".replace("'","")
 gicoption = lambda option, choice: fcmd("GIC_Options_Value",['VariableName', 'ValueField'], [option, choice])
@@ -60,6 +64,56 @@ class GIC(PWApp):
     def multiline(self):
         # TODO a function to do things to multi-lines
         pass
+
+    def dBounddI(eta, J, V):
+        ''' Interface Sensitivity w.r.t Transformer GIC Currents
+        Parameters:
+        - eta: (nx1) Numpy Vector of Injection
+        - J: (nxn) Full AC Powerflow Jacobian at Boundary
+        - V: (nx1) Bus Voltage Magnitudes
+        Returns:
+        - (1xn) Numpy Array of Sensitivites
+        '''
+
+        PT, PV, QT, QV = jac_decomp(J)
+        QVi = sinv(QV.tocsc())
+        return eta.T@PV@QVi@np.diagflat(V)
+    
+    def dIdE(dBdI, PX, Hx, Hy, Ex, Ey):
+        '''Returns tuple (Ex Sensitivities, Ey Sensitivities) w.r.t Bus GIC load model
+        which is presumed to be constant reactive current. Differential 1-Form
+        Parameters:
+        - dBdI: (nx1) Interface Sensitivity to Bus GIC Loads
+        - Px: (ixn) Permutation Matrix Mapping XFMRs to GIC-Bearing Bus
+        - Hx: (nxk) Flattened Tessalized Ex -> Signed XFMR GIC Matrix
+        - Hy: (nxk) Flattened Tessalized Ey -> Signed XFMR GIC Matrix
+        - Ex: (kx1) Flattened Tessalized Ex Magnitudes
+        - Ey: (kx1) Flattened Tessalized Ey Magnitudes
+        Returns:
+        - ((1xn) , (1xn)) Tuple of sensitivities of XFMR GICs to Ex and Ey
+        '''
+
+        '''
+        Old, do not modify
+        sf0 = np.sign(Hx@Ex + Hy@Ey)
+        signBound = np.sign(dBdI@Px).T
+        F = np.diagflat(sf0*signBound)
+        return (dBdI@Px@F@Hx).T, (dBdI@Px@F@Hy).T
+        '''
+    
+        # The sign of function inside absolute value at this solution point
+        sf0 = np.sign(Hx@Ex + Hy@Ey) # NOTE possible issue here ahhhh I need the individual signs of Ex and Ey
+  
+        # dBound/dXFMR Signs
+        g0 = dBdI@PX
+        signBound = np.sign(g0).T
+
+        # Sign flipper for abs (flip if gradient and function sign disagree)
+        F = np.diagflat(sf0*signBound)
+
+        # 1-Form Differential as tuple
+        return (g0@F@Hx).T, (g0@F@Hy).T
+    
 
     # BELOW IS FOR ADVANCED SETTINGS
 
@@ -480,6 +534,9 @@ class GICTool:
         isCustomGIC = self.lines['GICLineUsePFR']=='NO'
         GBranch = 3*np.where(isCustomGIC, GIC_G, PF_G).astype(float)
 
+        # Line Length and Angle For Tesselations
+        self.line_km = self.lines['GICLineDistance:1'].fillna(0).to_numpy()
+        self.line_ang = self.lines['GICLineAngle'].fillna(0).to_numpy()*np.pi/180 # North 0 Degrees
         self.nlines = len(self.lines)
 
         return (fromBus, toBus, GBranch)
@@ -669,6 +726,106 @@ class GICTool:
 
         return GICCorners(H, L, E)
 
+    def tesselations(self, tilewidth=0.5):
+        '''Return Tessalized forms of the H matrix for Ex and Ey.'''
+
+        line_km = self.line_km
+        line_ang = self.line_ang
+
+        # Seperated by X, Y
+        cX = self.lines[['Longitude', 'Longitude:1']].copy().to_numpy()
+        cY = self.lines[['Latitude', 'Latitude:1']].copy().to_numpy()
+
+        # Generate Tile Intervals
+        W = tilewidth
+        X = np.arange(cX.min(axis=None), cX.max(axis=None)+W, W) 
+        Y = np.arange(cY.min(axis=None), cY.max(axis=None)+W, W)
+
+        # Save for reference if needed
+        self.tile_info = X, Y, W
+
+        '''Tile Segment Assignment Matrix'''
+
+        # Store X/Y length in line by line
+        # Dim0: X or Y data , Dim 1: Line ID, Dim 2: X Tile, Dim 3: Y Tile
+        R = np.zeros((2, self.lines.index.size, X.size-1, Y.size-1))
+
+        # Approximation of Coords -> KM conversion
+        LX = np.abs(np.sin(line_ang)*line_km) # 0 is north so sin() is X
+        LY = np.abs(np.cos(line_ang)*line_km)
+
+        # 'Length' in coordinates
+        CLX = np.diff(cX)
+        CLY = np.diff(cY)
+
+        # Intentional -> 'Right' and 'Up' should be positive direction
+        # Converts coords to KM
+        coord_to_km = np.concatenate([[LX/CLX[:,0]], [LY/CLY[:,0]]],axis=0)
+        coord_to_km[np.isnan(coord_to_km)] = 0
+        coord_to_km = np.expand_dims(coord_to_km,axis=2)
+
+        # Spanned Area of Line
+        lminx = cX.min(axis=1,keepdims=True)
+        lmaxx = cX.max(axis=1,keepdims=True)
+        lminy = cY.min(axis=1,keepdims=True)
+        lmaxy = cY.max(axis=1,keepdims=True)
+
+        # Calculate points of line & tile intersection
+        Vx = np.repeat([X],lminx.size,axis=0)
+        Vx[(Vx<=lminx) | (Vx>=lmaxx)] = np.nan
+        Vy = CLY/CLX*(Vx-cX[:,[0]]) + cY[:,[0]]
+
+        Hy = np.repeat([Y],lminx.size,axis=0)
+        Hy[(Hy<=lminy) | (Hy >= lmaxy)] = np.nan
+        Hx = (Hy-cY[:,[0]])*CLX/CLY + cX[:,[0]]
+
+        # All Segment Points per Line
+        pntsX = np.concatenate([cX, Vx, Hx],axis=1)
+        pntsY = np.concatenate([cY, Vy, Hy],axis=1)
+
+        # Sort Points so segments can be calculated
+        sortSeg = pntsX.argsort(axis=1)
+        sortLine = np.arange(lminx.size).reshape(-1,1)
+        pntsX = pntsX[sortLine,sortSeg]
+        pntsY = pntsY[sortLine,sortSeg]
+
+        # Take line segments and determine tile assignemnt
+        allpnts = np.concatenate([[pntsX],[pntsY]],axis=0)
+        mdpnts = (allpnts[:,:,1:] +allpnts[:,:,:-1])/2 # Midpoints of each segment
+        isData = np.argwhere(~np.isnan(mdpnts)).T # Data Cleaning
+        refpnt = np.array([X.min(),Y.min()]).reshape(2,1,1) # Grid ref point
+        tile_ids = (mdpnts-refpnt)//W # Tile Index Floor Divide
+        self.tile_ids = tile_ids
+        seg_lens = coord_to_km*np.abs(np.diff(allpnts,axis=2)) # Length in Tile
+        
+
+        # Final Data Format
+        R[*isData[:-1],*tile_ids[:,*isData[1:]].astype(int)] = seg_lens[*isData]
+        R = R.reshape((2, R.shape[1], R.shape[2]*R.shape[3]), order='F')
+
+        # Ex and Ey Flattened Tile -> Xfmr Matrix
+        Rx = R[0]
+        Ry = R[1]
+
+        # God Tier H-Matrix
+        H = self.Hmat()
+
+        self.Hx, self.Hy = H@Rx, H@Ry
+
+        # Return Tessalised matricies
+        return self.Hx, self.Hy # TODO slow, use sparse matricies?
+    
+    def tesselation_as_df(self):
+        '''GICTool.tesselations() must have already been called. Get Index DF Version of Hx, Hy'''
+        tile_cols = pd.MultiIndex.from_product(
+            [np.arange(self.X_tiles.size-1), np.arange(self.Y_tiles.size-1)], 
+            names=['TileX', 'TileY']
+            )
+        Xdf = pd.DataFrame(self.Hx, columns = tile_cols)
+        Ydf = pd.DataFrame(self.Hy, columns = tile_cols)
+        Xdf.index.name = 'XFMR'
+        Ydf.index.name = 'XFMR'
+        return Xdf, Ydf
 
 class GICCorners:
 

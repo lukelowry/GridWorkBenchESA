@@ -208,3 +208,26 @@ r"""
 
 
 """
+from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
+
+def darker_hsv_colormap(scale_factor=0.5):
+    """
+    Creates a modified version of the HSV colormap that is darker in shade.
+    Parameters:
+        scale_factor (float): Factor to scale the value (brightness). Should be between 0 and 1.
+                             1 means no change, 0 means complete darkness.
+    Returns:
+        darker_hsv_cmap: A modified colormap that is a darker version of the original HSV colormap.
+    """
+    # Create the HSV colormap in RGB
+    hsv_cmap = plt.cm.hsv(np.linspace(0, 1, 256))[:, :3]
+    hsv_colors = rgb_to_hsv(hsv_cmap)
+    
+    # Scale the Value component to make it darker
+    hsv_colors[:, 2] *= scale_factor
+    hsv_colors[:, 2] = np.clip(hsv_colors[:, 2], 0, 1)
+
+    darker_rgb_colors = hsv_to_rgb(hsv_colors)
+    darker_hsv_cmap = plt.cm.colors.ListedColormap(darker_rgb_colors)
+    return darker_hsv_cmap
+

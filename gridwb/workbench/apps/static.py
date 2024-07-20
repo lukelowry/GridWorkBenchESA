@@ -28,15 +28,20 @@ class Statics(PWApp):
         gens = self.dm.get_df(Gen)
         buses = self.dm.get_df(Bus)
         loads = self.dm.get_df(Load)
-        
 
-        # Slack Bus Q Limits
-        self.genqmax = gens['GenMVRMax'] # Can't assume slack bus is first record TODO
+        zipfields = ['LoadSMW', 'LoadSMVR','LoadIMW', 'LoadIMVR','LoadZMW', 'LoadZMVR']
+        
+        # Gen Q Limits
+        self.genqmax = gens['GenMVRMax']
         self.genqmin = gens['GenMVRMin']
+
+        # Gen P Limits
+        self.genpmax = gens['GenMWMax']
+        self.genpmin = gens['GenMWMin']
 
         # Create DF that stores loads for all buses
         l = buses[['BusNum', 'BusName_NomVolt']].copy()#.merge(loads, how='left')
-        l.loc[:,['LoadIMVR', 'LoadSMVR', 'LoadSMW']] = 0.0
+        l.loc[:,zipfields] = 0.0
         l['LoadID'] = 99 # NOTE Random Large ID so that it does not interfere
         l['LoadStatus'] = 'Closed'
         l = l.fillna(0)
@@ -44,9 +49,7 @@ class Statics(PWApp):
         self.bus_loads = l
 
         # Smaller DF just for updating Constant Power at Buses for Injection Interface Functions
-        self.DispatchPQ = l[['BusNum', 'LoadID', 'LoadSMW', 'LoadSMVR']].copy()
-        self.P0 = l['LoadSMW'].to_numpy().copy()
-        self.Q0 = l['LoadSMVR'].to_numpy().copy()
+        self.DispatchPQ = l[['BusNum', 'LoadID'] + zipfields].copy()
 
         # Initial Gen Settings and Bus Voltages
         self.G0 = self.dm.get_df(Gen)[Gen.keys + ['GenMW', 'GenMVR', 'GenAVRAble', 'GenAGCAble']].copy() # Initial Gen Settings
@@ -155,14 +158,221 @@ class Statics(PWApp):
 
         return (meta, df.T)
     
+    def gensAtMaxP(self, p=None, tol=0.1):
+        '''Returns True if any CLOSED gens are outside P limits. Active function.'''
+        if p is None:
+            p = self.io.get_quick(Gen, 'GenMW')['GenMW']
+
+        isHigh = p > self.genpmax + tol
+        isLow = p < self.genpmin - tol
+        isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+        violation = isClosed & (isHigh | isLow)
+
+        return any(violation)
+        #return any(p > self.genpmax + tol) or any(p < self.genpmin - tol)
+    
     def gensAtMaxQ(self, q=None, tol=0.1):
-        '''Returns True if any gens are outside Q limits. Active function.'''
+        '''Returns True if any CLOSED gens are outside Q limits. Active function.'''
         if q is None:
             q = self.io.get_quick(Gen, 'GenMVR')['GenMVR']
-        return any(q > self.genqmax + tol) or any(q < self.genqmin - tol)
+
+        isHigh = q > self.genqmax + tol
+        isLow = q < self.genqmin - tol
+        isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+        violation = isClosed & (isHigh | isLow)
+
+        return any(violation)
+        #return any(q > self.genqmax + tol) or any(q < self.genqmin - tol)
 
     
-    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False):
+    ''' 
+    
+    
+    REMOVING::::: 
+    
+    
+    
+    Keep for one push - This attempt at CPF tried to use a secondary metric
+    to determine the boundary. It was a nice attempt but more trouble than
+    it was worth in the end. The simpler function is better.
+    
+    
+    
+    def continuation_pf_old(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None):
+        
+        
+        # Helper Function since this is common
+        def log(x,**kwargs): 
+            if verbose: print(x,**kwargs)
+        def getq():
+            return self.io.get_quick(Gen, 'GenMVR')['GenMVR']
+        
+        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
+        self.io.save_state('BACKUP')
+        self.chain(2)
+        
+        # Set NR Tolerance in MVA
+        self.io.set_mva_tol(nrtol)
+
+        # Outer Try - Should only catch scenarios not considered during development
+        try:
+
+            log(f'\n\n------Init Injection-----')
+
+            # Base Case PF, then Last-Change backup of state and prime the state chain
+            while True:
+                break
+                try:
+                    self.setload(SP=-initialmw*interface) # Initial MW
+                    self.io.pflow()
+                    break
+                except:
+                    log('Adjusting <')
+                    initialmw*= 3/4
+                    if initialmw < 1e-4: break
+
+            #sss = self.io.get_quick(Shunt, 'SSAMVR')['SSAMVR']
+            
+            log(f'Starting Injection at:  {initialmw:.4f} MW ')
+            self.pushstate()
+
+            # Misc Iteration Tracking
+            backstepPercent=0.25
+            pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
+            pprev, qprev = 0, 0
+            pstable, qstable = initialmw, 0
+            qconsec_decr, sweepone = 0, True
+            complete = False
+
+            # Continuation Loop
+            for i in arange(maxiter):
+
+                # Set Injection for this iteration
+                self.setload(SP=-pnow*interface)
+                
+                try: 
+
+                    # Do Power Flow
+                    log(f'PF: {pnow:>12.4f} MW\t', end='')
+                    self.io.pflow() 
+
+                    # Fail if all gens at max or Q decreases on any gen within tolerance
+                    qall = getq()
+                    qnow = qall.sum()
+
+                    # TODO I am not checking generator P limits - should I?
+                    # I Should for atleast the slack bus gens
+
+                    # 'Effective' Non-Convergence, Uncommon but necessary due to power world slack overloading
+                    if  self.gensAtMaxQ(qall): 
+                        log(' + ')
+                        raise GeneratorLimitException
+
+                    ### STAGE ONE SWEEP ###
+                    if sweepone:
+
+                        # Detect decreases in Q output
+                        if qprev > qnow: 
+                            log(' v ')
+
+                            qconsec_decr += 1
+                            if qconsec_decr >= 3:
+                                step = 0 
+                                raise BifurcationException
+                            self.istore() 
+                        
+                        # Push Stable Solutions
+                        elif qprev != 0: 
+                           
+                            log(' * ')
+                            self.pushstate()
+                            qconsec_decr = 0
+                            pstable, qstable = pprev, qprev
+                            yield pnow, qnow 
+
+                        # Push Solved Solutions (1st only really)
+                        else: 
+                            log(' - ')
+                            self.istore()
+                            yield pnow, qnow
+                    
+                    ### STAGE TWO SWEEP ### 
+                    else:   
+                        # Detect decrease in net Q
+                        log(' > ')
+                        if qprev-qnow>nrtol: raise BifurcationException
+                        self.istore() # Don't push, we don't want to override the stable sol
+                        yield pnow, qnow 
+
+                    pprev, qprev = pnow, qnow
+
+                except (Exception, GeneratorLimitException, BifurcationException) as e: 
+
+
+                    if sweepone:
+
+                        if isinstance(e,GeneratorLimitException): log('[Gen Q Limits Breached]')
+                        elif isinstance(e,BifurcationException): log('[Bifurcation Suspected T1]')
+                        else: log('XXX')
+
+                        # Low -> Then fail is BAD
+                        #if qconsec_decr >=1:
+                            #step=0
+                       
+                        # Set new injection, decrease stepsize, and load previous solution
+                        if step!=0:
+                            
+                            pnow = pprev
+                            step *= backstepPercent
+                            if pprev!=0: self.irestore()
+
+                    else:
+                        log('[Sweep 2 Complete]')
+                        complete = True
+                        self.irestore()
+                
+                # Sweep 1 Transition Code
+                if sweepone and step<minstep:
+
+                    # Restore Stable solution and become granular
+                    log("[Sweep 1 Compelete]")
+                    log(f'RS: {pstable:>12.4f} MW')
+                    sweepone, step = False, 2*minstep
+                    pnow, qprev = pstable-step, qstable
+                    self.irestore(1) 
+
+                # Exit Code
+                if complete:
+                    # Execute Boundary Function
+                    if boundary_func is not None:
+                        log(f'BD: {pprev:>12.4f} MW\t ! ')
+                        log(f'Calling Boundary Function...')
+                        boundary_func.X = boundary_func()
+                    break
+
+                # Advance Injection
+                pnow += step
+
+        except:
+            log(f'Ill-Conditioned Scenario. Restoring backup.')
+                
+        finally:
+
+            # Set Dispatch SMW to Zero
+            self.setload(SP=0*interface)
+
+            # Restore to before CPF Regardless of everything
+            self.io.restore_state('BACKUP')
+            log(f'-----------EXIT-----------\n\n')
+
+    '''
+            
+    # This version is simpler, I think it might actually work better
+    # TODO The only thing I have to do is switch slack bus to an interface bus
+    # NOTE This is because we are interested in maximum POSSIBLE injection of MW. 
+    # So then if all gens are at max but injection buses, one of them needs to be slack bus
+    # if we want the flow values to be realistic
+    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None):
         ''' 
         Continuation Power Flow. Will Find the maximum INjection MW through an interface. As an iterator, the last element will be the boundary value.
         The continuation will begin from the state
@@ -171,115 +381,84 @@ class Statics(PWApp):
         -maxstep: largest jump in MW
         -initial_mw: starting interface MW. Could speed up convergence if you know a lower limit
         -nrtol: Newton rhapston MVA tolerance
+        -boundary_func: Optional, pass a callable object to be called at boundary. Return of callable will be put into obj.X
         returns:
         - iterator with elements being the magnitude of interface injection. The last element is the CPF solution.
         '''
         
         # Helper Function since this is common
-        def getq():
-            return self.io.get_quick(Gen, 'GenMVR')['GenMVR']
-        
-        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
-        self.chain(2)
-        
-        # Base Case PF, then Last-Change backup of state and prime the state chain
-        self.io.pflow()
-        self.io.save_state('BACKUP')
-        self.pushstate()
+        def log(x,**kwargs): 
+            if verbose: print(x,**kwargs)
 
+        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
+        self.io.save_state('BACKUP')
+        
         # Set NR Tolerance in MVA
         self.io.set_mva_tol(nrtol)
 
+        log(f'Starting Injection at:  {initialmw:.4f} MW ')
+        
         # Misc Iteration Tracking
         backstepPercent=0.25
         pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
-        pprev, qprev = 0, 0
-        pstable, qstable = None, None 
-        qconsec_decr, sweepone = 0, True
+        pprev = 0
 
         # Continuation Loop
         for i in arange(maxiter):
 
             # Set Injection for this iteration
-            self.setload(self.P0 - pnow*interface) #TODO P0 should be updated at the call of this function, since load could be changed before this :(
+            self.setload(SP=-pnow*interface)
             
             try: 
 
                 # Do Power Flow
+                log(f'\nPF: {pnow:>12.4f} MW', end='\t')
                 self.io.pflow() 
 
-                # Fail if all gens at max or Q decreases on any gen within tolerance
-                qall = getq()
-                qnow = qall.sum()
-
+                # Check Max Power Output (NOTE not needed in GIC scenario)
+                if self.gensAtMaxP(): 
+                    log(' P+ ', end=' ')
+                    raise GeneratorLimitException
                 
-                # Stage One Sweep
-                if sweepone:
+                # Check Max Reactive Output
+                if self.gensAtMaxQ(): 
+                    log(' Q+ ', end=' ')
+                    raise GeneratorLimitException
+                
+                # Save
+                self.io.save_state('PREV')
+                pprev = pnow
 
-                    # 'Effective' Non-Convergence, Uncommon but necessary due to power world slack overloading
-                    if  self.gensAtMaxQ(qall): 
-                        if verbose: print('Gen Q Limits Breached')
-                        raise GeneratorLimitException 
+                yield pnow
+                
+            # Catch Fails, then backstep injection
+            except (Exception, GeneratorLimitException, BifurcationException) as e: 
 
-                    # Detect decreases in Q output
-                    if qprev > qnow: 
-                        qconsec_decr += 1
-                        if qconsec_decr >= 3:
-                            step = 0 
-                            raise BifurcationException
-                        self.istore() 
+                log('XXX')
+                        
+                pnow = pprev
+                step *= backstepPercent
+                if pprev!=0: 
+                    self.io.restore_state('PREV')
 
-                    # Push Stable Solutions
-                    elif qprev != 0: 
-                        self.pushstate()
-                        qconsec_decr = 0
-                        pstable, qstable = pprev, qprev
-                    
-                    # Push Solved Solutions
-                    else: self.istore() 
-
-                # Stage Two Sweep - Detect decrease in net Q
-                else:
-                    
-                    if qprev-qnow>nrtol:
-                        raise BifurcationException
-                    
-                    self.istore() # Don't push, we don't want to override the stable sol
-
-                if verbose: print(f'PF: {pnow:.4f} MW')
-
-                # Yield and save
-                yield pnow, qnow
-                pprev, qprev = pnow, qnow
-
-            except (Exception, GeneratorLimitException, BifurcationException): 
-
-                # Either Gen Limits reached or PF Divergence
-                if verbose: print(f'PFlow: {pnow:.4f} MW   -   Failed')
-
-                # Set new injection, decrease stepsize, and load previous solution
-                if step !=0:
-                    pnow -= step 
-                    step *= backstepPercent
-                    self.irestore()
-            
-            # Convergence Detection
             if step<minstep:
-
-                if not sweepone: break 
-
-                # Restore Stable solution and become granular
-                sweepone, step = False, 2*minstep
-                pnow, qprev = pstable, qstable
-                self.irestore(1) # Load Stable Solution
-
-                if verbose: print(f'Searching: [{pstable:.4f}, {pprev:.4f}] -> Step {step:.4f} MW')
+                break
 
             # Advance Injection
             pnow += step
+            
+        # Execute Boundary Function
+        if boundary_func is not None:
+            log(f'BD: {pprev:>12.4f} MW\t ! ')
+            log(f'Calling Boundary Function...')
+            boundary_func.X = boundary_func()
 
-        # Restore to before CPF
+        # Set Dispatch SMW to Zero
+        self.setload(SP=0*interface)
+
+        # Restore to before CPF Regardless of everything
         self.io.restore_state('BACKUP')
+        log(f'-----------EXIT-----------\n\n')
 
     '''
     The following functions probably deserve their own object or atleast be relocated
@@ -358,6 +537,7 @@ class Statics(PWApp):
         '''
         # Can only go back number of states
         if n > self.maxstates or n > self.stateidx:
+            if verbose: print(f'Restoration Failure')
             raise Exception
         
         if verbose: print(f'Restore -> {self.stateidx-n}')
@@ -370,6 +550,7 @@ class Statics(PWApp):
         The loads set by this function are independent of existing loads.
         This serves as a functional and fast way to apply 'deltas' to base case bus loads.
         Load ID 99 is used so that it does not interfere with existing loads.
+        This is a TEMPORARY load. Functions in GWB can and will override any Load ID 99.
         params:
         SP: Constant Active Power
         SQ: Constant Reactive Power
@@ -380,18 +561,22 @@ class Statics(PWApp):
 
         if SP is not None:
             self.DispatchPQ.loc[:,'LoadSMW'] = SP
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadSMW']]})
         if SQ is not None:
             self.DispatchPQ.loc[:,'LoadSMVR'] = SQ
-        '''
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadSMVR']]})
         if IP is not None:
             self.DispatchPQ.loc[:,'LoadIMW'] = IP
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadIMW']]})
         if IQ is not None:
             self.DispatchPQ.loc[:,'LoadIMVR'] = IQ
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadIMVR']]})
         if ZP is not None:
             self.DispatchPQ.loc[:,'LoadZMW'] = ZP
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadZMW']]})
         if ZQ is not None:
             self.DispatchPQ.loc[:,'LoadZMVR'] = ZQ
-        '''
+            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadZMVR']]})
 
         # TODO Only send off changed/present values
         # drop rows with all zeros
@@ -403,6 +588,6 @@ class Statics(PWApp):
         # df.loc[df!=df]
 
         # df.loc[:] = [SP, SQ, IP, IQ, ZP, ZQ]  ??
-        # I want more efficient way 
+        # I want more efficient way so I don't have to send everything
 
         self.io.upload({Load:self.DispatchPQ})
