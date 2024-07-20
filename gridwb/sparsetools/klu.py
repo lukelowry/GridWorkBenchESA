@@ -7,7 +7,7 @@ from numpy.ctypeslib import as_array as c_to_np
 
 from .dll import KLUDLL
 
-from gridwb.workbench.utils.decorators import timing
+from ..workbench.utils.decorators import timing
 
 class KLU:
     '''Structural Sparse LU Decomposition for Real and Complex Systems'''

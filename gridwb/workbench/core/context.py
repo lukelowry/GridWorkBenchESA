@@ -4,6 +4,7 @@ from .sets import GridSet
 from .datamaintainer import GridDataMaintainer
 
 class Context:
+    '''A Context Object that is passed between applications or instances that carry the live data of GWB'''
 
     def __init__(self, fname: str, set: GridSet) -> None:
         '''Context of a workbench session. Holds IO Connection and Common Data Maintainer'''

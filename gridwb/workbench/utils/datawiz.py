@@ -1,3 +1,8 @@
+'''
+Various Tools to help with DataFrame Processing
+
+'''
+
 from typing import Callable
 from pandas import DataFrame, MultiIndex
 

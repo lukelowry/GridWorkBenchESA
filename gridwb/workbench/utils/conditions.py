@@ -1,5 +1,5 @@
-import numpy as np
-import pandas as pd
+from numpy import arange
+from pandas import DataFrame
 
 from abc import ABC, abstractmethod
 from itertools import product
@@ -49,7 +49,7 @@ def trange(min: float, max: float, n: int):
     if n < 2:
         raise Exception("trange: N Steps must be >= 2")
     res = (max - min) / (n - 1)
-    return np.arange(min, max + res / 2, res)
+    return arange(min, max + res / 2, res)
 
 
 # Initialization and Implmentation for a Generic Grid Conditon
@@ -94,7 +94,7 @@ class BaseLoad(Condition):
 
         io.esa.change_and_confirm_params_multiple_element(
             ObjectType="Zone",
-            command_df=pd.DataFrame({"ZoneNum": [1], "SchedValue": [baseLoad]}),
+            command_df=DataFrame({"ZoneNum": [1], "SchedValue": [baseLoad]}),
         )
 
 
@@ -114,7 +114,7 @@ class RampRate(Condition):
             "LoadID": [""],
             "TSFlag": [1], # Enable Here
         }
-        load_char = pd.DataFrame(load_char)
+        load_char = DataFrame(load_char)
         self.esa.change_and_confirm_params_multiple_element(
             ObjectType='LoadCharacteristic_LoadTimeSchedule',
             command_df=load_char
@@ -133,7 +133,7 @@ class RampRate(Condition):
         sched = "WB_SCHED"
         io.esa.change_and_confirm_params_multiple_element(
             ObjectType="DSTimeScheduleTimePoint",
-            command_df=pd.DataFrame(
+            command_df=DataFrame(
                 {
                     "DSTimeSchedName": [sched, sched],
                     "DSTimeSchedTime": [0, ramptime],

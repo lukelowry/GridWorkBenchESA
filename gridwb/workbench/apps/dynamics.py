@@ -1,16 +1,11 @@
-import numpy as np
-import pandas as pd
-from typing import Any, Type
-from gridwb.workbench.grid.components import TSContingency
-
-from gridwb.workbench.core.powerworld import PowerWorldIO
+from numpy import NaN, float32
+from pandas import DataFrame, concat
 
 # WorkBench Imports
 from ...saw import CommandNotRespectedError
-from ..utils.metric import Metric
+from gridwb.workbench.grid.components import TSContingency
+from gridwb.workbench.core.powerworld import PowerWorldIO
 from .app import PWApp, griditer
-
-
 
 
 # Dynamics App (Simulation, Model, etc.)
@@ -44,7 +39,7 @@ class Dynamics(PWApp):
         try:
             self.io.esa.change_and_confirm_params_multiple_element(
                 ObjectType="TSContingency",
-                command_df=pd.DataFrame({"TSCTGName": ["SimOnly"]}),
+                command_df=DataFrame({"TSCTGName": ["SimOnly"]}),
             )
         except CommandNotRespectedError:
             print("Failure to create 'SimOnly' Contingency")
@@ -109,7 +104,7 @@ class Dynamics(PWApp):
             )
             metaSim['Metric'] = flatFields
             metaSim["Contingency"] = ctg
-            meta = pd.concat(
+            meta = concat(
                 [metaSim] if meta is None else [meta, metaSim],
                 axis=0,
                 ignore_index=True,
@@ -117,25 +112,25 @@ class Dynamics(PWApp):
 
             # Won't work if first result is bad
             if len(dfSim.columns) < 2:
-                dfSim = pd.DataFrame(np.NaN, columns=metaSim.index, index=[0])
+                dfSim = DataFrame(NaN, columns=metaSim.index, index=[0])
                 dfSim.index.name = "time"
             else:
                 # Trim Data Size, Index by Time, Append to Main
-                dfSim = dfSim.astype(np.float32)
+                dfSim = dfSim.astype(float32)
                 dfSim.set_index("time", inplace=True)
 
             #if df is not None:
                 #print(df.join(dfSim,how='outer'))
             #TODO only working for same types of ctgs
-            df = pd.concat(
+            df = concat(
                 [dfSim] if df is None else [df, dfSim], axis=1, ignore_index=True
             )
 
         # Clean Up -------------------------------------------------------
 
         # Hard Copy Before Wiping RAM
-        meta: pd.DataFrame = meta.copy(deep=True)
-        df: pd.DataFrame = df.copy(deep=True)
+        meta: DataFrame = meta.copy(deep=True)
+        df: DataFrame = df.copy(deep=True)
 
         # Clear RAM in PW
         self.io.clearram()

@@ -1,4 +1,4 @@
-import numpy as np
+from numpy import array, zeros, single, uint32, double, uint32, frombuffer, stack
 
 class B3D:
 
@@ -14,8 +14,8 @@ class B3D:
         # lat and lon should be a 1-dimensional np arrays of doubles
         # They must be the same length (n)
         # Only variable location point formats are supported here
-        self.lat = np.array([30.5, 30.5, 31.0, 31.0])
-        self.lon = np.array([-84.5, -85.0, -84.5, -85.0])
+        self.lat = array([30.5, 30.5, 31.0, 31.0])
+        self.lon = array([-84.5, -85.0, -84.5, -85.0])
 
         # Optional parameter to describe how the lat and lon points are organized into a grid
         # If invalid, it will be updated to n-by-1
@@ -23,13 +23,13 @@ class B3D:
         
         # Time array should be a 1-dimensioal np array of integers. By default they are milliseconds
         # Only variable location point formats are supported here
-        self.time = np.array([0, 1000, 2000], dtype=np.uint32) 
+        self.time = array([0, 1000, 2000], dtype=uint32) 
 
         # Data: Each of these should be 2-dimensional np arrays of singles
         # First dimension is the time point, with length nt
         # Second dimension is the location point, with length n
-        self.ex = np.zeros([3, 4], dtype=np.single)
-        self.ey = np.zeros([3, 4], dtype=np.single)
+        self.ex = zeros([3, 4], dtype=single)
+        self.ey = zeros([3, 4], dtype=single)
 
         if fname is not None:
             self.load_b3d_file(fname)
@@ -40,15 +40,15 @@ class B3D:
             nt = self.time.shape[0]
             if self.lon.shape[0] != n:
                 raise Exception("Lat and lon must be same length!")
-            if self.lat.dtype != np.double:
+            if self.lat.dtype != double:
                 raise Exception("Latitude must by np array of doubles")
-            if self.lon.dtype != np.double:
+            if self.lon.dtype != double:
                 raise Exception("Latitude must by np array of doubles")
-            if self.time.dtype != np.uint32:
+            if self.time.dtype != uint32:
                 raise Exception("Time must by np array of uint32")
-            if self.ex.dtype != np.single:
+            if self.ex.dtype != single:
                 raise Exception("Ex must by np array of singles")
-            if self.ey.dtype != np.single:
+            if self.ey.dtype != single:
                 raise Exception("Ey must by np array of singles")
             if self.ex.shape[1] != n:
                 raise Exception("Ex dimension 2 must be length of latitude")
@@ -67,8 +67,8 @@ class B3D:
             f.write((0).to_bytes(4, byteorder="little")) # 0 byte channels
             f.write((1).to_bytes(4, byteorder="little")) # Variable locations
             f.write((n).to_bytes(4, byteorder="little")) # Number of lat/lons
-            loc0 = np.zeros(n, dtype=np.double)
-            loc_data = np.stack([self.lon, self.lat, loc0]).transpose().reshape(1,n*3).tobytes()
+            loc0 = zeros(n, dtype=double)
+            loc_data = stack([self.lon, self.lat, loc0]).transpose().reshape(1,n*3).tobytes()
             f.write(loc_data)
             f.write((self.time_0).to_bytes(4, byteorder="little")) # Time 0
             f.write((self.time_units).to_bytes(4, byteorder="little")) # Time units code
@@ -78,7 +78,7 @@ class B3D:
             f.write(self.time.tobytes())
             exd = self.ex.reshape(n*nt)
             eyd = self.ey.reshape(n*nt)
-            f.write(np.stack([exd, eyd]).transpose().reshape(n*nt*2).tobytes())
+            f.write(stack([exd, eyd]).transpose().reshape(n*nt*2).tobytes())
 
 
     def load_b3d_file(self, fname):
@@ -126,7 +126,7 @@ class B3D:
             if self.grid_dim[0]*self.grid_dim[1] != n:
                 self.grid_dim = [n, 1]
             x3 = x2 + 16 + 3*8*n
-            loc_data = np.frombuffer(b[x2+16:x3],dtype=np.double).reshape([n, 3]).copy()
+            loc_data = frombuffer(b[x2+16:x3],dtype=double).reshape([n, 3]).copy()
             self.lon = loc_data[:,0]
             self.lat = loc_data[:,1]
             self.time_0 = int.from_bytes(b[x3:x3+4], "little")
@@ -137,17 +137,17 @@ class B3D:
             if time_step != 0:
                 raise Exception("Only B3D files with variable time points are supported")
             x4 = x3 + 20 + 4*nt
-            self.time = np.frombuffer(b[x3+20:x4], dtype=np.uint32).copy()
+            self.time = frombuffer(b[x3+20:x4], dtype=uint32).copy()
             npts = n*nt
             if float_channels == 2 and byte_channels == 0:
                 x5 = x4 + 4*2*n*nt
-                raw_exy = np.frombuffer(b[x4:x5], dtype=np.single)
+                raw_exy = frombuffer(b[x4:x5], dtype=single)
             else:
                 bxy = bytearray(npts*8)
                 for i in range(npts):
                     x5 = x4 + i*(float_channels*4+byte_channels)
                     bxy[i*8:(i+1)*8] = b[x5:x5+8]
-                raw_exy = np.frombuffer(bxy, dtype=np.single)
+                raw_exy = frombuffer(bxy, dtype=single)
             edata = raw_exy.reshape([nt, n, 2]).copy()
             self.ex = edata[:,:,0]
             self.ey = edata[:,:,1]

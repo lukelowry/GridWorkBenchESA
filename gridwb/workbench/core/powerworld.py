@@ -1,14 +1,13 @@
-from dataclasses import fields as dcfields
 from typing import Type
 from pandas import DataFrame
+from os import path
+
 from .datamaintainer import GridDataMaintainer
 from ..grid.components import *
-
 from ..utils.decorators import timing
 from ..io.model import IModelIO
-from ...saw import SAW
+from ...saw import SAW # NOTE Should be the only file importing SAW
 
-from os import path
 
 # Helper Function to parse Python Syntax/Field Syntax outliers
 # Example: fexcept('ThreeWindingTransformer') -> '3WindingTransformer
@@ -226,7 +225,6 @@ class PowerWorldIO(IModelIO):
     def get_min_volt(self):
         '''Retrieve the active minmimum bus voltage in p.u.'''
         return self.get_quick(PWCaseInformation,'BusPUVolt:1').iloc[0,0]
-
 
     def save_state(self, statename="GWB"):
         '''Store a state under an alias and restore it later.'''

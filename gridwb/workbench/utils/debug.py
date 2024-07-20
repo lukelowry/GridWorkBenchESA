@@ -1,7 +1,6 @@
 
 from gridwb.saw import SAW
 from gridwb.workbench.grid.components import GObject
-from dataclasses import fields as dcfields
 
 def problemField(esa: SAW, g: GObject, keys):
     '''Find the field(s) that cause a download issue'''

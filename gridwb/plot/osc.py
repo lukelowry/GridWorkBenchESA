@@ -9,7 +9,7 @@ From old GWB. Probably remove.
 
 # MISC
 from os.path import dirname, abspath, sep
-from numpy import ceil, sqrt, array, linspace, meshgrid, where, nan, pi, vstack, log
+from numpy import array, linspace, meshgrid, where, nan, pi, vstack, log
 from numpy import histogram, diff, arange
 from scipy.stats import gaussian_kde
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
@@ -20,7 +20,6 @@ from cmath import polar
 # MPL
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-from matplotlib.axes import Axes
 
 # GWB
 from .generic import formatPlot

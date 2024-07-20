@@ -1,9 +1,9 @@
 __title__ = "gridwb"
 __package_name__ = "gridwb"
-__description__ = "Easy SimAuto (ESA): An easy-to-use Python connector to PowerWorld Simulator " \
+__description__ = "Fork of : Gridworkbench and Easy SimAuto (ESA): An easy-to-use Python connector to PowerWorld Simulator " \
                   "Automation Server (SimAuto)"
 __author__ = "Adam Birchfield, Luke Lowery"
-__github__ = "https://github.com/mzy2240/ESA"
+__github__ = "https://github.com/wyattlaundry"
 __docs__ = "https://mzy2240.github.io/ESA"
 __tracker__ = "https://github.com/mzy2240/ESA/issues"
 __pypi__ = "https://pypi.org/project/esa/"

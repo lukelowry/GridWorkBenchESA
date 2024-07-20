@@ -7,7 +7,6 @@ This is from early GWB, will probably remove.
 '''
 
 # Class Abstraction
-import numpy as np
 from numpy import arange, linspace, clip, unique
 from warnings import filterwarnings
 from abc import ABC, abstractmethod
@@ -25,9 +24,6 @@ from matplotlib.colors import Normalize, hsv_to_rgb, rgb_to_hsv
 # Utils
 from pandas import DataFrame
 from networkx import *
-
-# GWB
-from gridwb.workbench.utils.conditions import BaseLoad
 
 # I Use this all the time
 def formatPlot(ax: Axes, 

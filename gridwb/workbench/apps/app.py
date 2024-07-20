@@ -1,6 +1,7 @@
-import functools
 from typing import Any, Iterable
-import pandas as pd
+from numpy import NaN
+from pandas import DataFrame, concat
+from functools import wraps
 from itertools import product
 
 from ..core import Context
@@ -12,7 +13,6 @@ from ..utils.conditions import *
 # - TSRunResultAnalyzer PW Post-transient analysis
 # - Tolerance MVA
 # - Need to auto create DSTimeSChedule & LoadCharacteristic for Ramp
-
 
 # Application Base Class
 class PWApp:
@@ -91,7 +91,7 @@ def gridexit(io: IModelIO):
 # Decorator for PWApp Instance Methods
 def griditer(func):
     # Sub-Class Method expected to have ESA as instance attribute
-    @functools.wraps(func)
+    @wraps(func)
     def wrapper(self: PWApp, *args, **kwargs):
         # App Regerence
         app = self
@@ -106,8 +106,8 @@ def griditer(func):
         # TODO Apply default Conditions for Non-Passed?
 
         # Outer Dataframe to save iterated application data
-        outer_meta: pd.DataFrame = None
-        outer_df: pd.DataFrame = None
+        outer_meta: DataFrame = None
+        outer_df: DataFrame = None
 
         # For every scenario
         for scenarioVals in product(*app.conditions.values()):
@@ -140,14 +140,14 @@ def griditer(func):
             else:
                 # Catch failed simulation, note: problems if first sim is bad
                 if len(inner_df.index) != len(outer_df.index):
-                    inner_df = pd.DataFrame(
-                        np.NaN, columns=inner_df.columns, index=outer_df.index
+                    inner_df = DataFrame(
+                        NaN, columns=inner_df.columns, index=outer_df.index
                     )
 
-                outer_meta = pd.concat(
+                outer_meta = concat(
                     [outer_meta, inner_meta], axis=0, ignore_index=True
                 )
-                outer_df = pd.concat([outer_df, inner_df], axis=1, ignore_index=True)
+                outer_df = concat([outer_df, inner_df], axis=1, ignore_index=True)
 
         # Safely reset grid to original state
         gridexit(app.io)

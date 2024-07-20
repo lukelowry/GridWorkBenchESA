@@ -1,11 +1,7 @@
-# Exceptions: Used for various WB functions
-#
-# Adam Birchfield, Texas A&M University
-# 
-# Log:
-# 8/18/22 Initial version
-#
+
+
 class GridObjDNE(Exception):
+    '''Describes a data query failure'''
     pass
 
 class FieldDataException(Exception):
@@ -20,15 +16,18 @@ class ContainerDeletedException(Exception):
 '''Observable Exceptions'''
 
 class PowerFlowException(Exception):
+    '''Raised When Power Flow Error Occurs'''
     pass
 
 class BifurcationException(PowerFlowException):
+    '''Raised when bifurcation is suscpected'''
     pass 
 
-class DivergenceException(PowerFlowException):
+class DivergenceException(PowerFlowException): # TODO in use?
     pass 
 
 class GeneratorLimitException(PowerFlowException):
+    '''Raised when a generator has exceed a limit'''
     pass 
 
 ''' GIC Exceptions '''

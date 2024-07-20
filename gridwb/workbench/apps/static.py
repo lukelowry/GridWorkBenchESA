@@ -1,18 +1,16 @@
 # Data Structure Imports
 import warnings
-import pandas as pd
-from numpy import NaN, exp, abs, any, argmax, arange
+from pandas import DataFrame, concat
+from numpy import NaN, exp, any, arange
 from numpy.random import random
-from gridwb.workbench.core import Context
-
-from gridwb.workbench.grid.components import Contingency, Gen, Load, Bus,Shunt, PWCaseInformation, Branch
 
 # WorkBench Imports
 from ..core.powerworld import PowerWorldIO
+from ..core import Context
+from ..grid.components import Contingency, Gen, Load, Bus,Shunt, PWCaseInformation, Branch
 from ..utils.metric import Metric
 from ..utils.exceptions import *
 from .app import PWApp, griditer
-from numpy import where, array
 
 # Annoying FutureWarnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -20,6 +18,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # Dynamics App (Simulation, Model, etc.)
 class Statics(PWApp):
+
     io: PowerWorldIO
 
     def __init__(self, context: Context) -> None:
@@ -90,7 +89,7 @@ class Statics(PWApp):
         keyFields = self.io.keys(gtype)
 
         # Get Keys OR Values
-        def get(field: str = None) -> pd.DataFrame:
+        def get(field: str = None) -> DataFrame:
             if field is None:
                 data = self.io.get(gtype)
             else:
@@ -102,13 +101,13 @@ class Statics(PWApp):
             return data
 
         # Initialize DFs
-        meta = pd.DataFrame(columns=["Object", "ID-A", "ID-B", "Metric", "Contingency"])
-        df = pd.DataFrame(columns=["Value", "Reference"])
+        meta = DataFrame(columns=["Object", "ID-A", "ID-B", "Metric", "Contingency"])
+        df = DataFrame(columns=["Value", "Reference"])
         keys = get()
 
         # Add All Meta Records
         for ctg in ctgs:
-            ctgMeta = pd.DataFrame(
+            ctgMeta = DataFrame(
                 {
                     "Object": gtype,
                     "ID-A": keys.iloc[:, 0],
@@ -117,7 +116,7 @@ class Statics(PWApp):
                     "Contingency": ctg,
                 }
             )
-            meta = pd.concat([meta, ctgMeta], ignore_index=True)
+            meta = concat([meta, ctgMeta], ignore_index=True)
 
         # If Base Case Does not Solve, Return N/A vals
         try:
@@ -127,7 +126,7 @@ class Statics(PWApp):
             self.io.esa.RunScriptCommand(f"CTGSetAsReference;")
         except:
             print("Loading Does Not Converge.")
-            df = pd.DataFrame(
+            df = DataFrame(
                 NaN, index=["Value", "Reference"], columns=range(len(ctgs))
             )
             return (meta, df)
@@ -135,7 +134,7 @@ class Statics(PWApp):
         # For Each CTG
         for ctg in ctgs:
             # Empty DF
-            data = pd.DataFrame(columns=["Value", "Reference"])
+            data = DataFrame(columns=["Value", "Reference"])
 
             # Apply CTG
             if ctg != "SimOnly":
@@ -154,7 +153,7 @@ class Statics(PWApp):
             self.io.esa.RunScriptCommand(f"CTGRestoreReference;")
 
             # Add Data to Main
-            df = pd.concat([df, data], ignore_index=True)
+            df = concat([df, data], ignore_index=True)
 
         return (meta, df.T)
     
@@ -183,191 +182,7 @@ class Statics(PWApp):
 
         return any(violation)
         #return any(q > self.genqmax + tol) or any(q < self.genqmin - tol)
-
-    
-    ''' 
-    
-    
-    REMOVING::::: 
-    
-    
-    
-    Keep for one push - This attempt at CPF tried to use a secondary metric
-    to determine the boundary. It was a nice attempt but more trouble than
-    it was worth in the end. The simpler function is better.
-    
-    
-    
-    def continuation_pf_old(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None):
-        
-        
-        # Helper Function since this is common
-        def log(x,**kwargs): 
-            if verbose: print(x,**kwargs)
-        def getq():
-            return self.io.get_quick(Gen, 'GenMVR')['GenMVR']
-        
-        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
-        self.io.save_state('BACKUP')
-        self.chain(2)
-        
-        # Set NR Tolerance in MVA
-        self.io.set_mva_tol(nrtol)
-
-        # Outer Try - Should only catch scenarios not considered during development
-        try:
-
-            log(f'\n\n------Init Injection-----')
-
-            # Base Case PF, then Last-Change backup of state and prime the state chain
-            while True:
-                break
-                try:
-                    self.setload(SP=-initialmw*interface) # Initial MW
-                    self.io.pflow()
-                    break
-                except:
-                    log('Adjusting <')
-                    initialmw*= 3/4
-                    if initialmw < 1e-4: break
-
-            #sss = self.io.get_quick(Shunt, 'SSAMVR')['SSAMVR']
             
-            log(f'Starting Injection at:  {initialmw:.4f} MW ')
-            self.pushstate()
-
-            # Misc Iteration Tracking
-            backstepPercent=0.25
-            pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
-            pprev, qprev = 0, 0
-            pstable, qstable = initialmw, 0
-            qconsec_decr, sweepone = 0, True
-            complete = False
-
-            # Continuation Loop
-            for i in arange(maxiter):
-
-                # Set Injection for this iteration
-                self.setload(SP=-pnow*interface)
-                
-                try: 
-
-                    # Do Power Flow
-                    log(f'PF: {pnow:>12.4f} MW\t', end='')
-                    self.io.pflow() 
-
-                    # Fail if all gens at max or Q decreases on any gen within tolerance
-                    qall = getq()
-                    qnow = qall.sum()
-
-                    # TODO I am not checking generator P limits - should I?
-                    # I Should for atleast the slack bus gens
-
-                    # 'Effective' Non-Convergence, Uncommon but necessary due to power world slack overloading
-                    if  self.gensAtMaxQ(qall): 
-                        log(' + ')
-                        raise GeneratorLimitException
-
-                    ### STAGE ONE SWEEP ###
-                    if sweepone:
-
-                        # Detect decreases in Q output
-                        if qprev > qnow: 
-                            log(' v ')
-
-                            qconsec_decr += 1
-                            if qconsec_decr >= 3:
-                                step = 0 
-                                raise BifurcationException
-                            self.istore() 
-                        
-                        # Push Stable Solutions
-                        elif qprev != 0: 
-                           
-                            log(' * ')
-                            self.pushstate()
-                            qconsec_decr = 0
-                            pstable, qstable = pprev, qprev
-                            yield pnow, qnow 
-
-                        # Push Solved Solutions (1st only really)
-                        else: 
-                            log(' - ')
-                            self.istore()
-                            yield pnow, qnow
-                    
-                    ### STAGE TWO SWEEP ### 
-                    else:   
-                        # Detect decrease in net Q
-                        log(' > ')
-                        if qprev-qnow>nrtol: raise BifurcationException
-                        self.istore() # Don't push, we don't want to override the stable sol
-                        yield pnow, qnow 
-
-                    pprev, qprev = pnow, qnow
-
-                except (Exception, GeneratorLimitException, BifurcationException) as e: 
-
-
-                    if sweepone:
-
-                        if isinstance(e,GeneratorLimitException): log('[Gen Q Limits Breached]')
-                        elif isinstance(e,BifurcationException): log('[Bifurcation Suspected T1]')
-                        else: log('XXX')
-
-                        # Low -> Then fail is BAD
-                        #if qconsec_decr >=1:
-                            #step=0
-                       
-                        # Set new injection, decrease stepsize, and load previous solution
-                        if step!=0:
-                            
-                            pnow = pprev
-                            step *= backstepPercent
-                            if pprev!=0: self.irestore()
-
-                    else:
-                        log('[Sweep 2 Complete]')
-                        complete = True
-                        self.irestore()
-                
-                # Sweep 1 Transition Code
-                if sweepone and step<minstep:
-
-                    # Restore Stable solution and become granular
-                    log("[Sweep 1 Compelete]")
-                    log(f'RS: {pstable:>12.4f} MW')
-                    sweepone, step = False, 2*minstep
-                    pnow, qprev = pstable-step, qstable
-                    self.irestore(1) 
-
-                # Exit Code
-                if complete:
-                    # Execute Boundary Function
-                    if boundary_func is not None:
-                        log(f'BD: {pprev:>12.4f} MW\t ! ')
-                        log(f'Calling Boundary Function...')
-                        boundary_func.X = boundary_func()
-                    break
-
-                # Advance Injection
-                pnow += step
-
-        except:
-            log(f'Ill-Conditioned Scenario. Restoring backup.')
-                
-        finally:
-
-            # Set Dispatch SMW to Zero
-            self.setload(SP=0*interface)
-
-            # Restore to before CPF Regardless of everything
-            self.io.restore_state('BACKUP')
-            log(f'-----------EXIT-----------\n\n')
-
-    '''
-            
-    # This version is simpler, I think it might actually work better
     # TODO The only thing I have to do is switch slack bus to an interface bus
     # NOTE This is because we are interested in maximum POSSIBLE injection of MW. 
     # So then if all gens are at max but injection buses, one of them needs to be slack bus
@@ -473,7 +288,6 @@ class Statics(PWApp):
 
         # TODO delete old states when this is called
 
-
     def pushstate(self, verbose=False):
         '''Update the PF chain queue with the current state. The n-th state will be forgotten.'''
 
@@ -546,6 +360,7 @@ class Statics(PWApp):
         self.io.restore_state(f'GWBState{self.stateidx-n}')
         
     def setload(self, SP=None, SQ=None, IP=None, IQ=None, ZP=None, ZQ=None):
+
         '''Set ZIP loads by bus. Vector of loads must include every bus.
         The loads set by this function are independent of existing loads.
         This serves as a functional and fast way to apply 'deltas' to base case bus loads.
@@ -577,17 +392,5 @@ class Statics(PWApp):
         if ZQ is not None:
             self.DispatchPQ.loc[:,'LoadZMVR'] = ZQ
             self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadZMVR']]})
-
-        # TODO Only send off changed/present values
-        # drop rows with all zeros
-        #df = df.loc[(df!=0).any(axis=1)]
-        #
-        #drop cols with all zeros?
-        # xxx
-        # Rather, select all where change is present
-        # df.loc[df!=df]
-
-        # df.loc[:] = [SP, SQ, IP, IQ, ZP, ZQ]  ??
-        # I want more efficient way so I don't have to send everything
 
         self.io.upload({Load:self.DispatchPQ})

@@ -1,19 +1,18 @@
+'''
+
+Plot Geared toward transient simulation data.
+
+Need to review, avoid use for now
+
+'''
+
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
-from .generic import Plot
 from pandas.api.types import is_numeric_dtype
 
-
-"""
-Input: (meta, data)
-
-:meta - DF of attributes of each time series
-:data - DF of time series (each column is time series)
-
-"""
-
+from .generic import Plot
 
 class TimeSeries(Plot):
     # Time Series is only one with custom animate

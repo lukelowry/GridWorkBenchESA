@@ -3,8 +3,8 @@ from os.path import dirname, abspath, sep
 import geopandas as gpd
 
 
-def border(shape='Texas', ax=None):
-    '''Plot Spatial data with a country or state border'''
+def border(ax, shape='Texas'):
+    '''Plot Shape data (Country, State, Etc.) on a Matplotlib Axis'''
             
     # Load
     _DIRNAME = dirname(abspath(__file__))
