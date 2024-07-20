@@ -1,18 +1,21 @@
-from itertools import product
-import numpy as np
-import pandas as pd
-from typing import Any, Type
+from numpy import array, ones, zeros, zeros_like, ones_like, diagflat, arange, eye
+from numpy import vectorize, min, max, sign, nan, pi, sqrt, abs, sin, cos, isnan
+from numpy import unique, concatenate, sort, all, diag_indices, diff, expand_dims, repeat
+from numpy import any, delete, where, argwhere, argmax, sum, percentile, array_equal
+from numpy.linalg import inv
+
+from pandas import DataFrame, read_csv, MultiIndex
 from scipy.sparse import coo_matrix, lil_matrix
 from enum import Enum, auto
-
-from gridwb.workbench.utils.datawiz import jac_decomp
-
+from itertools import product
 
 # WorkBench Imports
-from .app import PWApp, griditer
-from gridwb.workbench.grid.components import GIC_Options_Value, GICInputVoltObject, TSContingency
-from gridwb.workbench.grid.components import GICXFormer, Branch, Substation, Bus, Gen
-from gridwb.workbench.core.powerworld import PowerWorldIO
+from .app import PWApp
+from ..grid.components import GIC_Options_Value, GICInputVoltObject
+from ..grid.components import GICXFormer, Branch, Substation, Bus, Gen
+from ..core.powerworld import PowerWorldIO
+from ..utils.datawiz import jac_decomp
+
 
 from scipy.sparse.linalg import inv as sinv 
 
@@ -77,7 +80,7 @@ class GIC(PWApp):
 
         PT, PV, QT, QV = jac_decomp(J)
         QVi = sinv(QV.tocsc())
-        return eta.T@PV@QVi@np.diagflat(V)
+        return eta.T@PV@QVi@diagflat(V)
     
     def dIdE(dBdI, PX, Hx, Hy, Ex, Ey):
         '''Returns tuple (Ex Sensitivities, Ey Sensitivities) w.r.t Bus GIC load model
@@ -95,21 +98,21 @@ class GIC(PWApp):
 
         '''
         Old, do not modify
-        sf0 = np.sign(Hx@Ex + Hy@Ey)
-        signBound = np.sign(dBdI@Px).T
-        F = np.diagflat(sf0*signBound)
+        sf0 = sign(Hx@Ex + Hy@Ey)
+        signBound = sign(dBdI@Px).T
+        F = diagflat(sf0*signBound)
         return (dBdI@Px@F@Hx).T, (dBdI@Px@F@Hy).T
         '''
     
         # The sign of function inside absolute value at this solution point
-        sf0 = np.sign(Hx@Ex + Hy@Ey) # NOTE possible issue here ahhhh I need the individual signs of Ex and Ey
+        sf0 = sign(Hx@Ex + Hy@Ey) # NOTE possible issue here ahhhh I need the individual signs of Ex and Ey
   
         # dBound/dXFMR Signs
         g0 = dBdI@PX
-        signBound = np.sign(g0).T
+        signBound = sign(g0).T
 
         # Sign flipper for abs (flip if gradient and function sign disagree)
-        F = np.diagflat(sf0*signBound)
+        F = diagflat(sf0*signBound)
 
         # 1-Form Differential as tuple
         return (g0@F@Hx).T, (g0@F@Hy).T
@@ -156,7 +159,7 @@ class GIC(PWApp):
         '''
 
         # Get CSV Data
-        csv = pd.read_csv(fpath, header=None)
+        csv = read_csv(fpath, header=None)
 
         # Format for PW
         obj = GICInputVoltObject.TYPE
@@ -258,11 +261,11 @@ class GICTool:
     def __init__(self, gicxfmrs, branches, gens, substations, buses, customcalcs=False) -> None:
         
         # Now Return Incidence and branch info
-        self.gicxfmrs: pd.DataFrame = gicxfmrs.copy()
-        self.branches: pd.DataFrame = branches
-        self.gens: pd.DataFrame = gens
-        self.subs: pd.DataFrame = substations
-        self.buses: pd.DataFrame = buses
+        self.gicxfmrs: DataFrame = gicxfmrs.copy()
+        self.branches: DataFrame = branches
+        self.gens: DataFrame = gens
+        self.subs: DataFrame = substations
+        self.buses: DataFrame = buses
 
         # Self-Calculate Windings:
         # It works but no gaurentee on reliability
@@ -270,7 +273,7 @@ class GICTool:
 
         # Bus mapping only for final loss assignment
         busmap = {n: i for i, n in enumerate(buses['BusNum'])}
-        self.busmap = np.vectorize(lambda n: busmap[n])
+        self.busmap = vectorize(lambda n: busmap[n])
         self.nallbus = len(busmap)
 
         # Formatted in Managable Way
@@ -355,8 +358,8 @@ class GICTool:
 
         fromV = xfmrs['BusNomVolt']
         toV = xfmrs['BusNomVolt:1']
-        hv = np.max([fromV, toV],axis=0)
-        lv = np.min([fromV, toV],axis=0)
+        hv = max([fromV, toV],axis=0)
+        lv = min([fromV, toV],axis=0)
 
         xfmrs['N'] = hv/lv
         xfmrs['LowBase'] = lv**2/xfmrs['XFMVABase']
@@ -364,11 +367,11 @@ class GICTool:
 
         
         # HV Assignment (Where equal, use primary/FROM)
-        xfmrs.loc[:,'BusNum3W'] = np.where(fromV>toV, xfmrs['BusNum'], xfmrs['BusNum:1']) 
+        xfmrs.loc[:,'BusNum3W'] = where(fromV>toV, xfmrs['BusNum'], xfmrs['BusNum:1']) 
         xfmrs.loc[fromV==toV,'BusNum3W'] = xfmrs.loc[fromV==toV,'BusNum'] 
 
         # LV Assignment (Where voltages equal, use secondary/TO)
-        xfmrs.loc[:,'BusNum3W:1'] = np.where(fromV<toV, xfmrs['BusNum'], xfmrs['BusNum:1'])
+        xfmrs.loc[:,'BusNum3W:1'] = where(fromV<toV, xfmrs['BusNum'], xfmrs['BusNum:1'])
         xfmrs.loc[fromV==toV,'BusNum3W:1'] = xfmrs.loc[fromV==toV,'BusNum:1']
 
         # Tertiary Asssigment
@@ -381,7 +384,7 @@ class GICTool:
 
         manualGIC = self.gicxfmrs['GICManualCoilR']=='No'
         replaceFields = ['N', 'LowBase', 'HighBase', 'LineR:1']
-        self.gicxfmrs.loc[manualGIC,replaceFields] = np.nan 
+        self.gicxfmrs.loc[manualGIC,replaceFields] = nan 
         self.gicxfmrs = self.gicxfmrs.combine_first(xfmrs[replaceFields])
         self.gicxfmrs.reset_index(inplace=True)
 
@@ -389,15 +392,15 @@ class GICTool:
         # LineR:1 is R on xfmr base
         isAuto = g['XFIsAutoXF']=='Yes'
         isDeltaHigh_WyeLow = (g['XFConfiguration']=='Delta') & (g['XFConfiguration:1']=='Gwye')
-        base = np.where(isDeltaHigh_WyeLow & isAuto, g['LowBase'], g['HighBase'])
+        base = where(isDeltaHigh_WyeLow & isAuto, g['LowBase'], g['HighBase'])
 
         RHigh = g['LineR:1']*base/2 #< ---- HV R Calc (Works for HV Side for Delta-Wye)
         RLow = RHigh/(g['N']-1)**2 # < --- LV Calc
 
         # Ohms (Per Phase) 
         # For Auto transformers of GWye-Delta or Delta-GWye, select the primary as high
-        g['GICXFCoilR1'] = np.where(isDeltaHigh_WyeLow & isAuto, RLow, RHigh) # HV Resistance
-        g['GICXFCoilR1:1'] = np.where(isDeltaHigh_WyeLow & isAuto, RHigh, RLow) # LV Resistance
+        g['GICXFCoilR1'] = where(isDeltaHigh_WyeLow & isAuto, RLow, RHigh) # HV Resistance
+        g['GICXFCoilR1:1'] = where(isDeltaHigh_WyeLow & isAuto, RHigh, RLow) # LV Resistance
 
     def init_windings(self):
         '''Substation Branch Connections are represented as negative integers'''
@@ -514,8 +517,8 @@ class GICTool:
         xfmrs.columns = ['FromV', 'ToV', 'FromBus', 'ToBus', 'LineCircuit']
         fromV = xfmrs['FromV']
         toV = xfmrs['ToV']
-        xfmrs['BusNum3W'] = np.where(fromV>=toV, xfmrs['FromBus'], xfmrs['ToBus'])
-        xfmrs['BusNum3W:1'] = np.where(fromV<toV, xfmrs['FromBus'], xfmrs['ToBus'])
+        xfmrs['BusNum3W'] = where(fromV>=toV, xfmrs['FromBus'], xfmrs['ToBus'])
+        xfmrs['BusNum3W:1'] = where(fromV<toV, xfmrs['FromBus'], xfmrs['ToBus'])
         mapFrom = xfmrs[['FromBus', 'BusNum3W', 'BusNum3W:1', 'LineCircuit']]
         mapFrom = mapFrom.sort_values(['BusNum3W', 'BusNum3W:1','LineCircuit'])
         self.mapFrom = mapFrom
@@ -532,11 +535,11 @@ class GICTool:
         GIC_G = self.lines['GICConductance'] # Manually Entered GIC Resistance
         PF_G = 1/self.lines['GICLinePFR1'] # From Normal Model, per=phase resistance in ohms (MUST CONVERT FROM p.u.) 
         isCustomGIC = self.lines['GICLineUsePFR']=='NO'
-        GBranch = 3*np.where(isCustomGIC, GIC_G, PF_G).astype(float)
+        GBranch = 3*where(isCustomGIC, GIC_G, PF_G).astype(float)
 
         # Line Length and Angle For Tesselations
         self.line_km = self.lines['GICLineDistance:1'].fillna(0).to_numpy()
-        self.line_ang = self.lines['GICLineAngle'].fillna(0).to_numpy()*np.pi/180 # North 0 Degrees
+        self.line_ang = self.lines['GICLineAngle'].fillna(0).to_numpy()*pi/180 # North 0 Degrees
         self.nlines = len(self.lines)
 
         return (fromBus, toBus, GBranch)
@@ -555,10 +558,10 @@ class GICTool:
         lFrom, lTo, lG = self.line_data
         genFrom, genTo, genG = self.gen_stepup_data
 
-        allnodes = np.unique(np.concatenate([wFrom, wTo, lFrom, lTo, genFrom, genTo]))
+        allnodes = unique(concatenate([wFrom, wTo, lFrom, lTo, genFrom, genTo]))
 
-        subIDs = np.sort(allnodes[allnodes<0])[::-1]
-        busIDs = np.sort(allnodes[allnodes>0])
+        subIDs = sort(allnodes[allnodes<0])[::-1]
+        busIDs = sort(allnodes[allnodes>0])
 
         nsubs = len(subIDs)
         nbus = len(busIDs)
@@ -569,16 +572,16 @@ class GICTool:
         nodemap = {n: i for i, n in enumerate(subIDs)}
         for i, n in enumerate(busIDs):
             nodemap[n] = i+nsubs
-        vec_nodemap = np.vectorize(lambda n: nodemap[n])
+        vec_nodemap = vectorize(lambda n: nodemap[n])
 
         # Merge XFMR and Lines and use new mapping
         # NOTE ORDER: Windings, GSU, Lines
-        branchIDs = np.arange(nbranchtot)
-        fromNodes = vec_nodemap(np.concatenate([wFrom, genFrom, lFrom]))
-        toNodes = vec_nodemap(np.concatenate([wTo, genTo, lTo]))
+        branchIDs = arange(nbranchtot)
+        fromNodes = vec_nodemap(concatenate([wFrom, genFrom, lFrom]))
+        toNodes = vec_nodemap(concatenate([wTo, genTo, lTo]))
 
         # Branch Diagonal Matrix Values (3x for single phase equivilent)
-        self.GbranchDiag= np.diagflat(np.concatenate([wG, genG, lG])) #Hmmmmmmmmm the 3* is not consistant
+        self.GbranchDiag= diagflat(concatenate([wG, genG, lG])) #Hmmmmmmmmm the 3* is not consistant
 
         # Incidence Matrix (Without Floating Removal)
         self.Ainc = lil_matrix((nbranchtot, nnodes))
@@ -614,7 +617,7 @@ class GICTool:
         GLap = A.T@G@A 
 
         # Add Self Loops
-        di = np.diag_indices(len(self.subIDs))
+        di = diag_indices(len(self.subIDs))
         GLap[di] += self.subG
 
         self.GLap = GLap
@@ -633,20 +636,20 @@ class GICTool:
 
         # Tap Ratios
         tr = [xfmr.tapratio for xfmr in self.cleaned_xfmrs]
-        self.TR = np.diagflat(tr)
+        self.TR = diagflat(tr)
 
         # DC Current Base
-        bases = [xfmr.mvabase * 1e3 * np.sqrt(2/3) /xfmr.highnomv for xfmr in self.cleaned_xfmrs]
-        self.Ibase = np.diagflat(bases)
+        bases = [xfmr.mvabase * 1e3 * sqrt(2/3) /xfmr.highnomv for xfmr in self.cleaned_xfmrs]
+        self.Ibase = diagflat(bases)
 
         # K model values
         k = [xfmr.kparam for xfmr in self.cleaned_xfmrs]
-        self.Kdiag = np.diagflat(k)
+        self.Kdiag = diagflat(k)
 
         # Map XFMR Loss to Buses (From for XFMRS)
         self.fromIDX = self.busmap(self.mapFrom['FromBus'])
-        self.xfmrIDs = np.arange(self.nxfmrs)
-        ONE = np.ones_like(self.xfmrIDs)
+        self.xfmrIDs = arange(self.nxfmrs)
+        ONE = ones_like(self.xfmrIDs)
 
         shp = (self.nallbus, self.nxfmrs)
         self.PX = coo_matrix((ONE, (self.fromIDX,self.xfmrIDs)), shape=shp)
@@ -662,11 +665,11 @@ class GICTool:
         Gd = self.GbranchDiag
         A = self.Ainc
         Gmat = self.GLap
-        Gi = np.linalg.inv(Gmat)
+        Gi = inv(Gmat)
         PL = self.PL # Low Flow Selector
         PH = self.PH # High Flow Selector
-        TRi = np.linalg.inv(self.TR) # Tap Ratios Inverse
-        Ibasei = np.linalg.inv(self.Ibase)
+        TRi = inv(self.TR) # Tap Ratios Inverse
+        Ibasei = inv(self.Ibase)
         K = self.Kdiag
     
         H = K@Ibasei@(PH + TRi@PL)@(Gd@A@Gi@A.T@Gd - Gd)/3
@@ -683,11 +686,11 @@ class GICTool:
         Gd = self.GbranchDiag
         A = self.Ainc
         Gmat = self.GLap
-        Gi = np.linalg.inv(Gmat)
+        Gi = inv(Gmat)
         PL = self.PL # Low Flow Selector
         PH = self.PH # High Flow Selector
-        TRi = np.linalg.inv(self.TR) # Tap Ratios Inverse
-        Ibasei = np.linalg.inv(self.Ibase)
+        TRi = inv(self.TR) # Tap Ratios Inverse
+        Ibasei = inv(self.Ibase)
     
         M = Ibasei@(PH + TRi@PL)@(Gd@A@Gi@A.T@Gd - Gd)/3
         if reduceXFMR:
@@ -699,10 +702,10 @@ class GICTool:
         '''Returns vector with default induced voltages (lines only unless specified)'''
 
         if include_all:
-            vec = np.zeros((self.GbranchDiag.shape[0],1))
+            vec = zeros((self.GbranchDiag.shape[0],1))
             vec[-self.nlines:,0] = self.lines['GICObjectInputDCVolt']
         else:
-            vec = np.zeros((self.nlines,1))
+            vec = zeros((self.nlines,1))
             vec[:,0] = self.lines['GICObjectInputDCVolt']
         return vec
     
@@ -714,14 +717,14 @@ class GICTool:
 
         # Line Lengths
         line_km = self.lines['GICLineDistance:1'].fillna(0)
-        L = np.diagflat(line_km)
+        L = diagflat(line_km)
         self.L = L
 
         # Line Angles
-        #line_ang = gictool.lines['GICLineAngle'].fillna(0)*np.pi/180 # North 0 Degrees
+        #line_ang = gictool.lines['GICLineAngle'].fillna(0)*pi/180 # North 0 Degrees
         #ANG = line_ang.to_numpy()
 
-        E = np.eye(L.shape[0])
+        E = eye(L.shape[0])
         self.E = E
 
         return GICCorners(H, L, E)
@@ -738,8 +741,8 @@ class GICTool:
 
         # Generate Tile Intervals
         W = tilewidth
-        X = np.arange(cX.min(axis=None), cX.max(axis=None)+W, W) 
-        Y = np.arange(cY.min(axis=None), cY.max(axis=None)+W, W)
+        X = arange(cX.min(axis=None), cX.max(axis=None)+W, W) 
+        Y = arange(cY.min(axis=None), cY.max(axis=None)+W, W)
 
         # Save for reference if needed
         self.tile_info = X, Y, W
@@ -748,21 +751,21 @@ class GICTool:
 
         # Store X/Y length in line by line
         # Dim0: X or Y data , Dim 1: Line ID, Dim 2: X Tile, Dim 3: Y Tile
-        R = np.zeros((2, self.lines.index.size, X.size-1, Y.size-1))
+        R = zeros((2, self.lines.index.size, X.size-1, Y.size-1))
 
         # Approximation of Coords -> KM conversion
-        LX = np.abs(np.sin(line_ang)*line_km) # 0 is north so sin() is X
-        LY = np.abs(np.cos(line_ang)*line_km)
+        LX = abs(sin(line_ang)*line_km) # 0 is north so sin() is X
+        LY = abs(cos(line_ang)*line_km)
 
         # 'Length' in coordinates
-        CLX = np.diff(cX)
-        CLY = np.diff(cY)
+        CLX = diff(cX)
+        CLY = diff(cY)
 
         # Intentional -> 'Right' and 'Up' should be positive direction
         # Converts coords to KM
-        coord_to_km = np.concatenate([[LX/CLX[:,0]], [LY/CLY[:,0]]],axis=0)
-        coord_to_km[np.isnan(coord_to_km)] = 0
-        coord_to_km = np.expand_dims(coord_to_km,axis=2)
+        coord_to_km = concatenate([[LX/CLX[:,0]], [LY/CLY[:,0]]],axis=0)
+        coord_to_km[isnan(coord_to_km)] = 0
+        coord_to_km = expand_dims(coord_to_km,axis=2)
 
         # Spanned Area of Line
         lminx = cX.min(axis=1,keepdims=True)
@@ -771,32 +774,32 @@ class GICTool:
         lmaxy = cY.max(axis=1,keepdims=True)
 
         # Calculate points of line & tile intersection
-        Vx = np.repeat([X],lminx.size,axis=0)
-        Vx[(Vx<=lminx) | (Vx>=lmaxx)] = np.nan
+        Vx = repeat([X],lminx.size,axis=0)
+        Vx[(Vx<=lminx) | (Vx>=lmaxx)] = nan
         Vy = CLY/CLX*(Vx-cX[:,[0]]) + cY[:,[0]]
 
-        Hy = np.repeat([Y],lminx.size,axis=0)
-        Hy[(Hy<=lminy) | (Hy >= lmaxy)] = np.nan
+        Hy = repeat([Y],lminx.size,axis=0)
+        Hy[(Hy<=lminy) | (Hy >= lmaxy)] = nan
         Hx = (Hy-cY[:,[0]])*CLX/CLY + cX[:,[0]]
 
         # All Segment Points per Line
-        pntsX = np.concatenate([cX, Vx, Hx],axis=1)
-        pntsY = np.concatenate([cY, Vy, Hy],axis=1)
+        pntsX = concatenate([cX, Vx, Hx],axis=1)
+        pntsY = concatenate([cY, Vy, Hy],axis=1)
 
         # Sort Points so segments can be calculated
         sortSeg = pntsX.argsort(axis=1)
-        sortLine = np.arange(lminx.size).reshape(-1,1)
+        sortLine = arange(lminx.size).reshape(-1,1)
         pntsX = pntsX[sortLine,sortSeg]
         pntsY = pntsY[sortLine,sortSeg]
 
         # Take line segments and determine tile assignemnt
-        allpnts = np.concatenate([[pntsX],[pntsY]],axis=0)
+        allpnts = concatenate([[pntsX],[pntsY]],axis=0)
         mdpnts = (allpnts[:,:,1:] +allpnts[:,:,:-1])/2 # Midpoints of each segment
-        isData = np.argwhere(~np.isnan(mdpnts)).T # Data Cleaning
-        refpnt = np.array([X.min(),Y.min()]).reshape(2,1,1) # Grid ref point
+        isData = argwhere(~isnan(mdpnts)).T # Data Cleaning
+        refpnt = array([X.min(),Y.min()]).reshape(2,1,1) # Grid ref point
         tile_ids = (mdpnts-refpnt)//W # Tile Index Floor Divide
         self.tile_ids = tile_ids
-        seg_lens = coord_to_km*np.abs(np.diff(allpnts,axis=2)) # Length in Tile
+        seg_lens = coord_to_km*abs(diff(allpnts,axis=2)) # Length in Tile
         
 
         # Final Data Format
@@ -817,12 +820,12 @@ class GICTool:
     
     def tesselation_as_df(self):
         '''GICTool.tesselations() must have already been called. Get Index DF Version of Hx, Hy'''
-        tile_cols = pd.MultiIndex.from_product(
-            [np.arange(self.X_tiles.size-1), np.arange(self.Y_tiles.size-1)], 
+        tile_cols = MultiIndex.from_product(
+            [arange(self.X_tiles.size-1), arange(self.Y_tiles.size-1)], 
             names=['TileX', 'TileY']
             )
-        Xdf = pd.DataFrame(self.Hx, columns = tile_cols)
-        Ydf = pd.DataFrame(self.Hy, columns = tile_cols)
+        Xdf = DataFrame(self.Hx, columns = tile_cols)
+        Ydf = DataFrame(self.Hy, columns = tile_cols)
         Xdf.index.name = 'XFMR'
         Ydf.index.name = 'XFMR'
         return Xdf, Ydf
@@ -844,12 +847,12 @@ class GICCorners:
 
         # Signs of H
         zero_tol = 1e-15
-        self.signH = np.sign(H)
-        self.signH[np.abs(H)<zero_tol] = 0 # Level of tolerance to be considered zero
+        self.signH = sign(H)
+        self.signH[abs(H)<zero_tol] = 0 # Level of tolerance to be considered zero
 
         # Unique Rows Only - Remove all zero rows
-        shu = np.unique(self.signH,axis=0)
-        self.signHUnique = shu[~np.all(shu==0,axis=1)]
+        shu = unique(self.signH,axis=0)
+        self.signHUnique = shu[~all(shu==0,axis=1)]
         self.nSHU = self.signHUnique.shape[0]
 
         # Not necessary unless all corners are wanted
@@ -868,17 +871,17 @@ class GICCorners:
             nPgroups = len(PGROUPS)
 
             # CRNR - Group Combinations (Maps Permutation to Sign Group)
-            CRNR = np.zeros((nPgroups,2**nPgroups)) 
+            CRNR = zeros((nPgroups,2**nPgroups)) 
 
             # JOIN - Assigns Combinations to Lines (Maps Sign Group to Lines)
             nlines = self.L.shape[0]
-            JOIN = np.zeros((nlines, nPgroups))
+            JOIN = zeros((nlines, nPgroups))
 
             ''' FILL CORNER DATA '''
 
             # Creating +- polarity matrix (Columns = Different Possibilities, Rows = Group Sign)
             for i, perm in enumerate(product(*[(1,-1)]*nPgroups)):
-                CRNR[:, i] = np.array(perm)
+                CRNR[:, i] = array(perm)
 
             # Removing SECOND half of these permutations removes exact negative:
             CRNR = self.remove_negative_columns(CRNR)
@@ -918,23 +921,23 @@ class GICCorners:
         # Remove Corners that are absolutely less than another
         if remove_strictly_small:
             toremove = set()
-            TA = np.abs(TOPOLOGY)
+            TA = abs(TOPOLOGY)
             for i, corner in enumerate(TA):
-                isLessThan = np.all(corner <= TA, axis=1)
+                isLessThan = all(corner <= TA, axis=1)
                 isLessThan[i] = False
 
                 # If there is a corner strictly greater than this one
-                if np.any(isLessThan):
+                if any(isLessThan):
                     toremove.update([i])
 
-            CRNR = np.delete(CRNR,list(toremove),axis=1)
-            TOPOLOGY = np.delete(TOPOLOGY, list(toremove), axis=0)
+            CRNR = delete(CRNR,list(toremove),axis=1)
+            TOPOLOGY = delete(TOPOLOGY, list(toremove), axis=0)
             nCRNR = len(TOPOLOGY)
 
         # Top Percentile
         if top_losses_only:
-            NET = np.sum(np.abs(TOPOLOGY),axis=1)
-            TOP = np.percentile(NET, q=90)
+            NET = sum(abs(TOPOLOGY),axis=1)
+            TOP = percentile(NET, q=90)
             TOPI = NET>TOP
             TOPOLOGY = TOPOLOGY[TOPI]
 
@@ -951,7 +954,7 @@ class GICCorners:
         PGROUPS_INITIAL = self.find_equivalent_columns(self.signH)
         PGROUPS = []
         for group in PGROUPS_INITIAL:
-            gC = np.abs(self.HLE[:,group]) # Abs Group Columns
+            gC = abs(self.HLE[:,group]) # Abs Group Columns
             gC = gC[:,gC[0,:].argsort()]
 
             # Split group if not strictly increasing
@@ -963,7 +966,7 @@ class GICCorners:
             else:
                 PGROUPS += [group]
 
-        FLIP_MATRIX = np.ones((self.signH.shape[1],len(PGROUPS)))
+        FLIP_MATRIX = ones((self.signH.shape[1],len(PGROUPS)))
         for i, group in enumerate(PGROUPS):
             FLIP_MATRIX[group,i] = -1
 
@@ -974,15 +977,15 @@ class GICCorners:
     def find_local_max_hist(self, p):
         '''Generative Method to find largest local maximum'''
 
-        lss = np.sum(np.abs(self.HLE@p))
-        p_n = p*np.where(self.flip_matrix,-1,1)
+        lss = sum(abs(self.HLE@p))
+        p_n = p*where(self.flip_matrix,-1,1)
 
         yield (lss, p)
 
         while True:
             
-            NEIGHBIR_LOSSES = np.sum(np.abs(self.HLE@p_n),axis=0)
-            maxidx = np.argmax(NEIGHBIR_LOSSES)
+            NEIGHBIR_LOSSES = sum(abs(self.HLE@p_n),axis=0)
+            maxidx = argmax(NEIGHBIR_LOSSES)
 
             # NOTE I changed this from > to >= - verify it works
             if lss >= (lss := NEIGHBIR_LOSSES[maxidx]):
@@ -1006,8 +1009,8 @@ class GICCorners:
         Each row represents the initial guess of a unique row in signH, the set of polairties that
         maximize the GICs on that row's transformer.'''
 
-        totalGICS = np.zeros(self.nSHU)
-        pmaxs = np.zeros_like(self.signHUnique)
+        totalGICS = zeros(self.nSHU)
+        pmaxs = zeros_like(self.signHUnique)
 
         for i, p in enumerate(self.signHUnique):
 
@@ -1036,7 +1039,7 @@ class GICCorners:
         for i, col in enumerate(transposed_matrix):
             if i not in columns_to_remove:
                 for j in range(i + 1, transposed_matrix.shape[0]):
-                    if np.array_equal(col, -transposed_matrix[j]):
+                    if array_equal(col, -transposed_matrix[j]):
                         columns_to_remove.add(j)
         
         # Collect columns that are not in the remove set
@@ -1045,7 +1048,7 @@ class GICCorners:
                 columns_to_keep.append(transposed_matrix[i])
         
         # Reconstruct the matrix from the columns to keep
-        new_matrix = np.array(columns_to_keep).T
+        new_matrix = array(columns_to_keep).T
         
         return new_matrix
 
@@ -1064,7 +1067,7 @@ class GICCorners:
         
         # Iterate over the columns of the transposed matrix
         for i, col in enumerate(transposed_matrix):
-            if i not in identified_columns and not np.all(np.abs(col) < tolerance):
+            if i not in identified_columns and not all(abs(col) < tolerance):
         
                 # Find all columns that are identical to the current column and not negatives
                 colI = transposed_matrix[i]

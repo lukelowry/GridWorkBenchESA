@@ -4,9 +4,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from itertools import product
 
-from functools import partial
 from gridwb.workbench.grid.components import TSContingency
-
 from gridwb.workbench.io.model import IModelIO
 
 from ...saw import SAW

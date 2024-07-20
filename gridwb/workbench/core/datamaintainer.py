@@ -1,11 +1,12 @@
 
 from typing import Any, Self, Type, TypeVar
-
 from pandas import DataFrame
+
 from ..grid.components import GObject
 
 T = TypeVar("T", bound=GObject)
 
+# TODO Either Remove or Improve, this is a liability. I trust pandas more.
 class GridList(list[T]):
     '''Instance-Based representation of data if desired'''
 
@@ -31,6 +32,7 @@ class GridList(list[T]):
             return results
 
 class GridDataMaintainer:
+    ''' All Model-Retrieved data should be traced back to this object '''
 
     def __init__(self, all: dict[Type[GObject], DataFrame]) -> None:
         

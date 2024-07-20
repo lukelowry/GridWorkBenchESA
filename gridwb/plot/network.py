@@ -1,3 +1,10 @@
+'''
+
+Networkx plotting assistants.
+
+'''
+
+
 from networkx import Graph, draw_networkx_edges, draw_networkx_nodes, relabel_nodes, selfloop_edges
 from .generic import Plot
 

@@ -1,18 +1,29 @@
 
+'''
 
+Plots geared toward oscillation metrics. 
+
+From old GWB. Probably remove.
+
+'''
+
+# MISC
+from os.path import dirname, abspath, sep
+from numpy import ceil, sqrt, array, linspace, meshgrid, where, nan, pi, vstack, log
+from numpy import histogram, diff, arange
+from scipy.stats import gaussian_kde
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+import geopandas as gpd
+import shapely.vectorized
+from cmath import polar
+
+# MPL
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.axes import Axes
-import geopandas as gpd
-import shapely.vectorized
 
-from numpy import ceil, sqrt, array, linspace, meshgrid, where, nan, pi, vstack, log
-from cmath import polar
-
-from scipy.stats import gaussian_kde
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
-from os.path import dirname, abspath, sep
-from numpy import histogram, diff, arange
+# GWB
+from .generic import formatPlot
 
 
 def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
@@ -30,26 +41,6 @@ def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
     # Plot
     ax.bar(bin_edges[:-1], hist, width=diff(bin_edges), edgecolor='black', align='edge', zorder=4)
 
-def formatPlot(ax: Axes, plotarea='linen', spineColor='black', xlabel='Damping (%)', ylabel="Frequency Hz",title='Eigen Values / Modes', xlim=None, ylim=None, tstep=0.1):
-    '''Generic Axes Formatter'''
-    ax.set_facecolor(plotarea)
-    ax.grid(zorder=0)
-    ax.set_axisbelow(True)
-
-    ax.tick_params(color=spineColor, labelcolor=spineColor)
-    for spine in ax.spines.values():
-        spine.set_edgecolor(spineColor)
-
-    if xlim:
-        ax.set_xlim(xlim)
-        ax.set_xticks(arange(*xlim,0.1))
-    if ylim:
-        ax.set_ylim(ylim)
-    
-    
-    ax.set_title(title)
-    ax.set_ylabel(ylabel)
-    ax.set_xlabel(xlabel)
 
 def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
     '''

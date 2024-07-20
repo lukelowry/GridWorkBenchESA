@@ -1,27 +1,90 @@
+'''
+
+Generic plotting tools.
+
+This is from early GWB, will probably remove.
+
+'''
+
 # Class Abstraction
+import numpy as np
+from numpy import arange, linspace, clip, unique
+from warnings import filterwarnings
 from abc import ABC, abstractmethod
 
 # Plotting
-from warnings import filterwarnings
-
-from matplotlib.collections import LineCollection
-import numpy as np
-
-from gridwb.workbench.utils.conditions import BaseLoad
-
 filterwarnings("ignore", module="matplotlib\..*")
-
+from matplotlib.collections import LineCollection
 from matplotlib import pyplot as plt
 from matplotlib import lines as lines
 from matplotlib.axes import Axes
 from matplotlib.animation import FuncAnimation
 from matplotlib.style import use
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, hsv_to_rgb, rgb_to_hsv
 
 # Utils
-from pandas import DataFrame, MultiIndex
+from pandas import DataFrame
 from networkx import *
 
+# GWB
+from gridwb.workbench.utils.conditions import BaseLoad
+
+# I Use this all the time
+def formatPlot(ax: Axes, 
+               title='Chart Tile',
+               xlabel='X Axis Label', 
+               ylabel="Y Axis Label", 
+               xlim=None, 
+               ylim=None, 
+               grid=True,
+               plotarea='linen', 
+               spineColor='black'
+               ):
+    '''Generic Axes Formatter'''
+
+    
+    ax.set_facecolor(plotarea)
+    ax.grid(grid, zorder=0)
+    ax.set_axisbelow(True)
+
+    ax.tick_params(color=spineColor, labelcolor=spineColor)
+    for spine in ax.spines.values():
+        spine.set_edgecolor(spineColor)
+
+    if xlim:
+        ax.set_xlim(xlim)
+        ax.set_xticks(arange(*xlim,0.1))
+    if ylim:
+        ax.set_ylim(ylim)
+    
+    # Text
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+
+
+def darker_hsv_colormap(scale_factor=0.5):
+    """
+    Creates a modified version of the HSV colormap that is darker in shade.
+    Parameters:
+        scale_factor (float): Factor to scale the value (brightness). Should be between 0 and 1.
+                             1 means no change, 0 means complete darkness.
+    Returns:
+        darker_hsv_cmap: A modified colormap that is a darker version of the original HSV colormap.
+    """
+    # Create the HSV colormap in RGB
+    hsv_cmap = plt.cm.hsv(linspace(0, 1, 256))[:, :3]
+    hsv_colors = rgb_to_hsv(hsv_cmap)
+    
+    # Scale the Value component to make it darker
+    hsv_colors[:, 2] *= scale_factor
+    hsv_colors[:, 2] = clip(hsv_colors[:, 2], 0, 1)
+
+    darker_rgb_colors = hsv_to_rgb(hsv_colors)
+    darker_hsv_cmap = plt.cm.colors.ListedColormap(darker_rgb_colors)
+    return darker_hsv_cmap
+
+# Old plotting tools geared toward large dynamic datasets. Save for now.
 
 class Plot(ABC):
     def __init__(
@@ -139,7 +202,6 @@ class Plot(ABC):
 
         return anim
 
-
 class Scatter(Plot):
     cb = None
 
@@ -153,7 +215,7 @@ class Scatter(Plot):
         ax = super().plot(ax)
 
         if self.colorkey == "ID-A":
-            keys = np.unique(self.data[self.colorkey])
+            keys = unique(self.data[self.colorkey])
             idmap = {key: id for id, key in enumerate(keys)}
             self.cdata = self.data[self.colorkey].apply(lambda x: idmap[x])
         else:
@@ -199,35 +261,4 @@ class Scatter(Plot):
             self.cb.set_label(self.colorkey)
 
         return
-
-
-r"""
-# 'No Change' Line
-        line = lines.Line2D([0, 2], [0, 2], color="red")
-        ax.add_line(line)
-
-
-"""
-from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
-
-def darker_hsv_colormap(scale_factor=0.5):
-    """
-    Creates a modified version of the HSV colormap that is darker in shade.
-    Parameters:
-        scale_factor (float): Factor to scale the value (brightness). Should be between 0 and 1.
-                             1 means no change, 0 means complete darkness.
-    Returns:
-        darker_hsv_cmap: A modified colormap that is a darker version of the original HSV colormap.
-    """
-    # Create the HSV colormap in RGB
-    hsv_cmap = plt.cm.hsv(np.linspace(0, 1, 256))[:, :3]
-    hsv_colors = rgb_to_hsv(hsv_cmap)
-    
-    # Scale the Value component to make it darker
-    hsv_colors[:, 2] *= scale_factor
-    hsv_colors[:, 2] = np.clip(hsv_colors[:, 2], 0, 1)
-
-    darker_rgb_colors = hsv_to_rgb(hsv_colors)
-    darker_hsv_cmap = plt.cm.colors.ListedColormap(darker_rgb_colors)
-    return darker_hsv_cmap
 
