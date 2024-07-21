@@ -1,15 +1,7 @@
-# GridWorkbench: A Python structure for power system data
-#
-# Adam Birchfield, Texas A&M University
-#
-# Log:
-# 9/29/2021 Initial version, rearranged from prior draft so that most object fields
-#   are only listed in one place, the PW_Fields table. Now to add a field you just
-#   need to add it in that list.
-# 11/2/2021 Renamed this file to core and added fuel type object
-# 1/22/22 Split out all device types
-# 8/18/22 Engine rename and throwing exceptions for non-existent items
-#
+# TODO I want to de-merge this from ESA.
+# TODO implement tools to make synthetic grids (or just add components efficiently)
+# Orrrr maybe don't, I remeber the reason I integrated it in the first place
+# It allows for a way better dessign pattern - or atleast that was the idea
 
 # Imports
 import numpy as np
@@ -40,7 +32,11 @@ class GridWorkBench:
         return self.dm.get_inst(arg)
     '''
 
+    # TODO function that prints out number and type of datasets
+    def summary(self):
+        pass
 
+    # TODO move to datawiz
     def joint(self, type1: GObject, type2, key='BusNum'):
         '''Merges Two Component Sets (Used to map data)'''
         return self[type1].merge(self[type2], on=key)
@@ -54,7 +50,7 @@ class GridWorkBench:
             self.io.upload(self.all[gclass])
 
     def save(self):
-        '''Save the Power World File'''
+        '''Save Open the Power World File'''
         self.io.save()
 
     def sudos(self):
@@ -62,6 +58,8 @@ class GridWorkBench:
         self.commit()
         self.save()
 
+    # TODO remove or make this better ffs I don't want to pass the type.
+    # Dataframe subclass!
     def change(self, gtype, data: DataFrame):
         '''
         Inteded for a Quick data update to external model.

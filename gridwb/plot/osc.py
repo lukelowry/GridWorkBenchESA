@@ -24,7 +24,6 @@ from matplotlib.colors import Normalize
 # GWB
 from .generic import formatPlot
 
-
 def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
     '''Plot the frequency distribution in Hz of a set of Eigen Values'''
 
@@ -39,7 +38,6 @@ def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
 
     # Plot
     ax.bar(bin_edges[:-1], hist, width=diff(bin_edges), edgecolor='black', align='edge', zorder=4)
-
 
 def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
     '''

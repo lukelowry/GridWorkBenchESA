@@ -10,10 +10,16 @@ def border(ax, shape='Texas'):
     _DIRNAME = dirname(abspath(__file__))
     shapepath = _DIRNAME + sep + 'shapes' + sep + shape + sep + 'Shape.shp'
     shapeobj = gpd.read_file(shapepath)
-
-    # Mask
-    #mask = shapely.vectorized.contains(shapeobj.dissolve().geometry.item(), X, Y)
-    #im = ax.pcolormesh(X, Y, where(mask, Z0, nan), cmap=cmap, norm=norm)
-
+#
     # Plot
     shapeobj.plot(ax=ax, edgecolor='black', facecolor='none')
+
+
+def draw_lines(ax, coordsX, coordsY, ms=50):
+    '''Draw Transmission Line Geographically 
+    -coordsX -> nx2 array of x-coords for TO and FROM repsectively
+    -coordsY -> nx2 array of y-coords for TO and FROM repsectively
+    '''
+    for i in range(coordsX.shape[0]):
+        ax.plot(coordsX[i], coordsY[i], zorder=4, c='k')
+        ax.scatter(coordsX[i], coordsY[i], c='k', zorder=2, s=ms)

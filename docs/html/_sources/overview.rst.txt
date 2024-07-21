@@ -1,4 +1,4 @@
-ESA Overview
+Overview
 ============
 Please see :ref:`about-simauto` for a description of SimAuto as well as
 for links to PowerWorld's documentation.

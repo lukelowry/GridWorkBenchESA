@@ -14,6 +14,8 @@ from ..utils.conditions import *
 # - Tolerance MVA
 # - Need to auto create DSTimeSChedule & LoadCharacteristic for Ramp
 
+# TODO Remove this 'Conditions' Feature I Decided I do not like it
+
 # Application Base Class
 class PWApp:
     def __init__(self, context: Context) -> None:

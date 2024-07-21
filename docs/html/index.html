@@ -10,9 +10,9 @@
           <link rel="stylesheet" href="_static/theme.css " type="text/css" />
       
       <!-- sphinx script_files -->
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/documentation_options.js?v=4720776d"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
 
       
       <!-- bundled in js (rollup iife) -->
@@ -21,7 +21,7 @@
     
   <link rel="index" title="Index" href="genindex.html" />
   <link rel="search" title="Search" href="search.html" />
-  <link rel="next" title="Welcome!" href="welcome.html" /> 
+  <link rel="next" title="Introduction" href="welcome.html" /> 
   </head>
 
   <body>
@@ -29,7 +29,7 @@
     <div class="theme-container" :class="pageClasses"><navbar @toggle-sidebar="toggleSidebar">
   <router-link to="#" class="home-link">
     
-      <span class="site-name">ESA</span>
+      <img class="logo" src="_static/esa_logo.webp" alt="logo"/>
     
   </router-link>
 
@@ -106,7 +106,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="welcome.html" class="reference internal ">Welcome!</a>
+              <a href="welcome.html" class="reference internal ">Introduction</a>
             
 
             
@@ -115,7 +115,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="installation.html" class="reference internal ">Installing ESA</a>
+              <a href="installation.html" class="reference internal ">Installation</a>
             
 
             
@@ -133,7 +133,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="overview.html" class="reference internal ">ESA Overview</a>
+              <a href="overview.html" class="reference internal ">Overview</a>
             
 
             
@@ -142,7 +142,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="esa.html" class="reference internal ">esa API Documentation</a>
+              <a href="esa.html" class="reference internal ">API Documentation</a>
             
 
             
@@ -186,7 +186,7 @@
   <ul class="page-nav">
   <li class="next">
     <a href="welcome.html"
-       title="next chapter">Welcome! →</a>
+       title="next chapter">Introduction →</a>
   </li>
 </ul>
   
@@ -195,50 +195,175 @@
           <div class="content" role="main" v-pre>
             
   <section id="easy-simauto-esa-documentation">
-<h1>Easy SimAuto (ESA) Documentation<a class="headerlink" href="#easy-simauto-esa-documentation" title="Permalink to this heading">¶</a></h1>
+<h1>Easy SimAuto (ESA) Documentation<a class="headerlink" href="#easy-simauto-esa-documentation" title="Link to this heading">¶</a></h1>
 <p>Easy SimAuto is a Python package to ease interaction with PowerWorld
 Simulator’s <a class="reference internal" href="welcome.html#about-simauto"><span class="std std-ref">SimAuto</span></a> add-on. This documentation
 seeks to be comprehensive, with detailed <a class="reference internal" href="installation.html#installation"><span class="std std-ref">installation instructions</span></a>, complete <a class="reference internal" href="esa.html#api"><span class="std std-ref">API documentation</span></a>, and a rich
 set of <a class="reference internal" href="snippets.html#examples"><span class="std std-ref">examples</span></a>. If you’re new to ESA, please start
-by reading the <a class="reference internal" href="welcome.html#welcome"><span class="std std-ref">Welcome!</span></a> section. Returning users looking to see
+by reading the <a class="reference internal" href="welcome.html#welcome"><span class="std std-ref">Introduction</span></a> section. Returning users looking to see
 what’s new should check out the <a class="reference internal" href="welcome.html#changelog"><span class="std std-ref">Changelog</span></a>.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="welcome.html">Welcome!</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="welcome.html">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="welcome.html#citation">Citation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#what-is-esa">What Is ESA?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#about-simauto">About SimAuto</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#who-should-use-esa">Who Should Use ESA?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#why-use-esa">Why Use ESA?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#projects-that-use-esa">Projects That Use ESA</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#disclaimer-and-credits">Disclaimer and Credits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="welcome.html#changelog">Changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#what-is-gwb">What Is GWB?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#about-simauto">About SimAuto</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#simauto-functions">SimAuto Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#simauto-properties">SimAuto Properties</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installing ESA</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#who-should-use-gwb">Who Should Use GWB?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#why-use-gwb">Why Use GWB?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#projects-that-use-gwb">Projects That Use GWB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#disclaimer-and-credits">Disclaimer and Credits</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#disclaimer">Disclaimer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#credits-and-thanks">Credits and Thanks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="welcome.html#changelog">Changelog</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-5">Version 1.3.5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-4">Version 1.3.4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-3">Version 1.3.3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-2">Version 1.3.2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-1">Version 1.3.1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-3-0">Version 1.3.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-9">Version 1.2.9</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-8">Version 1.2.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-7">Version 1.2.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-6">Version 1.2.6</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-5">Version 1.2.5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-4">Version 1.2.4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-3">Version 1.2.3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-2">Version 1.2.2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-1">Version 1.2.1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-2-0">Version 1.2.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-1-0">Version 1.1.0</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-9">Version 1.0.9</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-8">Version 1.0.8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-7">Version 1.0.7</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-6">Version 1.0.6</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-5">Version 1.0.5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-4">Version 1.0.4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-3">Version 1.0.3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-2">Version 1.0.2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-1">Version 1.0.1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="welcome.html#version-1-0-0">Version 1.0.0</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#virtual-environment-configuration">Virtual Environment Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#install-prerequisite-packages">Install Prerequisite Packages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#install-esa-via-pip">Install ESA via Pip</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#install-esa-from-source">Install ESA from Source</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#post-installation">Post-Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#post-installation">Post-Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#cursory-verification-of-successful-installation">Cursory Verification of Successful Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#execute-esa-unittests">Execute ESA Unittests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#pywin32-post-installation">pywin32 Post-Installation</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick Start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="overview.html">ESA Overview</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#naming-conventions">Naming Conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="overview.html#functions-methods">Functions/Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#functions-methods">Functions/Methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#simauto-functions">SimAuto Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#high-level-helper-functions">High-Level/Helper Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#runscriptcommand">RunScriptCommand</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#clean-df-or-series">clean_df_or_series</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#data-types">Data Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#powerworld-variables">PowerWorld Variables</a></li>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#testing-coverage">Testing Coverage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="overview.html#contributing">Contributing</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="esa.html">esa API Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="esa.html#module-esa">esa Package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="esa.html#module-esa.saw">esa.saw Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="esa.html">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="esa.html#module-gridwb.workbench.main">Workbench Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.summary"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.joint"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.joint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.commit"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.commit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.save"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.sudos"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.sudos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.change"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.change()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.pflow"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.pflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.ybus"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.ybus()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.incidence"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.incidence()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.main.GridWorkBench.ybranch"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.main.GridWorkBench.ybranch()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.workbench.apps.gic">GIC App</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.fcmd"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.fcmd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.gicoption"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.gicoption()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.GIC"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.GIC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.XFWiringType"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.XFWiringType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.Winding"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.Winding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.ParsingXFMR"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.ParsingXFMR</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.GICTool"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.GICTool</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.gic.GICCorners"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.gic.GICCorners</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.workbench.apps.static">Static App</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.static.random"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.static.random()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.apps.static.Statics"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.apps.static.Statics</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.workbench.core.powerworld">IO</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.core.powerworld.fexcept"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.core.powerworld.fexcept()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.core.powerworld.PowerWorldIO</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.workbench.utils.datawiz">Utils</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.datawiz.flat"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.datawiz.flat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.datawiz.select"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.datawiz.select()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.datawiz.addFields"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.datawiz.addFields()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.datawiz.dropFields"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.datawiz.dropFields()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.datawiz.jac_decomp"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.datawiz.jac_decomp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.workbench.utils.exceptions">Exceptions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.GridObjDNE"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.GridObjDNE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.FieldDataException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.FieldDataException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.AuxParseException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.AuxParseException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.ContainerDeletedException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.ContainerDeletedException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.PowerFlowException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.PowerFlowException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.BifurcationException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.BifurcationException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.DivergenceException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.DivergenceException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.GeneratorLimitException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.GeneratorLimitException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.workbench.utils.exceptions.GICException"><code class="docutils literal notranslate"><span class="pre">gridwb.workbench.utils.exceptions.GICException</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="esa.html#module-gridwb.plot">Plotting Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.plot.generic">General</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.generic.formatPlot"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.generic.formatPlot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.generic.darker_hsv_colormap"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.generic.darker_hsv_colormap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.generic.Plot"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.generic.Plot</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.generic.Scatter"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.generic.Scatter</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.plot.map">Geographical</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.map.border"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.map.border()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.plot.map.draw_lines"><code class="docutils literal notranslate"><span class="pre">gridwb.plot.map.draw_lines()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="esa.html#module-gridwb.sparsetools">Sparse Tools Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="esa.html#module-gridwb.sparsetools.klu">KLU</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="esa.html#gridwb.sparsetools.klu.KLU"><code class="docutils literal notranslate"><span class="pre">gridwb.sparsetools.klu.KLU</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="snippets.html">Examples</a><ul>
@@ -254,15 +379,25 @@ what’s new should check out the <a class="reference internal" href="welcome.ht
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="common_issues.html">Common Issues</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="common_issues.html#installation-virtual-environment-issues">Installation/Virtual Environment Issues</a></li>
-<li class="toctree-l2"><a class="reference internal" href="common_issues.html#errors-issues-initializing-a-saw-instance">Errors/Issues Initializing a SAW Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_issues.html#installation-virtual-environment-issues">Installation/Virtual Environment Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#pycharm-virtual-environments">PyCharm Virtual Environments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="common_issues.html#errors-issues-initializing-a-saw-instance">Errors/Issues Initializing a SAW Instance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#esa-saw-powerworlderror-opencase-errors-have-occurred">esa.saw.PowerWorldError: OpenCase: Errors have occurred</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#typeerror-this-com-object-can-not-automate-the-makepy-process-please-run-makepy-manually-for-this-object">TypeError: This COM object can not automate the makepy process - please run makepy manually for this object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#attributeerror-module-win32com-gen-py-c99f1760-277e-11d5-a106-00c04f469176x0x20x0-has-no-attribute-clsidtoclassmap">AttributeError: module ‘win32com.gen_py.C99F1760-277E-11D5-A106-00C04F469176x0x20x0’ has no attribute ‘CLSIDToClassMap’</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#modulenotfounderror-no-module-pywintypes">ModuleNotFoundError: no module pywintypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common_issues.html#esa-saw-powerworlderror-access-violation">esa.saw.PowerWorldError: Access Violation</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 </div>
 </section>
 <section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h1>
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
@@ -276,12 +411,12 @@ what’s new should check out the <a class="reference internal" href="welcome.ht
             <div class="inner"><ul class="page-nav">
   <li class="next">
     <a href="welcome.html"
-       title="next chapter">Welcome! →</a>
+       title="next chapter">Introduction →</a>
   </li>
 </ul><div class="footer" role="contentinfo">
-      &#169; Copyright 2022, Zeyu Mao, Brandon Thayer, Yijing Liu.
+      &#169; Copyright 2024, Luke Lowery.
     <br>
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.8.0.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.4.7 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
 </div>
             </div>
           </div>

@@ -1,3 +1,7 @@
+"""
+Psuedo-Application interfaces
+"""
+
 
 # Applications
 from .dynamics import Dynamics

@@ -4,15 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-      <title>Installing ESA</title>
+      <title>Installation</title>
     
           <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
           <link rel="stylesheet" href="_static/theme.css " type="text/css" />
       
       <!-- sphinx script_files -->
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/documentation_options.js?v=4720776d"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
 
       
       <!-- bundled in js (rollup iife) -->
@@ -22,7 +22,7 @@
   <link rel="index" title="Index" href="genindex.html" />
   <link rel="search" title="Search" href="search.html" />
   <link rel="next" title="Quick Start" href="quick_start.html" />
-  <link rel="prev" title="Welcome!" href="welcome.html" /> 
+  <link rel="prev" title="Introduction" href="welcome.html" /> 
   </head>
 
   <body>
@@ -30,7 +30,7 @@
     <div class="theme-container" :class="pageClasses"><navbar @toggle-sidebar="toggleSidebar">
   <router-link to="index.html" class="home-link">
     
-      <span class="site-name">ESA</span>
+      <img class="logo" src="_static/esa_logo.webp" alt="logo"/>
     
   </router-link>
 
@@ -107,7 +107,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="welcome.html" class="reference internal ">Welcome!</a>
+              <a href="welcome.html" class="reference internal ">Introduction</a>
             
 
             
@@ -116,7 +116,7 @@
         
           <li class="toctree-l1 current">
             
-              <a href="#" class="reference internal current">Installing ESA</a>
+              <a href="#" class="reference internal current">Installation</a>
             
 
             
@@ -152,7 +152,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="overview.html" class="reference internal ">ESA Overview</a>
+              <a href="overview.html" class="reference internal ">Overview</a>
             
 
             
@@ -161,7 +161,7 @@
         
           <li class="toctree-l1 ">
             
-              <a href="esa.html" class="reference internal ">esa API Documentation</a>
+              <a href="esa.html" class="reference internal ">API Documentation</a>
             
 
             
@@ -198,14 +198,14 @@
   <ul class="breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
     
-    <li>Installing ESA</li>
+    <li>Installation</li>
   </ul>
   
 
   <ul class="page-nav">
   <li class="prev">
     <a href="welcome.html"
-       title="previous chapter">← Welcome!</a>
+       title="previous chapter">← Introduction</a>
   </li>
   <li class="next">
     <a href="quick_start.html"
@@ -217,11 +217,11 @@
 <hr>
           <div class="content" role="main" v-pre>
             
-  <section id="installing-esa">
-<span id="installation"></span><h1>Installing ESA<a class="headerlink" href="#installing-esa" title="Permalink to this heading">¶</a></h1>
+  <section id="installation">
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
 <p>Installing ESA is simple! Follow the directions below to get started.</p>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p>TL;DR:</p>
 <div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>python -m pip install --only-binary pywin32,pypiwin32 pywin32 pypiwin32 esa
 </pre></div>
@@ -231,7 +231,7 @@ package manager, Pip, to install ESA. Users who want to extend or modify
 ESA should install from source.</p>
 </section>
 <section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h2>
 <p>ESA has the following prerequisites:</p>
 <ul class="simple">
 <li><p>Microsoft Windows Operating System (PowerWorld is Windows only. The
@@ -259,7 +259,7 @@ with Git LFS.</p></li>
 </ul>
 </section>
 <section id="virtual-environment-configuration">
-<h2>Virtual Environment Configuration<a class="headerlink" href="#virtual-environment-configuration" title="Permalink to this heading">¶</a></h2>
+<h2>Virtual Environment Configuration<a class="headerlink" href="#virtual-environment-configuration" title="Link to this heading">¶</a></h2>
 <p>Like any Python project, the use of virtual environments is <strong>strongly</strong>
 encouraged. If you’re new to virtual environments, Python provides a
 nice <a class="reference external" href="https://docs.python.org/3/tutorial/venv.html">tutorial</a>.</p>
@@ -283,7 +283,7 @@ activated.</strong></p>
 </div>
 </section>
 <section id="install-prerequisite-packages">
-<h2>Install Prerequisite Packages<a class="headerlink" href="#install-prerequisite-packages" title="Permalink to this heading">¶</a></h2>
+<h2>Install Prerequisite Packages<a class="headerlink" href="#install-prerequisite-packages" title="Link to this heading">¶</a></h2>
 <p>ESA depends on the pywin32 Python package in order to interface with
 Windows components. Unfortunately, pywin32 does not always cleanly
 install automatically when installing ESA, so it’s recommended that you
@@ -302,7 +302,7 @@ to install instead of pip:</p>
 </div>
 </section>
 <section id="install-esa-via-pip">
-<h2>Install ESA via Pip<a class="headerlink" href="#install-esa-via-pip" title="Permalink to this heading">¶</a></h2>
+<h2>Install ESA via Pip<a class="headerlink" href="#install-esa-via-pip" title="Link to this heading">¶</a></h2>
 <p>To install ESA with pip, run the following in your activated virtual
 environment:</p>
 <div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>python -m pip install esa
@@ -310,7 +310,7 @@ environment:</p>
 </div>
 </section>
 <section id="install-esa-from-source">
-<h2>Install ESA from Source<a class="headerlink" href="#install-esa-from-source" title="Permalink to this heading">¶</a></h2>
+<h2>Install ESA from Source<a class="headerlink" href="#install-esa-from-source" title="Link to this heading">¶</a></h2>
 <p>Installing ESA from source is quite simple, and does not require any
 extra tools. One might choose to install ESA from source if you plan
 to extend or modify ESA, or would like to run ESA’s suite of tests.</p>
@@ -354,11 +354,11 @@ testing dependencies:</p>
 <code class="docutils literal notranslate"><span class="pre">extras_require</span></code>.</p>
 </section>
 <section id="post-installation">
-<h2>Post-Installation<a class="headerlink" href="#post-installation" title="Permalink to this heading">¶</a></h2>
+<h2>Post-Installation<a class="headerlink" href="#post-installation" title="Link to this heading">¶</a></h2>
 <p>The post-installation steps found here are optional, but may save you
 some headache down the line.</p>
 <section id="cursory-verification-of-successful-installation">
-<h3>Cursory Verification of Successful Installation<a class="headerlink" href="#cursory-verification-of-successful-installation" title="Permalink to this heading">¶</a></h3>
+<h3>Cursory Verification of Successful Installation<a class="headerlink" href="#cursory-verification-of-successful-installation" title="Link to this heading">¶</a></h3>
 <p>The simplest way to verify that ESA installed correctly is to attempt
 to import it. Most (but not all) installation issues will rear their
 heads at this point. Simply execute the following in a Command Prompt
@@ -372,7 +372,7 @@ file an issue on <a class="reference external" href="https://github.com/mzy2240/
 do not guarantee that we can help everyone.</p>
 </section>
 <section id="execute-esa-unittests">
-<h3>Execute ESA Unittests<a class="headerlink" href="#execute-esa-unittests" title="Permalink to this heading">¶</a></h3>
+<h3>Execute ESA Unittests<a class="headerlink" href="#execute-esa-unittests" title="Link to this heading">¶</a></h3>
 <p>At this point in time, one can only run unittests if ESA is installed
 from source and if you’ve installed the <code class="docutils literal notranslate"><span class="pre">test</span></code> dependencies. A
 future version of ESA may make tests available when installing via Pip.</p>
@@ -407,7 +407,7 @@ coverage report -m
 <code class="docutils literal notranslate"><span class="pre">.coveragerc</span></code> at the top-level of the repository.</p>
 </section>
 <section id="pywin32-post-installation">
-<h3>pywin32 Post-Installation<a class="headerlink" href="#pywin32-post-installation" title="Permalink to this heading">¶</a></h3>
+<h3>pywin32 Post-Installation<a class="headerlink" href="#pywin32-post-installation" title="Link to this heading">¶</a></h3>
 <p>From the <a class="reference external" href="https://github.com/mhammond/pywin32">pywin32 GitHub page</a>:</p>
 <blockquote>
 <div><p>Note that if you want to use pywin32 for “system wide” features,
@@ -430,16 +430,16 @@ your virtual environment directory.</p>
             <div class="inner"><ul class="page-nav">
   <li class="prev">
     <a href="welcome.html"
-       title="previous chapter">← Welcome!</a>
+       title="previous chapter">← Introduction</a>
   </li>
   <li class="next">
     <a href="quick_start.html"
        title="next chapter">Quick Start →</a>
   </li>
 </ul><div class="footer" role="contentinfo">
-      &#169; Copyright 2022, Zeyu Mao, Brandon Thayer, Yijing Liu.
+      &#169; Copyright 2024, Luke Lowery.
     <br>
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.0.1 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.8.0.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.4.7 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
 </div>
             </div>
           </div>

@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # Get the project root dir, which is the parent dir of this
 doc_path = Path(__file__).parent
 project_root = doc_path.parent.parent
-src_root = project_root / "esa"
+src_root = project_root / "gridwb"
 
 # package data
 about = {}
@@ -36,9 +36,9 @@ with open('../../VERSION', 'r') as fh:
 
 # -- Project information -----------------------------------------------------
 
-project = 'ESA'
-copyright = '2022, Zeyu Mao, Brandon Thayer, Yijing Liu'
-author = 'Zeyu Mao, Brandon Thayer, Yijing Liu'
+project = 'Grid Workbench'
+copyright = '2024, Luke Lowery'
+author = 'Luke Lowery'
 
 # The short X.Y version
 version = __version__
@@ -72,6 +72,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'installation',
 autoclass_content = 'both'
 autodoc_member_order = "bysource"
 toc_object_entries_show_parents = 'all'
+
+# Shorten Module Names
+add_module_names = False
 
 
 # -- Options for HTML output -------------------------------------------------

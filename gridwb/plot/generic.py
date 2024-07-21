@@ -38,7 +38,6 @@ def formatPlot(ax: Axes,
                ):
     '''Generic Axes Formatter'''
 
-    
     ax.set_facecolor(plotarea)
     ax.grid(grid, zorder=0)
     ax.set_axisbelow(True)
@@ -47,6 +46,7 @@ def formatPlot(ax: Axes,
     for spine in ax.spines.values():
         spine.set_edgecolor(spineColor)
 
+    # Viewport
     if xlim:
         ax.set_xlim(xlim)
         ax.set_xticks(arange(*xlim,0.1))

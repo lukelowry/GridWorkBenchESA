@@ -16,6 +16,8 @@ the repository's top-level, under the ``extras_require`` argument to
 
 Next, activate your virtual environment, and change directories to here.
 
+(Use Choco if no admit privs)
+
 Finally, simply execute ``make html`` to build the documentation.
 
 Initial One Time Setup (DO NOT RUN THIS)

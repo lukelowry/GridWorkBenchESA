@@ -94,7 +94,7 @@ setuptools.setup(
         "numpy >= 1.19.5",
         "scipy",
         "pywin32",
-        "pypiwin32",
+        "pypiwin32",       # TODO Double Check these to make sure we want them all
         "toolz",
         "networkx",
         "tqdm",
@@ -105,8 +105,8 @@ setuptools.setup(
     # of sphinx for documentation. Coverage is necessary to keep the
     # coverage report up to date.
     extras_require={
-        "test": ["networkx", "coverage"],
-        "doc": ["sphinx", "tabulate", "sphinx_press_theme"],
+        "test": ["networkx", "coverage"],     
+        "doc": ["sphinx", "tabulate", "sphinx_press_theme"], 
         "dev": ["pythran", "numba", "mypy", "black"],
     },
     license="Apache License 2.0",

@@ -1,11 +1,10 @@
 .. _welcome:
 
-Welcome!
-========
+Introduction
+================
 
-Welcome to Easy SimAuto's (ESA) documentation! If you encounter issues
-with ESA or the documentation, please file an issue on `GitHub
-<https://github.com/mzy2240/ESA/issues>`__.
+This is the official documentation for Gridworkbench! If you encounter issues
+with ESA or the documentation, please file an issue on XXX.
 
 .. _citation:
 
@@ -16,7 +15,7 @@ Citation
 
 .. _what-is-esa:
 
-What Is ESA?
+What Is GWB?
 ------------
 
 .. include:: welcome/what.rst
@@ -28,17 +27,17 @@ About SimAuto
 
 .. include:: welcome/about_simauto.rst
 
-Who Should Use ESA?
+Who Should Use GWB?
 -------------------
 
 .. include:: welcome/who.rst
 
-Why Use ESA?
+Why Use GWB?
 ------------
 
 .. include:: welcome/why.rst
 
-Projects That Use ESA
+Projects That Use GWB
 ---------------------
 
 .. include:: welcome/projects.rst

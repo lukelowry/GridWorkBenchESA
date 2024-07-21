@@ -250,13 +250,10 @@ class ParsingXFMR:
             return 0
 
 
-
-
 class GICTool:
+    '''Generatic GIC Helper Object that creates common matricies and calculations'''
 
     # TODO branch removal if un-needed
-    # - We could place Q on either to/from and it shouldn't make a diff
-    # - It just won't Align with PW
 
     def __init__(self, gicxfmrs, branches, gens, substations, buses, customcalcs=False) -> None:
         
@@ -758,8 +755,9 @@ class GICTool:
         LY = abs(cos(line_ang)*line_km)
 
         # 'Length' in coordinates
-        CLX = diff(cX)
-        CLY = diff(cY)
+        CLX, CLY = diff(cX),  diff(cY)
+        #CLX[~(CLX>0)] = 1 # Set to one so no division error
+        #CLY[~(CLY>0)] = 1
 
         # Intentional -> 'Right' and 'Up' should be positive direction
         # Converts coords to KM
@@ -801,7 +799,6 @@ class GICTool:
         self.tile_ids = tile_ids
         seg_lens = coord_to_km*abs(diff(allpnts,axis=2)) # Length in Tile
         
-
         # Final Data Format
         R[*isData[:-1],*tile_ids[:,*isData[1:]].astype(int)] = seg_lens[*isData]
         R = R.reshape((2, R.shape[1], R.shape[2]*R.shape[3]), order='F')
@@ -820,8 +817,10 @@ class GICTool:
     
     def tesselation_as_df(self):
         '''GICTool.tesselations() must have already been called. Get Index DF Version of Hx, Hy'''
+
+        X, Y, W = self.tile_info
         tile_cols = MultiIndex.from_product(
-            [arange(self.X_tiles.size-1), arange(self.Y_tiles.size-1)], 
+            [arange(len(X)-1), arange(len(Y)-1)], 
             names=['TileX', 'TileY']
             )
         Xdf = DataFrame(self.Hx, columns = tile_cols)
@@ -903,15 +902,14 @@ class GICCorners:
         return self.corner_matrix
 
     def topology(self, remove_strictly_small = False, top_losses_only = False):
-        '''
+        """
         Calculates the XFMR losses of every corner
         params:
         - remove_strictly_small: Removes any corners that have strictly less losses than some other corner
         - top_losses_only: Returns only corners in the top 10% of net losses
         returns: 
             Matrix (nXFMR x nCorners)
-
-        '''
+        """
 
         HLE = self.HLE
         C = self.corner_matrix
@@ -943,7 +941,6 @@ class GICCorners:
 
         return TOPOLOGY
     
-    # TODO kinda slow, improve
     @property
     def flip_matrix(self):
 

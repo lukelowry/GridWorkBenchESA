@@ -49,7 +49,7 @@ class GridDataMaintainer:
             return self.all[component]
         
     ''' Instance-Based Accessors'''
-
+    # TODO REMOVE I DON"T WANT TO USE INSTANCES ANYMORE - PANDAS FOR LIFE
     def get_inst(self, component: Type[T]) -> GridList[T]:
         '''Instance Factor if this representation is preferred. Not efficient for large datasets.'''
         return GridList[T](

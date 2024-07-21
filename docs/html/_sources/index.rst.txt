@@ -15,7 +15,7 @@ by reading the :ref:`welcome` section. Returning users looking to see
 what's new should check out the :ref:`changelog`.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    welcome
