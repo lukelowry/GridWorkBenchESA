@@ -5,7 +5,9 @@
 
 # Imports
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from scipy.sparse import lil_matrix
+
 from .grid.components import *
 from .apps import Dynamics, Statics, GIC
 from .grid.common import arc_incidence, InjectionVector
@@ -42,11 +44,6 @@ class GridWorkBench:
     def summary(self):
         pass
 
-    # TODO move to datawiz
-    def joint(self, type1: GObject, type2, key='BusNum'):
-        '''Merges Two Component Sets (Used to map data)'''
-        return self[type1].merge(self[type2], on=key)
-
     def commit(self, gclass=None):
         '''Send ALL local data to remote model.
         Not recommended.'''
@@ -64,8 +61,7 @@ class GridWorkBench:
         self.commit()
         self.save()
 
-    # TODO remove or make this better ffs I don't want to pass the type.
-    # Dataframe subclass!
+    # TODO Remove - New Indexing method is superior
     def change(self, gtype, data: DataFrame):
         '''
         Inteded for a Quick data update to external model.
@@ -94,14 +90,39 @@ class GridWorkBench:
             vpu.columns = ['Bus Number', 'Voltage']
             return vpu
 
+    def busmap(self):
+        '''
+        Returns a Pandas Series indexed by BusNum to the positional value of each bus
+        in matricies like the Y-Bus, Incidence Matrix, Etc.
+
+        Example usage:
+        branches['BusNum'].map(busmap)
+        '''
+        busNums = self.io[Bus]
+        return Series(busNums.index, busNums['BusNum'])
+        
     
     def incidence(self):
-        '''Returns the Incidence Matrix (In BusNum Order)'''
-        busmap = {b: i for i, b in enumerate(self.all[Bus]['BusNum'])}
-        linedata = self.all[Branch][['BusNum', 'BusNum:1']].to_records()
-        ft = [(busmap[FB], busmap[TB])for i, FB, TB in linedata]
+        '''
+        Returns a SparseIncidence Matrix of the branch network of the grid.
+        
+        Dimensions: (Number of Branches)x(Number of Buses)
+        '''
 
-        return arc_incidence(ft)
+        branches = self.io[Branch,['BusNum', 'BusNum:1']]
+        nbranches = len(branches)
+
+        # Column Positions 
+        bmap = self.busmap()
+        fromBus = branches['BusNum'].map(bmap).to_numpy()
+        toBus = branches['BusNum:1'].map(bmap).to_numpy()
+
+        # Sparse Arc-Incidence Matrix
+        A = lil_matrix((nbranches,len(bmap)))
+        A[np.arange(nbranches), fromBus] = -1
+        A[np.arange(nbranches), toBus] = 1
+
+        return A
     
     def ybranch(self):
         '''Return Admittance of Lines in Complex Form'''

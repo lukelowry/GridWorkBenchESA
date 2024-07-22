@@ -1,10 +1,11 @@
 '''
-Various Tools to help with DataFrame Processing
+Various Tools to help with DataFrame and Matrix Processing
 
 '''
 
 from typing import Callable
 from pandas import DataFrame, MultiIndex
+from ..grid.components import GObject
 
 
 def flat(meta: DataFrame, data: DataFrame, copy=True) -> DataFrame:
@@ -75,3 +76,8 @@ def jac_decomp(jac):
     yield jac[:nbus, nbus:] # dP/dV
     yield jac[nbus:, :nbus] # dQ/dT
     yield jac[nbus:, nbus:] # dQ/dV
+
+# TODO move to datawiz
+def joint(self, type1: GObject, type2, key='BusNum'):
+    '''Merges Two Component Sets (Used to map data)'''
+    return self[type1].merge(self[type2], on=key)

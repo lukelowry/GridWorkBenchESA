@@ -66,7 +66,7 @@ class PowerWorldIO(IModelIO):
             except:
                 print(f"Failed to Write Data for {gclass.TYPE}")
     
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> DataFrame | None:
         '''Retrieve Data frome Power world with Indexor Notation
         
         
@@ -77,22 +77,35 @@ class PowerWorldIO(IModelIO):
         wb.pw[Bus, :] # Get all fields
         '''
         
+        # Type checking is an anti-pattern but this is accepted within community as a necessary part of the magic function
+        # >1 Argument - Objecet Type & Fields(s)
         if isinstance(index, tuple): 
             gtype, fields = index
             if isinstance(fields, str): fields = fields,
             elif isinstance(fields, slice): fields = gtype.fields
+        # 1 Argument - Object Type: retrieve only key fields
         else: 
             gtype, fields = index, ()
 
-        keys = gtype.keys
-        dfields = [f for f in fields if f not in keys]
+        # Keys and then Fields
+        key_fields = gtype.keys
+        data_fields = [f for f in fields if f not in key_fields]
+        unique_fields = [*key_fields, *data_fields]
 
-        df = self.esa.GetParametersMultipleElement(gtype.TYPE, [*keys, *dfields])
-        df.set_index(keys, inplace=True)
+        # If no fields (I.e. there were no keys and no data field passed)
+        if len(unique_fields) < 1:
+            return None
+
+        # Retrieve data from unique list of fields
+        df = self.esa.GetParametersMultipleElement(gtype.TYPE, unique_fields)
+
+        # Set Index of DF if key field exists and DF valid
+        #if df is not None and len(key_fields)>0:
+            #df.set_index(key_fields, inplace=True) # NOTE I might want to rethink indexing these. It is useful to me but might be confusing.
         
         return df
     
-    def __setitem__(self, args, value):
+    def __setitem__(self, args, value) -> None:
         '''Set grid data using indexors directly to Power World
         Must be atleast 2 args: Type & Field
 
@@ -102,17 +115,23 @@ class PowerWorldIO(IModelIO):
         wb.pw[Bus, p>10, [xxx,xxx,xxx]] = [arr1, arr2, arr3]
         '''
 
+        # Type checking is an anti-pattern but this is accepted within community as a necessary part of the magic function
         # Extract Arguments depending on Index Method
+
+        # [Type, [Fields]]
         if len(args)==2:   gtype, where, fields = args[0], None, args[1]
+
+        # [Type, Where, [Fields]]
         elif len(args)==3: gtype, where, fields = args
+        else: raise Exception
 
         # Format as list
         if isinstance(fields, str): fields = fields,
         
-        # Retrieve active power world record keys 
+        # Retrieve active power world records with keys only
         base = self[gtype]
 
-        # Assign Values
+        # Assign Values based on index
         if where is not None: base.loc[where, fields] = value
         else: base.loc[:,fields] = value
             
