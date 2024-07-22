@@ -158,14 +158,14 @@ def linkcode_resolve(
     fn = relpath(fn, start=dirname(gridwb.__file__))
 
     if "dev" in about["__version__"]:
-        return "{}/blob/master/{}/{}{}".format(
+        return "{}/master/{}/{}{}".format(
             about["__github__"],
             about["__package_name__"],
             fn,
             linespec,
         )
     else:
-        return "{}/blob/v{}/{}/{}{}".format(
+        return "{}/v{}/{}/{}{}".format(
             about["__github__"],
             version,
             about["__package_name__"],

@@ -1,6 +1,7 @@
 from typing import Type
 from pandas import DataFrame
 from os import path
+from numpy import unique
 
 from .datamaintainer import GridDataMaintainer
 from ..grid.components import *
@@ -64,10 +65,66 @@ class PowerWorldIO(IModelIO):
                 self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
             except:
                 print(f"Failed to Write Data for {gclass.TYPE}")
+    
+    def __getitem__(self, index):
+        '''Retrieve Data frome Power world with Indexor Notation
+        
+        
+        Examples:
+        wb.pw[Bus] # Get Primary Keys of PW Buses
+        wb.pw[Bus, 'BusPUVolt'] # Get Voltage Magnitudes
+        wb.pw[Bus, ['SubNum', 'BusPUVolt']] # Get Two Fields
+        wb.pw[Bus, :] # Get all fields
+        '''
+        
+        if isinstance(index, tuple): 
+            gtype, fields = index
+            if isinstance(fields, str): fields = fields,
+            elif isinstance(fields, slice): fields = gtype.fields
+        else: 
+            gtype, fields = index, ()
+
+        keys = gtype.keys
+        dfields = [f for f in fields if f not in keys]
+
+        df = self.esa.GetParametersMultipleElement(gtype.TYPE, [*keys, *dfields])
+        df.set_index(keys, inplace=True)
+        
+        return df
+    
+    def __setitem__(self, args, value):
+        '''Set grid data using indexors directly to Power World
+        Must be atleast 2 args: Type & Field
+
+        Examples:
+        wb.pw[Bus, 'BusPUVolt'] = 1
+        wb.pw[Bus, v<1, 'BusPUVolt'] = arr
+        wb.pw[Bus, p>10, [xxx,xxx,xxx]] = [arr1, arr2, arr3]
+        '''
+
+        # Extract Arguments depending on Index Method
+        if len(args)==2:   gtype, where, fields = args[0], None, args[1]
+        elif len(args)==3: gtype, where, fields = args
+
+        # Format as list
+        if isinstance(fields, str): fields = fields,
+        
+        # Retrieve active power world record keys 
+        base = self[gtype]
+
+        # Assign Values
+        if where is not None: base.loc[where, fields] = value
+        else: base.loc[:,fields] = value
+            
+        # Send to Power World
+        self.esa.change_parameters_multiple_element_df(gtype.TYPE, base.reset_index())
+
 
     def save(self):
-        '''Save all Open Changes to PWB File.
-        Note: only data/settings written back to PowerWorld will be saved.'''
+        '''
+        Save all Open Changes to PWB File.
+        Note: only data/settings written back to PowerWorld will be saved.
+        '''
         return self.esa.SaveCase()
 
     def get(self, gtype: Type[GObject], keysonly=False):
@@ -104,7 +161,8 @@ class PowerWorldIO(IModelIO):
         return df
     
     def get_quick(self, gtype: Type[GObject], fieldname: str | list[str]):
-        '''Helper Function that will retrieve one field from all objects of specified type.
+        '''
+        Helper Function that will retrieve one field from all objects of specified type.
         Intended for repeated data retrieval.
         
         Parameters:
@@ -150,7 +208,9 @@ class PowerWorldIO(IModelIO):
                 self.esa.SolvePowerFlow()
 
     def flatstart(self):
-        '''Call to reset PF to a flat start.'''
+        '''
+        Call to reset PF to a flat start.
+        '''
         self.esa.RunScriptCommand("ResetToFlatStart()")
 
 
@@ -189,7 +249,9 @@ class PowerWorldIO(IModelIO):
     }
 
     def saveinram(self, objdf, datafields):
-        '''Save Specified Fields for TS'''
+        '''
+        Save Specified Fields for TS
+        '''
 
         # Get Respective Data
         savefields = []
@@ -215,7 +277,9 @@ class PowerWorldIO(IModelIO):
         )
 
     def set_mva_tol(self, tol=0.1):
-        '''Sets the MVA Tolerance for NR Convergence'''
+        '''
+        Sets the MVA Tolerance for NR Convergence
+        '''
         settings = self.dm.get_df(Sim_Solution_Options)
         settings['ConvergenceTol:2'] = tol
         self.upload({
@@ -223,21 +287,29 @@ class PowerWorldIO(IModelIO):
         })
 
     def get_min_volt(self):
-        '''Retrieve the active minmimum bus voltage in p.u.'''
+        '''
+        Retrieve the active minmimum bus voltage in p.u.
+        '''
         return self.get_quick(PWCaseInformation,'BusPUVolt:1').iloc[0,0]
 
     def save_state(self, statename="GWB"):
-        '''Store a state under an alias and restore it later.'''
+        '''
+        Store a state under an alias and restore it later.
+        '''
         self.esa.RunScriptCommand('EnterMode(RUN);')
         self.esa.RunScriptCommand(f'StoreState({statename});')
 
     def restore_state(self, statename="GWB"):
-        '''Restore a saved state.'''
+        '''
+        Restore a saved state.
+        '''
         self.esa.RunScriptCommand('EnterMode(RUN);')
         self.esa.RunScriptCommand(f'RestoreState(USER,{statename});')
 
     def delete_state(self, statename="GWB"):
-        '''Restore a saved state.'''
+        '''
+        Restore a saved state.
+        '''
         self.esa.RunScriptCommand('EnterMode(RUN);')
         self.esa.RunScriptCommand(f'DeleteState(USER,{statename});')
                 

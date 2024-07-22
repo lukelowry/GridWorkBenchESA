@@ -34,6 +34,8 @@ class GridList(list[T]):
 class GridDataMaintainer:
     ''' All Model-Retrieved data should be traced back to this object '''
 
+    # TODO I want to implement a clear difference between LOCAL retrieval and EXTERNAL retrieval
+
     def __init__(self, all: dict[Type[GObject], DataFrame]) -> None:
         
         # Main Storage Dictionary

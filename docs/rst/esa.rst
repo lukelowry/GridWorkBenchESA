@@ -2,10 +2,18 @@
 
 API Documentation
 #######################
-ESA is a single module package - the only Python file is ``saw.py``.
-To make it easy to remember, "SAW" is an acronym for "SimAuto Wrapper."
-Within the ``saw`` module is the ``SAW`` class, which is the workhorse
-of ESA.
+
+I developed this package because I was tired of switching between 3 different application screens to 
+develop advanced programs in ESA. At the time I was new to PowerWorld, so I had to reference the object field 
+excel sheet every 5 minutes. I found my self wanting more direct control over the data stuctures, even at 
+the cost of additional overhead.
+
+If you are very comfortable with ESA, please continue using it for research. It is safer to use, and well maintained.
+If you find yourself struggling with the disconnect between ESA and full PowerWorld, give GridWorkbench a try!
+
+The ``gridwb`` package was created to use pandas and numpy-like indexing to interface with power world.
+The learning curve can be high, but once understood there is no going back.
+
 
 .. contents:: Table of Contents
     :local:

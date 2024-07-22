@@ -1,4 +1,5 @@
 
+from numpy import unique
 from .powerworld import PowerWorldIO
 from .sets import GridSet
 from .datamaintainer import GridDataMaintainer
@@ -22,5 +23,3 @@ class Context:
     def getDataMaintainer(self) -> GridDataMaintainer:
         '''Return Data Maintainer'''
         return self.dm
-
-

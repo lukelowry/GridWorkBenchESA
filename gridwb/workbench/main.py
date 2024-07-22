@@ -24,7 +24,13 @@ class GridWorkBench:
         self.gic = GIC(self.context)
 
     def __getitem__(self, arg):
+        '''Local Indexing of retrieval'''
         return self.dm.get_df(arg)
+    
+    def ext(self,**args):
+        '''External Data Retrieval'''
+        # Same as above but get from PW
+        pass
 
     '''
     Disabled Feature as Instance Creation is not Stable
@@ -88,10 +94,7 @@ class GridWorkBench:
             vpu.columns = ['Bus Number', 'Voltage']
             return vpu
 
-    def ybus(self):
-        '''Returns the full y-bus as a dense Numpy Matrix'''
-        return self.io.esa.get_ybus(True)
-
+    
     def incidence(self):
         '''Returns the Incidence Matrix (In BusNum Order)'''
         busmap = {b: i for i, b in enumerate(self.all[Bus]['BusNum'])}
@@ -111,3 +114,6 @@ class GridWorkBench:
 
         return Y
     
+    def ybus(self):
+        '''Returns the full y-bus as a dense Numpy Matrix'''
+        return self.io.esa.get_ybus(True)
