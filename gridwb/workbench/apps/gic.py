@@ -1,7 +1,8 @@
 from numpy import array, ones, zeros, zeros_like, ones_like, diagflat, arange, eye
-from numpy import vectorize, min, max, sign, nan, pi, sqrt, abs, sin, cos, isnan
+from numpy import min, max, sign, nan, pi, sqrt, abs, sin, cos, isnan
 from numpy import unique, concatenate, sort, all, diag_indices, diff, expand_dims, repeat
 from numpy import any, delete, where, argwhere, argmax, sum, percentile, array_equal
+from numpy import errstate, vectorize
 from numpy.linalg import inv
 
 from pandas import DataFrame, read_csv, MultiIndex
@@ -171,6 +172,24 @@ class GIC(PWApp):
             self.io.esa.RunScriptCommand(cmd)
 
         print("GIC Time Varying Data Uploaded")
+    
+    def divergence(u, v):
+
+        divx = diff(u[:,:1],axis=0) + diff(u[:,:-1],axis=0) 
+        divy = diff(v[1:],axis=1) + diff(v[:-1],axis=1) 
+        
+        return divx + divy
+
+    def curl(u, v):
+        
+        a = diff(u,axis=0) #(dy)u
+        b = (a[:,:-1] + a[:,1:])/2 # (mux)(dy)(u)
+
+        c = diff(v,axis=1) #(dx)v
+        d = (c[:-1] + c[1:])/2 #(muy)(dx)v
+
+        return d-b
+
 
 
 class XFWiringType(Enum):
@@ -756,12 +775,10 @@ class GICTool:
 
         # 'Length' in coordinates
         CLX, CLY = diff(cX),  diff(cY)
-        #CLX[~(CLX>0)] = 1 # Set to one so no division error
-        #CLY[~(CLY>0)] = 1
 
-        # Intentional -> 'Right' and 'Up' should be positive direction
-        # Converts coords to KM
-        coord_to_km = concatenate([[LX/CLX[:,0]], [LY/CLY[:,0]]],axis=0)
+        # Intentional -> 'Right' and 'Up' should be positive direction, Converts coords to KM
+        with errstate(divide='ignore', invalid='ignore'):
+            coord_to_km = concatenate([[LX/CLX[:,0]], [LY/CLY[:,0]]],axis=0)
         coord_to_km[isnan(coord_to_km)] = 0
         coord_to_km = expand_dims(coord_to_km,axis=2)
 
@@ -774,11 +791,13 @@ class GICTool:
         # Calculate points of line & tile intersection
         Vx = repeat([X],lminx.size,axis=0)
         Vx[(Vx<=lminx) | (Vx>=lmaxx)] = nan
-        Vy = CLY/CLX*(Vx-cX[:,[0]]) + cY[:,[0]]
+        with errstate(divide='ignore', invalid='ignore'):
+            Vy = CLY/CLX*(Vx-cX[:,[0]]) + cY[:,[0]]
 
         Hy = repeat([Y],lminx.size,axis=0)
         Hy[(Hy<=lminy) | (Hy >= lmaxy)] = nan
-        Hx = (Hy-cY[:,[0]])*CLX/CLY + cX[:,[0]]
+        with errstate(divide='ignore', invalid='ignore'):
+            Hx = (Hy-cY[:,[0]])*CLX/CLY + cX[:,[0]]
 
         # All Segment Points per Line
         pntsX = concatenate([cX, Vx, Hx],axis=1)
@@ -809,7 +828,6 @@ class GICTool:
 
         # God Tier H-Matrix
         H = self.Hmat()
-
         self.Hx, self.Hy = H@Rx, H@Ry
 
         # Return Tessalised matricies

@@ -1,7 +1,7 @@
 # Data Structure Imports
 import warnings
 from pandas import DataFrame, concat
-from numpy import NaN, exp, any, arange
+from numpy import NaN, exp, any, arange, nanmin, isnan
 from numpy.random import random
 
 # WorkBench Imports
@@ -157,27 +157,29 @@ class Statics(PWApp):
 
         return (meta, df.T)
     
-    def gensAtMaxP(self, p=None, tol=0.1):
+    def gensAbovePMax(self, p=None, isClosed=None, tol=0):
         '''Returns True if any CLOSED gens are outside P limits. Active function.'''
         if p is None:
             p = self.io.get_quick(Gen, 'GenMW')['GenMW']
 
         isHigh = p > self.genpmax + tol
         isLow = p < self.genpmin - tol
-        isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+        if isClosed is None:
+            isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
         violation = isClosed & (isHigh | isLow)
 
         return any(violation)
         #return any(p > self.genpmax + tol) or any(p < self.genpmin - tol)
     
-    def gensAtMaxQ(self, q=None, tol=0.1):
+    def gensAboveQMax(self, q=None, isClosed=None, tol=0):
         '''Returns True if any CLOSED gens are outside Q limits. Active function.'''
         if q is None:
             q = self.io.get_quick(Gen, 'GenMVR')['GenMVR']
 
         isHigh = q > self.genqmax + tol
         isLow = q < self.genqmin - tol
-        isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+        if isClosed is None:
+            isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
         violation = isClosed & (isHigh | isLow)
 
         return any(violation)
@@ -205,8 +207,18 @@ class Statics(PWApp):
         def log(x,**kwargs): 
             if verbose: print(x,**kwargs)
 
+        slackdata = self.io[Bus,'BusCat']
+        slackbus = slackdata[slackdata['BusCat']=='Slack']['BusNum'][0]
+        slackloc = self.io[Gen]['BusNum'] == slackbus
+        slackq_ub = self.genqmax.loc[slackloc][0]
+        slackq_lb = self.genqmin.loc[slackloc][0]
+        slackdevmin = NaN
+        slackabsprev = None
+
         # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
         self.io.save_state('BACKUP')
+        self.chain()
+        self.pushstate()
         
         # Set NR Tolerance in MVA
         self.io.set_mva_tol(nrtol)
@@ -216,7 +228,8 @@ class Statics(PWApp):
         # Misc Iteration Tracking
         backstepPercent=0.25
         pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
-        pprev = 0
+        pstable, pprev = 0, 0
+
 
         # Continuation Loop
         for i in arange(maxiter):
@@ -230,31 +243,55 @@ class Statics(PWApp):
                 log(f'\nPF: {pnow:>12.4f} MW', end='\t')
                 self.io.pflow() 
 
-                # Check Max Power Output (NOTE not needed in GIC scenario)
-                if self.gensAtMaxP(): 
-                    log(' P+ ', end=' ')
-                    raise GeneratorLimitException
-                
+                # Fail if slack is at max
+                qall = self.io[Gen, ['GenMVR','GenStatus']]
+                qclosed = qall['GenStatus']=='Closed'
+
                 # Check Max Reactive Output
-                if self.gensAtMaxQ(): 
+                if self.gensAboveQMax(qall['GenMVR'], qclosed): 
                     log(' Q+ ', end=' ')
                     raise GeneratorLimitException
                 
+                # Check Max Power Output (NOTE not needed in GIC scenario)
+                if self.gensAbovePMax(None, qclosed): 
+                    log(' P+ ', end=' ')
+                    raise GeneratorLimitException
+                
+                # NOTE a possibility I will need to do this for PV buses too!
+                # NOTE this won't work for instances where slack path crosses 0
+                
+                # Slack Bus at Max Q is Critical Failures
+                qslack = qall['GenMVR'].loc[slackloc][0]
+                slackabs = abs(qslack)
+                if slackabsprev is not None and  slackabs < slackabsprev: 
+                    log(f' SL+ ', end=' ')
+                    raise BifurcationException
+                slackabsprev = slackabs
+            
                 # Save
-                self.io.save_state('PREV')
-                pprev = pnow
+                self.pushstate()
+                pstable, pprev = pprev, pnow
 
-                yield pnow
+                # Yield Stable Solutions
+                if pstable is not None:
+                    yield pprev # NOTE I thought should be yeilding stable but this gives the clearly more correct answer
+
+            except BifurcationException as e:
+
+                pnow = pstable 
+                pprev = pstable 
+                step *= backstepPercent
+                self.irestore(1)
                 
             # Catch Fails, then backstep injection
-            except (Exception, GeneratorLimitException, BifurcationException) as e: 
+            except (Exception, GeneratorLimitException) as e: 
 
-                log('XXX')
+                log('XXX', end=' ')
                         
                 pnow = pprev
                 step *= backstepPercent
                 if pprev!=0: 
-                    self.io.restore_state('PREV')
+                    self.irestore(0)
 
             if step<minstep:
                 break
@@ -270,6 +307,8 @@ class Statics(PWApp):
 
         # Set Dispatch SMW to Zero
         self.setload(SP=0*interface)
+
+        # TODO delete states that were saved
 
         # Restore to before CPF Regardless of everything
         self.io.restore_state('BACKUP')
