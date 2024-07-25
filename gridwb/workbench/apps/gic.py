@@ -6,7 +6,7 @@ from numpy import errstate, vectorize
 from numpy.linalg import inv
 
 from pandas import DataFrame, read_csv, MultiIndex
-from scipy.sparse import coo_matrix, lil_matrix
+from scipy.sparse import coo_matrix, lil_matrix, hstack, vstack
 from enum import Enum, auto
 from itertools import product
 
@@ -69,7 +69,7 @@ class GIC(PWApp):
         # TODO a function to do things to multi-lines
         pass
 
-    def dBounddI(eta, J, V):
+    def dBounddI(self, eta, PX, J, V):
         ''' Interface Sensitivity w.r.t Transformer GIC Currents
         Parameters:
         - eta: (nx1) Numpy Vector of Injection
@@ -79,9 +79,37 @@ class GIC(PWApp):
         - (1xn) Numpy Array of Sensitivites
         '''
 
-        PT, PV, QT, QV = jac_decomp(J)
-        QVi = sinv(QV.tocsc())
-        return eta.T@PV@QVi@diagflat(V)
+        
+        # Category Selectors
+        buscat = self.io[Bus,['BusCat']]['BusCat']
+        slk = buscat=='Slack'
+        pv = buscat=='PV'
+        pq = ~(slk | pv) # I think this is the best way
+
+        dPdT, dPdV, dQdT, dQdV = jac_decomp(J)   
+        
+        # P Equations ( Include Slack in row just for dimensionality - Techniqly should not be included)
+        At = dPdT[:,~slk]
+        Av = dPdV[:,pq]
+        A = hstack([At, Av])
+
+        # Q equations
+        Bt = dQdT[pq][:,~slk]
+        Bv = dQdV[pq][:,pq]
+        B = hstack([Bt, Bv])
+
+        # PQ Voltage Diagonal
+        Vdiag = diagflat(V[pq])
+
+        # Psuedo Inverse Sensitivity (N Buses) x (N XFMRs)
+        return eta.T@A@B.T@sinv((B@B.T).tocsc())@Vdiag@PX[pq]
+
+
+        # NOTE Part of me thinks I can just DO this with the jacobian at the base case.... That would be powerful
+        # NOTE Then I could do multiple interfaces AT THE SAME TIME
+        # NOTE It would be like 'Trasporting' the solution down an interface without increasing any active power
+
+        #return eta.T@dPdQ@diagflat(V[1:])
     
     def dIdE(dBdI, PX, Hx, Hy, Ex, Ey):
         '''Returns tuple (Ex Sensitivities, Ey Sensitivities) w.r.t Bus GIC load model

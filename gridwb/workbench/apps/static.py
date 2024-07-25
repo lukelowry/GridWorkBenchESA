@@ -207,14 +207,6 @@ class Statics(PWApp):
         def log(x,**kwargs): 
             if verbose: print(x,**kwargs)
 
-        slackdata = self.io[Bus,'BusCat']
-        slackbus = slackdata[slackdata['BusCat']=='Slack']['BusNum'][0]
-        slackloc = self.io[Gen]['BusNum'] == slackbus
-        slackq_ub = self.genqmax.loc[slackloc][0]
-        slackq_lb = self.genqmin.loc[slackloc][0]
-        slackdevmin = NaN
-        slackabsprev = None
-
         # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
         self.io.save_state('BACKUP')
         self.chain()
@@ -229,6 +221,7 @@ class Statics(PWApp):
         backstepPercent=0.25
         pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
         pstable, pprev = 0, 0
+        qabsprev = None
 
 
         # Continuation Loop
@@ -252,21 +245,20 @@ class Statics(PWApp):
                     log(' Q+ ', end=' ')
                     raise GeneratorLimitException
                 
-                # Check Max Power Output (NOTE not needed in GIC scenario)
+                # Check Max Power Output (NOTE not needed in GIC scenario I think)
                 if self.gensAbovePMax(None, qclosed): 
                     log(' P+ ', end=' ')
                     raise GeneratorLimitException
                 
-                # NOTE a possibility I will need to do this for PV buses too!
                 # NOTE this won't work for instances where slack path crosses 0
-                
-                # Slack Bus at Max Q is Critical Failures
-                qslack = qall['GenMVR'].loc[slackloc][0]
-                slackabs = abs(qslack)
-                if slackabsprev is not None and  slackabs < slackabsprev: 
+
+                # ANY Slack or PV Bus Q falling is bad
+                qabs = qall['GenMVR'].abs()
+                if qabsprev is not None and any(qabsprev > qabs):
                     log(f' SL+ ', end=' ')
                     raise BifurcationException
-                slackabsprev = slackabs
+                qabsprev = qabs
+
             
                 # Save
                 self.pushstate()
@@ -287,6 +279,9 @@ class Statics(PWApp):
             except (Exception, GeneratorLimitException) as e: 
 
                 log('XXX', end=' ')
+
+                if i==0:
+                    print('FIRST INJ FAILED. RESULTS WILL BE INACCURATE.')
                         
                 pnow = pprev
                 step *= backstepPercent
