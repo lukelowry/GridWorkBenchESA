@@ -201,23 +201,6 @@ class GIC(PWApp):
 
         print("GIC Time Varying Data Uploaded")
     
-    def divergence(u, v):
-
-        divx = diff(u[:,:1],axis=0) + diff(u[:,:-1],axis=0) 
-        divy = diff(v[1:],axis=1) + diff(v[:-1],axis=1) 
-        
-        return divx + divy
-
-    def curl(u, v):
-        
-        a = diff(u,axis=0) #(dy)u
-        b = (a[:,:-1] + a[:,1:])/2 # (mux)(dy)(u)
-
-        c = diff(v,axis=1) #(dx)v
-        d = (c[:-1] + c[1:])/2 #(muy)(dx)v
-
-        return d-b
-
 
 
 class XFWiringType(Enum):
@@ -696,7 +679,7 @@ class GICTool:
         ONE = ones_like(self.xfmrIDs)
 
         shp = (self.nallbus, self.nxfmrs)
-        self.PX = coo_matrix((ONE, (self.fromIDX,self.xfmrIDs)), shape=shp)
+        self.PX = coo_matrix((ONE, (self.fromIDX,self.xfmrIDs)), shape=shp).tolil()
         
     # Below are accessing tools (Don't know best way yet)
     # Final step causes some problems, summing on busses
@@ -790,6 +773,7 @@ class GICTool:
 
         # Save for reference if needed
         self.tile_info = X, Y, W
+        self.tile_count = len(X)-1, len(Y)-1, (len(X)-1)*(len(Y)-1)
 
         '''Tile Segment Assignment Matrix'''
 

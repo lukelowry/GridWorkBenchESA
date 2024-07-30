@@ -39,8 +39,11 @@ def formatPlot(ax: Axes,
     '''Generic Axes Formatter'''
 
     ax.set_facecolor(plotarea)
-    ax.grid(grid, zorder=0)
-    ax.set_axisbelow(True)
+    ax.grid(grid)
+
+    # Grid plotted below all data
+    if grid:
+        ax.set_axisbelow(True)
 
     ax.tick_params(color=spineColor, labelcolor=spineColor)
     for spine in ax.spines.values():

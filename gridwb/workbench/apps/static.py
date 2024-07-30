@@ -253,13 +253,18 @@ class Statics(PWApp):
                 # NOTE this won't work for instances where slack path crosses 0
 
                 # ANY Slack or PV Bus Q falling is bad
-                qabs = qall['GenMVR'].abs()
-                if qabsprev is not None and any(qabsprev > qabs):
+                #qabs = qall['GenMVR'].abs()
+                #print(qall['GenMVR'])
+                #if qabsprev is not None and any(qabsprev > qabs):
+                #    log(f' SL+ ', end=' ')
+                #    raise BifurcationException
+                #qabsprev = qabs
+                qsum = qall['GenMVR'].sum()
+                if qabsprev is not None and qsum < qabsprev:
                     log(f' SL+ ', end=' ')
                     raise BifurcationException
-                qabsprev = qabs
+                qabsprev = qsum
 
-            
                 # Save
                 self.pushstate()
                 pstable, pprev = pprev, pnow
@@ -282,6 +287,10 @@ class Statics(PWApp):
 
                 if i==0:
                     print('FIRST INJ FAILED. RESULTS WILL BE INACCURATE.')
+                    self.setload(SP=0*interface)
+                    self.io.restore_state('BACKUP')
+                    log(f'-----------EXIT-----------\n\n')
+                    return
                         
                 pnow = pprev
                 step *= backstepPercent
