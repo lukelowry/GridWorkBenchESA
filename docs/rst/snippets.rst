@@ -11,7 +11,7 @@ examples (though in a *much* less reader friendly format), check out
 ESA's `tests <https://github.com/mzy2240/ESA/tree/master/tests>`__,
 specifically the ``test_saw.py`` file.
 
-ESA Quick Start
+GWB Quick Start
 ---------------
 The following example is also presented in the :ref:`quick-start`
 section.

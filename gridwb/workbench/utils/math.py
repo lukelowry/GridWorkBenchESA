@@ -3,8 +3,12 @@ from numpy import diff
 def divergence(u, v):
     '''Central Difference Based Finite Divergence'''
 
-    divx = diff(u[:,:1],axis=0) + diff(u[:,:-1],axis=0) 
-    divy = diff(v[1:],axis=1) + diff(v[:-1],axis=1) 
+    # Selects inner region
+    r = slice(1,-1)
+
+    # Compute Component Wise
+    divx = diff(u[r,1:],axis=1) + diff(u[r,:-1],axis=1) 
+    divy = diff(v[1:, r],axis=0) + diff(v[:-1, r],axis=0) 
     
     return divx + divy
 

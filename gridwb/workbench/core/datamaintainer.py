@@ -49,33 +49,37 @@ class GridDataMaintainer:
         else:
             self.all[component] = DataFrame(columns=component.fields)
             return self.all[component]
-        
-    ''' Instance-Based Accessors'''
-    # TODO REMOVE I DON"T WANT TO USE INSTANCES ANYMORE - PANDAS FOR LIFE
-    def get_inst(self, component: Type[T]) -> GridList[T]:
-        '''Instance Factor if this representation is preferred. Not efficient for large datasets.'''
-        return GridList[T](
-            [
-                component.__load__(**self.cfilt(kw))
-                for kw in self[component].to_dict("records")
-            ]
-        )
-
-    # Colon Filters for Fields
-    def cfilt(self, kw: dict):
-        for key in kw.copy().keys():
-            if ":" in key:
-                kw[key.replace(":", "__")] = kw.pop(key)
-        return kw
-    
    
-    """
-    def add(self, *gobjs: GObject):
-        '''Add a new object to the grid. Must instantiate correctly.'''
-        for gobj in gobjs:
-            gset = self[gobj.__class__]
-            gset.loc[len(gset)] = dict(zip(gobj.fields, astuple(gobj)))
-    """
+   # NOTE maybe not work - I did not test this
+    def __getitem__(self, index) -> DataFrame | None:
+        '''Retrieve LOCAL Data with Indexor Notation
 
+        Examples:
+        wb.dm[Bus] # Get Primary Keys of PW Buses
+        wb.dm[Bus, 'BusPUVolt'] # Get Voltage Magnitudes
+        wb.dm[Bus, ['SubNum', 'BusPUVolt']] # Get Two Fields
+        wb.dm[Bus, :] # Get all fields
+        '''
+
+        # Type checking is an anti-pattern but this is accepted within community as a necessary part of the magic function
+        # >1 Argument - Objecet Type & Fields(s)
+        if isinstance(index, tuple): 
+            gtype, fields = index
+            if isinstance(fields, str): fields = fields,
+            elif isinstance(fields, slice): fields = gtype.fields
+        # 1 Argument - Object Type: retrieve only key fields
+        else: 
+            gtype, fields = index, ()
+
+        # Keys and then Fields
+        key_fields = gtype.keys
+        data_fields = [f for f in fields if f not in key_fields]
+        unique_fields = [*key_fields, *data_fields]
+
+        # If no fields (I.e. there were no keys and no data field passed)
+        if len(unique_fields) < 1:
+            return None
+
+        return self.all[gtype][unique_fields]
 
     

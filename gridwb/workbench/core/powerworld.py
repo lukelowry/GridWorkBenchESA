@@ -7,7 +7,7 @@ from .datamaintainer import GridDataMaintainer
 from ..grid.components import *
 from ..utils.decorators import timing
 from ..io.model import IModelIO
-from ...saw import SAW # NOTE Should be the only file importing SAW
+from ...saw import SAW, CommandNotRespectedError # NOTE Should be the only file importing SAW
 
 
 # Helper Function to parse Python Syntax/Field Syntax outliers
@@ -56,15 +56,18 @@ class PowerWorldIO(IModelIO):
         model: A dictionary with Object Types as keys. The dat associated with this key
             is a Dataframe holding data with atleast respective keys.
         '''
-        self.esa.RunScriptCommand("EnterMode(EDIT);")
+        self.edit_mode()
         for gclass, gset in model.items():
             # Only Pass Params That are Editable
-            #df = gset[gset.columns.intersection(gclass.editable)].copy()
             df = gset[gset.columns].copy()
             try:
-                self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
+                #self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
+                self.esa.change_and_confirm_params_multiple_element(gclass.TYPE, df)
+            except CommandNotRespectedError:
+                print(f'Power World did not accept the changes for {gclass.TYPE}')
             except:
                 print(f"Failed to Write Data for {gclass.TYPE}")
+        self.run_mode()
     
     def __getitem__(self, index) -> DataFrame | None:
         '''Retrieve Data frome Power world with Indexor Notation
@@ -118,6 +121,9 @@ class PowerWorldIO(IModelIO):
         # Type checking is an anti-pattern but this is accepted within community as a necessary part of the magic function
         # Extract Arguments depending on Index Method
 
+        # Ensure Edit Mode
+        self.edit_mode()
+
         # [Type, [Fields]]
         if len(args)==2:   gtype, where, fields = args[0], None, args[1]
 
@@ -129,14 +135,17 @@ class PowerWorldIO(IModelIO):
         if isinstance(fields, str): fields = fields,
         
         # Retrieve active power world records with keys only
-        base = self[gtype]
+        base = self[gtype,:]
 
         # Assign Values based on index
         if where is not None: base.loc[where, fields] = value
         else: base.loc[:,fields] = value
             
         # Send to Power World
-        self.esa.change_parameters_multiple_element_df(gtype.TYPE, base.reset_index())
+        self.esa.change_parameters_multiple_element_df(gtype.TYPE, base)
+
+        # Enter back into run mode
+        self.run_mode()
 
 
     def save(self):
@@ -145,6 +154,12 @@ class PowerWorldIO(IModelIO):
         Note: only data/settings written back to PowerWorld will be saved.
         '''
         return self.esa.SaveCase()
+    
+    def edit_mode(self):
+        self.esa.RunScriptCommand("EnterMode(EDIT);")
+
+    def run_mode(self):
+        self.esa.RunScriptCommand("EnterMode(RUN);")
 
     def get(self, gtype: Type[GObject], keysonly=False):
         '''
@@ -299,11 +314,13 @@ class PowerWorldIO(IModelIO):
         '''
         Sets the MVA Tolerance for NR Convergence
         '''
-        settings = self.dm.get_df(Sim_Solution_Options)
-        settings['ConvergenceTol:2'] = tol
-        self.upload({
-            Sim_Solution_Options: settings
-        })
+        self[Sim_Solution_Options,'ConvergenceTol:2'] = tol
+
+    def inner_loop_check_mvar_immediatly(self, enable=True):
+        ''' 
+        Set inner loop of power flow to check mvar limits before proceeding to outer loop.
+        '''
+        self[Sim_Solution_Options,'ChkVars'] = 'YES' if enable else 'NO'
 
     def get_min_volt(self):
         '''
@@ -315,14 +332,14 @@ class PowerWorldIO(IModelIO):
         '''
         Store a state under an alias and restore it later.
         '''
-        self.esa.RunScriptCommand('EnterMode(RUN);')
+        self.run_mode()
         self.esa.RunScriptCommand(f'StoreState({statename});')
 
     def restore_state(self, statename="GWB"):
         '''
         Restore a saved state.
         '''
-        self.esa.RunScriptCommand('EnterMode(RUN);')
+        self.run_mode()
         self.esa.RunScriptCommand(f'RestoreState(USER,{statename});')
 
     def delete_state(self, statename="GWB"):

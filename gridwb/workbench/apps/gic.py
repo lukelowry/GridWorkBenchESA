@@ -4,6 +4,7 @@ from numpy import unique, concatenate, sort, all, diag_indices, diff, expand_dim
 from numpy import any, delete, where, argwhere, argmax, sum, percentile, array_equal
 from numpy import errstate, vectorize
 from numpy.linalg import inv
+import numpy as np # TODO there is so much usage just import whole module
 
 from pandas import DataFrame, read_csv, MultiIndex
 from scipy.sparse import coo_matrix, lil_matrix, hstack, vstack
@@ -16,6 +17,7 @@ from ..grid.components import GIC_Options_Value, GICInputVoltObject
 from ..grid.components import GICXFormer, Branch, Substation, Bus, Gen
 from ..core.powerworld import PowerWorldIO
 from ..utils.datawiz import jac_decomp
+from ..io.b3d import B3D
 
 
 from scipy.sparse.linalg import inv as sinv 
@@ -53,7 +55,7 @@ class GIC(PWApp):
         self.io.esa.RunScriptCommand(f"GICCalculate({maxfield}, {direction}, {'YES' if solvepf else 'NO'})")
 
     def cleargic(self):
-        '''Clear the GIC Calculations'''
+        '''Clear the Power World Manual GIC Calculations. '''
         self.io.esa.RunScriptCommand(f"GICClear;")
 
     def loadb3d(self, ftype, fname, setuponload=True):
@@ -63,10 +65,6 @@ class GIC(PWApp):
 
     def minkv(self, kv):
         '''Set the minimum KV of lines to contribute to GIC Calculations'''
-        pass
-
-    def multiline(self):
-        # TODO a function to do things to multi-lines
         pass
 
     def dBounddI(self, eta, PX, J, V):
@@ -202,6 +200,10 @@ class GIC(PWApp):
         print("GIC Time Varying Data Uploaded")
     
 
+    
+'''
+The following three classes are helper-classes to help create GIC data. Not ideal formatting, but it works. Do not touch.
+'''
 
 class XFWiringType(Enum):
     GWYE = auto()
@@ -859,7 +861,13 @@ class GICTool:
         Ydf.index.name = 'XFMR'
         return Xdf, Ydf
 
+    def to_b3d(self, EX, EY):
+        '''Convert Electric Field data associated with a tesselation to a B3D Object.'''
+        X, Y, W = self.tile_info
+        return B3D.from_mesh(X[:-1]+W/2, Y[:-1]+W/2, EX, EY)
+
 class GICCorners:
+    '''Discrete Class for handling 'Corner' Analysis of plausible electric fields. Old methodology, not recomended to use.'''
 
     def __init__(self, H, L, E) -> None:
         '''
@@ -1078,7 +1086,6 @@ class GICCorners:
         new_matrix = array(columns_to_keep).T
         
         return new_matrix
-
 
     def find_equivalent_columns(self, matrix, tolerance=1e-10):
         '''Tolerance is for identifying zero columns so they are not added'''

@@ -34,7 +34,9 @@ def formatPlot(ax: Axes,
                ylim=None, 
                grid=True,
                plotarea='linen', 
-               spineColor='black'
+               spineColor='black',
+               xticksep = None,
+               yticksep = None
                ):
     '''Generic Axes Formatter'''
 
@@ -52,9 +54,12 @@ def formatPlot(ax: Axes,
     # Viewport
     if xlim:
         ax.set_xlim(xlim)
-        ax.set_xticks(arange(*xlim,0.1))
+        if xticksep:
+            ax.set_xticks(arange(*xlim,xticksep))
     if ylim:
         ax.set_ylim(ylim)
+        if yticksep:
+            pass
     
     # Text
     ax.set_title(title)
@@ -82,6 +87,7 @@ def darker_hsv_colormap(scale_factor=0.5):
     darker_rgb_colors = hsv_to_rgb(hsv_colors)
     darker_hsv_cmap = plt.cm.colors.ListedColormap(darker_rgb_colors)
     return darker_hsv_cmap
+
 
 # Old plotting tools geared toward large dynamic datasets. Save for now.
 

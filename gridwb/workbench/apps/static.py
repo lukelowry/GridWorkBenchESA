@@ -45,7 +45,6 @@ class Statics(PWApp):
         l['LoadStatus'] = 'Closed'
         l = l.fillna(0)
         self.io.upload({Load: l})
-        self.bus_loads = l
 
         # Smaller DF just for updating Constant Power at Buses for Injection Interface Functions
         self.DispatchPQ = l[['BusNum', 'LoadID'] + zipfields].copy()
@@ -171,7 +170,7 @@ class Statics(PWApp):
         return any(violation)
         #return any(p > self.genpmax + tol) or any(p < self.genpmin - tol)
     
-    def gensAboveQMax(self, q=None, isClosed=None, tol=0):
+    def gensAboveQMax(self, q=None, isClosed=None, tol=0.001):
         '''Returns True if any CLOSED gens are outside Q limits. Active function.'''
         if q is None:
             q = self.io.get_quick(Gen, 'GenMVR')['GenMVR']
@@ -189,7 +188,7 @@ class Statics(PWApp):
     # NOTE This is because we are interested in maximum POSSIBLE injection of MW. 
     # So then if all gens are at max but injection buses, one of them needs to be slack bus
     # if we want the flow values to be realistic
-    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None):
+    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None, restore_when_done=False, qlimtol=0):
         ''' 
         Continuation Power Flow. Will Find the maximum INjection MW through an interface. As an iterator, the last element will be the boundary value.
         The continuation will begin from the state
@@ -207,8 +206,11 @@ class Statics(PWApp):
         def log(x,**kwargs): 
             if verbose: print(x,**kwargs)
 
-        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution    
-        self.io.save_state('BACKUP')
+        # 1. Solved -> Last Solved Solution,     2. Stable -> Known HV Solution  
+        if restore_when_done:  
+            self.io.save_state('BACKUP')
+
+        # Initialize State Save Chain
         self.chain()
         self.pushstate()
         
@@ -241,24 +243,16 @@ class Statics(PWApp):
                 qclosed = qall['GenStatus']=='Closed'
 
                 # Check Max Reactive Output
-                if self.gensAboveQMax(qall['GenMVR'], qclosed): 
+                if self.gensAboveQMax(qall['GenMVR'], qclosed,tol=qlimtol): 
                     log(' Q+ ', end=' ')
                     raise GeneratorLimitException
                 
-                # Check Max Power Output (NOTE not needed in GIC scenario I think)
-                if self.gensAbovePMax(None, qclosed): 
+                # Check Max Power Output (Rarer but happens)
+                if self.gensAbovePMax(None, qclosed):  # TODO add tolerance option for P Limits
                     log(' P+ ', end=' ')
                     raise GeneratorLimitException
                 
-                # NOTE this won't work for instances where slack path crosses 0
-
                 # ANY Slack or PV Bus Q falling is bad
-                #qabs = qall['GenMVR'].abs()
-                #print(qall['GenMVR'])
-                #if qabsprev is not None and any(qabsprev > qabs):
-                #    log(f' SL+ ', end=' ')
-                #    raise BifurcationException
-                #qabsprev = qabs
                 qsum = qall['GenMVR'].sum()
                 if qabsprev is not None and qsum < qabsprev:
                     log(f' SL+ ', end=' ')
@@ -285,18 +279,20 @@ class Statics(PWApp):
 
                 log('XXX', end=' ')
 
+                # Failure on first iteration - return and restore the state the function was called in
                 if i==0:
-                    print('FIRST INJ FAILED. RESULTS WILL BE INACCURATE.')
-                    self.setload(SP=0*interface)
-                    self.io.restore_state('BACKUP')
+                    log('First Injection Failed. This could be due to a LV Solution, or it is already past the boundary.')
+                    self.irestore(0)
                     log(f'-----------EXIT-----------\n\n')
                     return
-                        
+
+                # Nominal Failure, backstep binary search       
                 pnow = pprev
                 step *= backstepPercent
                 if pprev!=0: 
                     self.irestore(0)
 
+            # Terminating Condition
             if step<minstep:
                 break
 
@@ -315,7 +311,8 @@ class Statics(PWApp):
         # TODO delete states that were saved
 
         # Restore to before CPF Regardless of everything
-        self.io.restore_state('BACKUP')
+        if restore_when_done: 
+            self.io.restore_state('BACKUP')
         log(f'-----------EXIT-----------\n\n')
 
     '''
@@ -419,21 +416,20 @@ class Statics(PWApp):
 
         if SP is not None:
             self.DispatchPQ.loc[:,'LoadSMW'] = SP
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadSMW']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadSMW']]})
         if SQ is not None:
             self.DispatchPQ.loc[:,'LoadSMVR'] = SQ
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadSMVR']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadSMVR']]})
         if IP is not None:
             self.DispatchPQ.loc[:,'LoadIMW'] = IP
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadIMW']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadIMW']]})
         if IQ is not None:
             self.DispatchPQ.loc[:,'LoadIMVR'] = IQ
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadIMVR']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadIMVR']]})
         if ZP is not None:
             self.DispatchPQ.loc[:,'LoadZMW'] = ZP
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadZMW']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadZMW']]})
         if ZQ is not None:
             self.DispatchPQ.loc[:,'LoadZMVR'] = ZQ
-            self.io.upload({Load:self.DispatchPQ[['BusNum','LoadID','LoadZMVR']]})
+            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadZMVR']]})
 
-        self.io.upload({Load:self.DispatchPQ})

@@ -1,4 +1,5 @@
-from numpy import array, zeros, single, uint32, double, uint32, frombuffer, stack
+from numpy import array, zeros, frombuffer, stack, meshgrid, linspace, ndarray
+from numpy import single, uint32, double, uint32, uint32
 
 class B3D:
 
@@ -33,6 +34,41 @@ class B3D:
 
         if fname is not None:
             self.load_b3d_file(fname)
+
+    @classmethod
+    def from_mesh(cls, long, lat, ex: ndarray, ey: ndarray, times=None, comment="GWB Electric Field Data"):
+        '''
+        Convert mesh-grid style efield data to B3D
+        Only Supporting Static Fields at the moment.
+        longs: shape (n, )
+        lats: shape (m, )
+        ex: shape (n, m) Mesh array of X-Component Electric Field
+        ey: shape (n, m) Mesh array of Y-Component Electric Field
+        '''
+
+        b3d = cls()
+        b3d.comment = comment
+
+        # n x m Geographic
+        n = len(long) 
+        m = len(lat)
+        nt = n*m
+        X, Y = meshgrid(long, lat)
+        b3d.lon = X.reshape(nt, order='F')
+        b3d.lat = Y.reshape(nt, order='F')
+        b3d.grid_dim = [n, m]
+
+        # Time Periods
+        periods = 1
+        b3d.time = linspace(0,10, periods, dtype=uint32)
+
+        # Prepare Efield
+        eshape = (1,nt)
+        eorder = 'F'
+        b3d.ex = ex.reshape(eshape, order=eorder).astype(single)
+        b3d.ey = ey.reshape(eshape, order=eorder).astype(single)
+
+        return b3d
 
     def write_b3d_file(self, fname):
         with open(fname, "wb") as f:
@@ -79,7 +115,6 @@ class B3D:
             exd = self.ex.reshape(n*nt)
             eyd = self.ey.reshape(n*nt)
             f.write(stack([exd, eyd]).transpose().reshape(n*nt*2).tobytes())
-
 
     def load_b3d_file(self, fname):
         with open(fname, "rb") as f:
