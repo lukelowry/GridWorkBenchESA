@@ -68,39 +68,35 @@ class GIC(PWApp):
         pass
 
     def dBounddI(self, eta, PX, J, V):
-        ''' Interface Sensitivity w.r.t Transformer GIC Currents
+        ''' Interface Sensitivity w.r.t Transformer GIC Currents.
         Parameters:
         - eta: (nx1) Numpy Vector of Injection
+        - PX: (nxm) Transformer to loaded-bus mapping
         - J: (nxn) Full AC Powerflow Jacobian at Boundary
         - V: (nx1) Bus Voltage Magnitudes
         Returns:
         - (1xn) Numpy Array of Sensitivites
         '''
 
-        
         # Category Selectors
         buscat = self.io[Bus,['BusCat']]['BusCat']
         slk = buscat=='Slack'
         pv = buscat=='PV'
         pq = ~(slk | pv) # I think this is the best way
-
         dPdT, dPdV, dQdT, dQdV = jac_decomp(J)   
         
-        # P Equations ( Include Slack in row just for dimensionality - Techniqly should not be included)
-        At = dPdT[:,~slk]
-        Av = dPdV[:,pq]
-        A = hstack([At, Av])
-
-        # Q equations
-        Bt = dQdT[pq][:,~slk]
-        Bv = dQdV[pq][:,pq]
-        B = hstack([Bt, Bv])
+        # P & Q Equations ( Include Slack in row just for dimensionality - Techniqly should not be included)
+        A = hstack([dPdT[:,~slk], dPdV[:,pq]])
+        B = hstack([dQdT[pq][:,~slk], dQdV[pq][:,pq]])
 
         # PQ Voltage Diagonal
         Vdiag = diagflat(V[pq])
 
-        # Psuedo Inverse Sensitivity (N Buses) x (N XFMRs)
-        return eta.T@A@B.T@sinv((B@B.T).tocsc())@Vdiag@PX[pq]
+        # Psuedo Inverse (for eta and B) Sensitivity (N Buses) x (N XFMRs)
+        return (1/(eta.T@eta))@eta.T@A@B.T@sinv((B@B.T).tocsc())@Vdiag@PX[pq]
+
+        # Without eta Psuedo
+        #return eta.T@A@B.T@sinv((B@B.T).tocsc())@Vdiag@PX[pq]
 
 
         # NOTE Part of me thinks I can just DO this with the jacobian at the base case.... That would be powerful
@@ -108,8 +104,38 @@ class GIC(PWApp):
         # NOTE It would be like 'Trasporting' the solution down an interface without increasing any active power
 
         #return eta.T@dPdQ@diagflat(V[1:])
+
+    def dIdE(self, H, E=None, i=None):
+        '''
+        Compute the Jacobean between a mesh Efield 
+        and (absolute) Transformer GICs
+
+        Pass H and one other parameter:
+        - Electric field OR Signed Nuetral XFMR Currents
+
+        Return Jacobean (Rows -> i, Cols -> E)
+        '''
+
+        # E passed
+        if E is not None:
+            if i is None: i = H@E
+            else: print('(E) and (i) passed. Using (i) only.')
+
+        # E not passed
+        else:
+            if i is None: raise Exception
+
+        # Piece Wise Emulator
+        F = self.signdiag(i) 
     
-    def dIdE(dBdI, PX, Hx, Hy, Ex, Ey):
+        return F@H
+    
+    def signdiag(self, x):
+        '''Return a diagonal matrix of the sign of a vector'''
+        return np.diagflat(np.sign(x)) 
+        
+    
+    def dIdEOLD(dBdI, PX, Hx, Hy, Ex, Ey):
         '''Returns tuple (Ex Sensitivities, Ey Sensitivities) w.r.t Bus GIC load model
         which is presumed to be constant reactive current. Differential 1-Form
         Parameters:
@@ -200,11 +226,6 @@ class GIC(PWApp):
         print("GIC Time Varying Data Uploaded")
     
 
-    
-'''
-The following three classes are helper-classes to help create GIC data. Not ideal formatting, but it works. Do not touch.
-'''
-
 class XFWiringType(Enum):
     GWYE = auto()
     WYE = auto()
@@ -221,6 +242,102 @@ class XFWiringType(Enum):
             return XFWiringType.DELTA
         else:
             raise NotImplementedError
+
+
+'''
+Process:
+Add all substations
+Add all buses
+KNOWN: [Locations, Grounding Conductance, Nodes]
+Add all lines
+KNOWN: [Geographic Interface, Line Conductances]
+Add all windings
+Add all transformers (using windings)
+KNOWN: [Wiring Configurations, Winding Conductances, etc]
+Add all GIC Blocking Devices
+KNOWN: [Restricted Ground Paths]
+
+Internally Calculate Network Matrices...
+'''
+
+from scipy.sparse import bmat, diags, block_diag
+
+class GICData:
+
+    def __init__(self, subs: DataFrame, buses: DataFrame, lines: DataFrame, xfmrs: DataFrame) -> None:
+        
+
+        # Manifest Node IDs
+        self.nbus = len(buses)
+        self.nsubs = len(subs)
+        self.nlines = len(lines)
+
+        def nodeperm(field):
+            idx = buses.index[buses['Name']==lines[field]]
+            return coo_matrix((np.ones(self.nlines), (idx, lines.index), (self.nlines, self.nbus)))
+
+        # Manifest Line Incidence Matrix and Conductance Weights
+        Aline = nodeperm('FromBus') - nodeperm('ToBus')
+        Gline = diags(lines['G'])
+
+        # Determine High/Low Windings
+        getXBus = lambda x: (buses['Name']==xfmrs[x])
+        getBusV = lambda x: buses.loc[getXBus(x),'NomVolt'] 
+
+        fromIsHigh = getBusV('FromBus')>getBusV('ToBus')
+        xfmrs['HighBus'] = np.where(fromIsHigh, xfmrs['FromBus'],  ['ToBus'])
+
+        # Determine Winding Mappings (wSub, +- 1 at node index)
+        wSub, wBus = None, None
+
+        # In order used, Winding Conductances
+        Gwind = diags([xfmrs['G1'], xfmrs['G2']])
+
+        # Manifest Winding Incidence
+        A = bmat([
+            [wSub, wBus ]
+            [None, Aline]
+        ])
+
+        # Manifest all branch weights
+        Gdiag = block_diag([Gline, Gwind])
+
+        # Conductance Laplacian
+        G = A.T@Gdiag@A 
+
+        # Etc
+
+
+# Let us do this assuming it was all passed correctly.
+class GICFactory:
+
+    def __init__(self) -> None:
+
+        self.subdf = DataFrame(columns=['Name', 'SubG', 'Long', 'Lat'])
+        self.busdf = DataFrame(columns=['Name', 'NomVolt', 'SubID'])
+        self.linedf = DataFrame(columns=['Name', 'FromBus', 'ToBus', 'G'])
+        self.xfmrdf = DataFrame(columns=['Name', 'FromBus', 'ToBus', 'CFG1', 'CFG2', 'G1', 'G2', 'BD', 'Auto'])
+
+    def substation(self, name, subG, long, lat):
+        self.subdf.iloc[-1,:] = [id, subG, long, lat]
+    
+    def bus(self, name, nomvolt, subID):
+        self.busdf.iloc[-1,:] = [name, nomvolt, subID]
+
+    def line(self, name, fbus, tbus, g):
+        self.linedf.iloc[-1,:] = [name, fbus, tbus, g]
+
+    def xfmr(self, name, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto):
+        self.xfmrdf = [name, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto]
+
+    def make(self):
+        return GICData(self.subdf, self.busdf,self.linedf,self.xfmrdf)
+
+
+'''
+The following three classes are helper-classes to help create GIC data. Not ideal formatting, but it works. Do not touch.
+'''
+
 
 # Custom Winding Class
 class Winding:
@@ -281,6 +398,9 @@ class ParsingXFMR:
         else:
             return 0
 
+# TODO
+# - More General Implementation of Below
+# - I want to give this to people for general use
 
 class GICTool:
     '''Generatic GIC Helper Object that creates common matricies and calculations'''
@@ -738,6 +858,7 @@ class GICTool:
             vec[:,0] = self.lines['GICObjectInputDCVolt']
         return vec
     
+    # TODO remove
     def corner_factory(self):
         '''Return a GICCorner Object that parses possible Efields'''
 
@@ -758,7 +879,7 @@ class GICTool:
 
         return GICCorners(H, L, E)
 
-    def tesselations(self, tilewidth=0.5):
+    def tesselations(self, tilewidth=0.5, num_spacers=1):
         '''Return Tessalized forms of the H matrix for Ex and Ey.'''
 
         line_km = self.line_km
@@ -770,8 +891,9 @@ class GICTool:
 
         # Generate Tile Intervals
         W = tilewidth
-        X = arange(cX.min(axis=None), cX.max(axis=None)+W, W) 
-        Y = arange(cY.min(axis=None), cY.max(axis=None)+W, W)
+        margin = num_spacers*W
+        X = arange(cX.min(axis=None) -margin, cX.max(axis=None)+W+margin, W) 
+        Y = arange(cY.min(axis=None) -margin, cY.max(axis=None)+W+margin, W) # TODO  Change to be one extra cell in x and y direction for SLACK VARIABLE IN E FIELD during optimization
 
         # Save for reference if needed
         self.tile_info = X, Y, W
@@ -865,6 +987,9 @@ class GICTool:
         '''Convert Electric Field data associated with a tesselation to a B3D Object.'''
         X, Y, W = self.tile_info
         return B3D.from_mesh(X[:-1]+W/2, Y[:-1]+W/2, EX, EY)
+
+
+# TODO remove, not applicable anymore
 
 class GICCorners:
     '''Discrete Class for handling 'Corner' Analysis of plausible electric fields. Old methodology, not recomended to use.'''

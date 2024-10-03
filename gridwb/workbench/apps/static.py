@@ -1,7 +1,7 @@
 # Data Structure Imports
 import warnings
 from pandas import DataFrame, concat
-from numpy import NaN, exp, any, arange, nanmin, isnan
+from numpy import NaN, exp, any, arange, nanmin, isnan, inf
 from numpy.random import random
 
 # WorkBench Imports
@@ -156,7 +156,7 @@ class Statics(PWApp):
 
         return (meta, df.T)
     
-    def gensAbovePMax(self, p=None, isClosed=None, tol=0):
+    def gensAbovePMax(self, p=None, isClosed=None, tol=0.001):
         '''Returns True if any CLOSED gens are outside P limits. Active function.'''
         if p is None:
             p = self.io.get_quick(Gen, 'GenMW')['GenMW']
@@ -188,7 +188,7 @@ class Statics(PWApp):
     # NOTE This is because we are interested in maximum POSSIBLE injection of MW. 
     # So then if all gens are at max but injection buses, one of them needs to be slack bus
     # if we want the flow values to be realistic
-    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None, restore_when_done=False, qlimtol=0):
+    def continuation_pf(self, interface, initialmw = 0, minstep=1, maxstep=50, maxiter=200, nrtol=0.0001, verbose=False, boundary_func=None, restore_when_done=False, qlimtol=0, plimtol=None, bifur_check=True):
         ''' 
         Continuation Power Flow. Will Find the maximum INjection MW through an interface. As an iterator, the last element will be the boundary value.
         The continuation will begin from the state
@@ -198,6 +198,8 @@ class Statics(PWApp):
         -initial_mw: starting interface MW. Could speed up convergence if you know a lower limit
         -nrtol: Newton rhapston MVA tolerance
         -boundary_func: Optional, pass a callable object to be called at boundary. Return of callable will be put into obj.X
+        -qlim_tol: Tolerance on detecting if a generator is above its Q limits (None = Do not check)
+        -plimtol: Tolerance on detecting if a generator is above its P Limits (None = Do not check)
         returns:
         - iterator with elements being the magnitude of interface injection. The last element is the CPF solution.
         '''
@@ -210,10 +212,14 @@ class Statics(PWApp):
         if restore_when_done:  
             self.io.save_state('BACKUP')
 
-        # Initialize State Save Chain
+        # Initialize Stability State Chain
         self.chain()
         self.pushstate()
-        
+        self.pushstate()
+
+        # For solution Continuity
+        self.io.save_state('PREV')
+
         # Set NR Tolerance in MVA
         self.io.set_mva_tol(nrtol)
 
@@ -222,8 +228,10 @@ class Statics(PWApp):
         # Misc Iteration Tracking
         backstepPercent=0.25
         pnow, step = initialmw, maxstep # Current Interface MW, Step Size in MW
-        pstable, pprev = 0, 0
-        qabsprev = None
+        pstable, pprev = initialmw, initialmw
+        qstable, qprev = -inf, -inf
+        qmax, pmax = -inf, initialmw # Maximum Observed Sum MVAR
+        laststableindex = 0
 
 
         # Continuation Loop
@@ -243,34 +251,71 @@ class Statics(PWApp):
                 qclosed = qall['GenStatus']=='Closed'
 
                 # Check Max Reactive Output
-                if self.gensAboveQMax(qall['GenMVR'], qclosed,tol=qlimtol): 
+                if qlimtol is not None and self.gensAboveQMax(qall['GenMVR'], qclosed,tol=qlimtol): 
                     log(' Q+ ', end=' ')
                     raise GeneratorLimitException
                 
                 # Check Max Power Output (Rarer but happens)
-                if self.gensAbovePMax(None, qclosed):  # TODO add tolerance option for P Limits
+                # Need to be enabled by user because they might not care about slack
+                if plimtol is not None and self.gensAbovePMax(None, qclosed, tol=plimtol):
                     log(' P+ ', end=' ')
                     raise GeneratorLimitException
                 
-                # ANY Slack or PV Bus Q falling is bad
+                # Indicator Data
                 qsum = qall['GenMVR'].sum()
-                if qabsprev is not None and qsum < qabsprev:
-                    log(f' SL+ ', end=' ')
-                    raise BifurcationException
-                qabsprev = qsum
 
-                # Save
-                self.pushstate()
-                pstable, pprev = pprev, pnow
+                # Stability Indicator
+                # 0 - Atleast 1 previous solution
+                # 1 - Net Q of generators risen above a previous stable solution
+                # 3 - Net Q of generators risen above a known maximum
+                # 2 - MW Injection at detected Q drop is less than MW of previous known solution
+                # (Does not actually gaurentee stable - but the previous is DEFINITLY stable)
+                isStable =  (i > 0) and (qsum > qstable) and (qsum > qmax) and (pnow > pstable) and (pnow > pmax)
+
+
+                ''' STATE SAVE DETERMINATION - Criteria: Stability'''
+
+                # Stable Solution Candidate Actions
+                if isStable:
+                    
+                    log(' ST ', end=' ')
+                    self.pushstate() # Push in Stable Chain
+
+                    # Don't yield on first stable
+                    if laststableindex > 0:
+                        self.irestore(1)
+                        yield pprev
+                        self.irestore(0)
+
+                    laststableindex = i
+                    pstable, qstable = pprev, qprev
+                    
+                # Bifurcation Action
+                if bifur_check:
+
+                    # After so many unstable solutions we can quit and assume bifurcation
+                    if i - laststableindex > 4:
+                        log(f' SL+ ', end=' ')
+                        raise BifurcationException    
+
+
+                # Store as solved solution - but not stable
+                self.io.save_state('PREV')
+
+                pmax, qmax = max(pnow, pprev), max(qsum, qprev)
+                pprev, qprev = pnow, qsum
+                
+                
 
                 # Yield Stable Solutions
-                if pstable is not None:
-                    yield pprev # NOTE I thought should be yeilding stable but this gives the clearly more correct answer
+                #if pstable is not None:
+                    #yield pprev # NOTE I thought should be yeilding stable but this gives the clearly more correct answer
 
             except BifurcationException as e:
 
                 pnow = pstable 
-                pprev = pstable 
+                pprev = pstable
+                qprev = qstable 
                 step *= backstepPercent
                 self.irestore(1)
                 
@@ -282,15 +327,19 @@ class Statics(PWApp):
                 # Failure on first iteration - return and restore the state the function was called in
                 if i==0:
                     log('First Injection Failed. This could be due to a LV Solution, or it is already past the boundary.')
-                    self.irestore(0)
+                    #self.irestore(0)
+                    self.io.restore_state('PREV')
                     log(f'-----------EXIT-----------\n\n')
                     return
 
-                # Nominal Failure, backstep binary search       
+                # Non-Bifurcative Failure, backstep binary search       
                 pnow = pprev
+                #pnow, pprev = pstable, pstable
+                #qprev = qstable
                 step *= backstepPercent
                 if pprev!=0: 
-                    self.irestore(0)
+                    self.irestore(1)
+                    #self.io.restore_state('PREV')
 
             # Terminating Condition
             if step<minstep:
@@ -301,6 +350,7 @@ class Statics(PWApp):
             
         # Execute Boundary Function
         if boundary_func is not None:
+            self.irestore(1)
             log(f'BD: {pprev:>12.4f} MW\t ! ')
             log(f'Calling Boundary Function...')
             boundary_func.X = boundary_func()
@@ -376,7 +426,7 @@ class Statics(PWApp):
         Regress backward in the saved states. Consecutive calls do not affect which state is restored.
         Example:
         back(1) # Loads 2 states ago
-        back(1) # Will load the same state
+        back(0) # Will load the same state
 
         # Each line represents a call to push() with nmax = 3
         # 0*          <- push()  State 0 added (sidx = 0)

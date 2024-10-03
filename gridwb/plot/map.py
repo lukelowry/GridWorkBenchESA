@@ -27,7 +27,7 @@ def border(ax, shape='Texas'):
     shapeobj.plot(ax=ax, edgecolor='black', facecolor='none')
 
 
-def plot_lines(ax, lines, ms=50):
+def plot_lines(ax, lines, ms=50, lw=1):
     '''Draw Transmission Line Geographically 
     -lines: GWB DataFrame of Line Data
     -coordsX -> nx2 array of x-coords for TO and FROM repsectively
@@ -38,12 +38,13 @@ def plot_lines(ax, lines, ms=50):
     cY = lines[['Latitude', 'Latitude:1']].to_numpy()
     
     for i in range(cX.shape[0]):
-        ax.plot(cX[i], cY[i], zorder=4, c='k')
+        ax.plot(cX[i], cY[i], zorder=4, c='k', linewidth=lw)
         ax.scatter(cX[i], cY[i], c='k', zorder=2, s=ms)
 
 
-def plot_tiles(ax, gt, include_lines=True, color='grey'):
-    '''Plot a GIC Tool Tesselation Grid. Hx and Hy should be calculated with gt.tesselations before calling.'''
+def plot_mesh(ax, gt, include_lines=True, color='grey', tcolor='red', talpha=0.3):
+    '''Plot a GIC Tool Tesselation Grid. Hx and Hy should be calculated with gt.tesselations before calling.
+    Tile Colors should be a 2D array.'''
 
     
     if include_lines:
@@ -64,11 +65,23 @@ def plot_tiles(ax, gt, include_lines=True, color='grey'):
     refpnt = np.array([[X.min(), Y.min()]]).T
     tiles_unique = np.unique(tile_ids[:,~np.isnan(tile_ids[0])],axis=1)
     tile_pos = tiles_unique*W + refpnt
+
     for tile in tile_pos.T:
-        ax.add_patch(Rectangle((tile[0],tile[1]), W, W, facecolor='red', alpha=0.3))
+        ax.add_patch(Rectangle((tile[0],tile[1]), W, W, facecolor=tcolor, alpha=talpha))
 
     plt.axis('scaled')
     formatPlot(ax, xlabel='Longitude ($^\circ$E)', ylabel='Latitude ($^\circ$N)', title='Geographic Line Plot', plotarea='white', grid=False)
+
+def plot_tiles(ax, gt, colors=None):
+
+    X, Y, W = gt.tile_info
+
+    for i in np.arange(len(X)-1):
+        for j in np.arange(len(Y)-1):
+            ax.add_patch(Rectangle((X[i]*W + 0, Y[j]*W + 0), W, W, facecolor=colors[j,i] if colors is not None else 'red', alpha=0.3))
+
+    plt.axis('scaled')
+    formatPlot(ax, xlabel='Longitude ($^\circ$E)', ylabel='Latitude ($^\circ$N)', title='Tile Plot', plotarea='white', grid=False)
  
 
 def plot_compass(ax: Axes, cmap=None, center=(-81.75, 33.2), radius=0.4, card_fs=16, band_width=0.1, band_thick=2, comp_thick=100, dir_perc=0.6):
