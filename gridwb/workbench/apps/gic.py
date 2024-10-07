@@ -6,8 +6,8 @@ from numpy import errstate, vectorize
 from numpy.linalg import inv
 import numpy as np # TODO there is so much usage just import whole module
 
-from pandas import DataFrame, read_csv, MultiIndex
-from scipy.sparse import coo_matrix, lil_matrix, hstack, vstack
+from pandas import DataFrame, read_csv, MultiIndex, concat
+from scipy.sparse import coo_matrix, lil_matrix, hstack, vstack, bmat, diags, block_diag
 from enum import Enum, auto
 from itertools import product
 
@@ -25,8 +25,234 @@ from scipy.sparse.linalg import inv as sinv
 fcmd = lambda obj, fields, data: f"SetData({obj}, {fields}, {data})".replace("'","")
 gicoption = lambda option, choice: fcmd("GIC_Options_Value",['VariableName', 'ValueField'], [option, choice])
 
-# Dynamics App (Simulation, Model, etc.)
+
+class GICModel:
+
+    '''A model class that holds all associated GIC matricies. Model instantiation requires proper
+    data input format. If using ESA, use GIC.model() to automatically generate an instance.'''
+
+    def __init__(self, subs: DataFrame, buses: DataFrame, lines: DataFrame, xfmrs: DataFrame) -> None:
+
+        # Helper Function
+        iv = lambda A: sinv(A.tocsc())
+        
+        # Manifest Node IDs
+        self.nbus, self.nsubs, self.nlines, self.nxfmr = len(buses), len(subs), len(lines), len(xfmrs)
+
+        # Extract High and Low Winding Conductance
+        MOHM = 1e6
+        GH , GL = xfmrs['HighG'].copy(), xfmrs['LowG'].copy()
+        Gline = lines['G'].copy()
+        GSUB = subs['SubG'].copy().to_numpy()
+
+        # Select based on Wiring Configuration
+        HWYE, LWYE = xfmrs['CFGHigh']=='Gwye', xfmrs['CFGLow']=='Gwye'
+        AUTO, BD = xfmrs['Auto'].to_numpy(bool), xfmrs['BD'].to_numpy(bool)
+
+        ''' BRANCH MAPPING '''
+
+        # Incidence Mapping
+        def nodeperm(data, field, mount):
+            obj = subs if mount=='SubNum' else buses
+            m, n = len(data), len(obj)
+            idx = obj.reset_index().set_index(mount).loc[data[field], 'index'].to_numpy()
+            return coo_matrix((np.ones(m), (np.arange(m), idx)), shape=(m, n))
+
+        # Manifest Line Incidence Matrix and Conductance Weights
+        ZRO = lil_matrix((self.nlines, self.nsubs))
+        Aline = nodeperm(lines, 'FromBus', 'BusNum') - nodeperm(lines, 'ToBus', 'BusNum')
+        Aline = hstack([ZRO, Aline])
+        
+        # Determine Wnd Map (Substation, High and Low Bus Mounts)
+        SUB = nodeperm(xfmrs, 'SubNum', 'SubNum')
+        BH, BL = nodeperm(xfmrs, 'HighBus', 'BusNum'), nodeperm(xfmrs, 'LowBus', 'BusNum')
+ 
+        # Grounded Wye Windings (From Bus -> to Sub Nuetral Bus)
+        # Auto Transformer # High Wnd(High Bus -> Low Bus) # Low Wnd (Low Bus -> Sub Nuetral) 
+        ZRO = lil_matrix((self.nxfmr, self.nsubs))
+        A_WYE_HIGH, A_WYE_LOW = hstack([-SUB, BH]).tolil(), hstack([-SUB , BL]).tolil() 
+        A_AUTO_HIGH, A_AUTO_LOW = hstack([ZRO, BH-BL]).tolil(), hstack([SUB, -BL]).tolil()
+
+        # Merge Wiring Configurations
+        A_WYE_HIGH[~HWYE|AUTO], A_WYE_LOW[~LWYE|AUTO] = 0, 0
+        A_AUTO_HIGH[~AUTO], A_AUTO_LOW[~AUTO] = 0, 0
+        AH, AL = A_WYE_HIGH + A_AUTO_HIGH, A_WYE_LOW + A_AUTO_LOW
+
+        # Total Incidence (High Wnd, Low Wnd, Lines/Other Branches)
+        A = vstack([AH, AL, Aline]).tolil()
+
+        ''' CONDUCTANCE VALUES'''
+
+        # BLOCKING DEVICE(+ 1 Mega Ohm) # (Series Shunt/High R Lines) Conductances
+        # Wye: Make winding Ohms Large # Auto: Make Low Winding Ohms Large
+        GH.loc[HWYE&BD], GL.loc[LWYE&BD], GL.loc[AUTO&BD] = 1/MOHM, 1/MOHM, 1/MOHM
+        Gline.loc[Gline==0], GSUB[GSUB==0] = 1/MOHM, 1/MOHM
+        Ggnd = np.concatenate([GSUB, np.ones(self.nbus)/MOHM])
+
+        # Total Branch Conductances & Substation Grounding Conductance
+        Gd = diags(concat([GH, GL, Gline], ignore_index=True))
+        Gs = diags(Ggnd)
+
+        ''' EFFECTIVE GICS '''
+
+        # Determine Effective GIC extraction  # Equivilent to (Ph + N^(-1) Pl)
+        Eff = hstack([
+            eye(self.nxfmr), 
+            diags(1/xfmrs['TurnsRatio']), 
+            lil_matrix((self.nxfmr, self.nlines))
+        ])
+
+        # Conductance Laplacian
+        G = A.T@Gd@A + Gs
+
+        # H Matrix
+        H = Eff@(Gd@A@iv(G)@A.T@Gd+Gd)/3
+
+        self._A = A
+        self._G = G
+        self._eff = Eff
+        self._H = H
+        return
+    
+        # TODO Perform Per-Unit Scaling
+        # TODO eliminate dimensions where it is not needed (i.e. at the end when getting windings)
+        # TODO bus assignment
+
+        # Scale by K for partical one-matrix operations
+        K = None 
+        self._zeta = K@H
+    
+    @property
+    def A(self):
+        '''
+        The General incidence Matrix of the GIC Network. The first N  columns are substation nuetral buses, and
+        the remaining M are bus nodes. The first 2X rows are High and Low Windings, and the remaining are non-winding branches.
+        
+        Returns:
+        (N+M)x(N+M) sparse matrix
+        '''
+        return self._A
+    
+    @property
+    def G(self):
+        '''
+        Conductance Laplacian of the GIC Network. The first N nodes are substation nuetral buses, and
+        the remaining M nodes are bus nodes.
+        
+        Returns:
+        (N+M)x(N+M) sparse matrix
+        '''
+        return self._G
+    
+    @property
+    def H(self):
+        '''
+        Linear GIC Function Matrix. This matrix maps induced line voltages to (signed) effective transformer GICs.
+        
+        Returns:
+        XXX
+        '''
+        return self._H
+    
+    @property
+    def zeta(self):
+        '''
+        Linear GIC Model. Returns the constant-current load (prior to absolute value) in per unit, for eahc bus.
+        This matrix is provided as the fastest option to model GICs in power flow.
+        
+        Returns:
+        XXX
+        '''
+        # TODO multiply by K and do per-unit
+        return self._H
+
+    @property
+    def eff(self):
+        '''
+        Effective GIC operator matrix. Calculates the effective transformer GICs when applied to the vector of branch GICs.
+        (This includes non-winding branches, trim the dimension for a quicker product).
+        
+        Returns:
+        XXX
+        '''
+        # TODO multiply by K and do per-unit
+        return self._eff
+
+class GICFactory:
+
+    '''A helper class to assist in loading data for the GIC model. Mostly intended for use when not using Power World.
+    
+    If a Power World case is being used, we recommend you use the GIC.model() function.'''
+
+    def __init__(self) -> None:
+
+        self.subdf = DataFrame(columns=['SubNum', 'SubG', 'Long', 'Lat'])
+        self.busdf = DataFrame(columns=['BusNum', 'NomVolt', 'SubNum'])
+        self.linedf = DataFrame(columns=['FromBus', 'ToBus', 'G'])
+        self.xfmrdf = DataFrame(columns=['SubNum', 'FromBus', 'ToBus', 'CFG1', 'CFG2', 'G1', 'G2', 'BD', 'Auto'])
+
+    def substation(self, subnum, subG, long, lat) -> None:
+        self.subdf.loc[len(self.subdf)] =  [subnum, subG, long, lat]
+    
+    def bus(self, busnum, nomvolt, subnum) -> None:
+        self.busdf.loc[len(self.busdf)] =  [busnum, nomvolt, subnum]
+
+    def line(self, fbus, tbus, g) -> None:
+        self.linedf.loc[len(self.linedf)] = [fbus, tbus, g]
+
+    def xfmr(self, subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto) -> None:
+        self.xfmrdf.loc[len(self.xfmrdf)] = [subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto]
+
+    def make(self) -> GICModel:
+        '''Execute the passed data and synthesize a GIC model.'''
+
+        self.subdf = self.subdf.astype({
+            'SubNum':'int64',
+            'SubG':'float64', 
+            'Long':'float64', 
+            'Lat':'float64', 
+        })
+        self.busdf = self.busdf.astype({
+            'BusNum':'int64',
+            'NomVolt':'float64',
+            'SubNum':'int64',
+        })
+        self.linedf = self.linedf.astype({
+            'FromBus':'int64', 
+            'ToBus':'int64', 
+            'G':'float64'
+        })
+        self.xfmrdf = self.xfmrdf.astype({
+            'SubNum':'int64',
+            'FromBus':'int64', 
+            'ToBus':'int64', 
+            'CFG1':'string', 
+            'CFG2':'string', 
+            'G1': 'float64', 
+            'G2':'float64',
+            'BD':'boolean', 
+            'Auto':'boolean'
+        })
+
+        b, x = self.busdf, self.xfmrdf
+
+        # Determine High/Low Windings and Turns Ratio
+        getBusV = lambda terminal: b.set_index('BusNum').loc[x[terminal],'NomVolt'].reset_index(drop=True)
+        x['FromV'], x['ToV'] = getBusV('FromBus'), getBusV('ToBus')
+        fromIsHigh = x['FromV']>x['ToV']
+        x['TurnsRatio'] = x[['FromV', 'ToV']].max(axis=1)/x[['FromV', 'ToV']].min(axis=1)
+        x['HighBus']    = np.where(fromIsHigh , x['FromBus'],  x['ToBus'])
+        x['LowBus']     = np.where(~fromIsHigh, x['FromBus'],  x['ToBus'])
+        x['CFGHigh']    = np.where(fromIsHigh , x['CFG1']   ,  x['CFG2'])
+        x['CFGLow']     = np.where(~fromIsHigh, x['CFG1']   ,  x['CFG2'])
+        x['HighG']      = np.where(fromIsHigh , x['G1']     ,  x['G2'])
+        x['LowG']       = np.where(~fromIsHigh, x['G1']     ,  x['G2'])
+
+        return GICModel(self.subdf, b, self.linedf, x)
+
+#  GWB App
 class GIC(PWApp):
+
     io: PowerWorldIO
 
     def gictool(self, calc_all_windings = False):
@@ -41,7 +267,6 @@ class GIC(PWApp):
         buses = self.dm.get_df(Bus)
 
         return GICTool(gicxfmrs, branches, gens, subs, buses, customcalcs=calc_all_windings)
-
 
     def storm(self, maxfield: float, direction: float, solvepf=True) -> None:
         '''Configure Synthetic Storm with uniform Electric Field to be used in power flow.
@@ -170,7 +395,6 @@ class GIC(PWApp):
         # 1-Form Differential as tuple
         return (g0@F@Hx).T, (g0@F@Hy).T
     
-
     # BELOW IS FOR ADVANCED SETTINGS
 
     def settings(self, value=None):
@@ -182,7 +406,6 @@ class GIC(PWApp):
             )[['VariableName', 'ValueField']]
         else:
             self.io.upload({GIC_Options_Value: value})
-
 
     def calc_mode(self, mode: str):
         """GIC Calculation Mode (Either SnapShot, TimeVarying, 
@@ -225,6 +448,50 @@ class GIC(PWApp):
 
         print("GIC Time Varying Data Uploaded")
     
+    def model(self) -> GICModel:
+        '''Generate the common linear GIC model with Power World Data'''
+        
+        gicsubs = self.io[Substation, ["SubNum", "GICSubGroundOhms", "Longitude", "Latitude"]]
+        gicbus = self.io[Bus,["BusNum", "BusNomVolt", "SubNum"]]
+
+        linefields = ["BusNum", "BusNum:1", "GICConductance"]
+        xfmrfields = ["SubNum", "BusNum", "BusNum:1", "XFConfiguration", "GICCoilRFrom", "GICCoilRTo", 'XFIsAutoXF','GICBlockDevice']
+        
+        branches = self.io[Branch,linefields+xfmrfields+['BranchDeviceType']]
+        isXFMR = branches['BranchDeviceType']=='Transformer'
+        gicbranch = branches.loc[~isXFMR,linefields]
+        gicxfmr   = branches.loc[isXFMR,xfmrfields]
+
+        gf = GICFactory()
+
+        # Feed Substation Data
+        for rec in gicsubs.to_records():
+            i, *data = rec
+            gf.substation(*data)
+
+        # Feed Bus Data
+        for rec in gicbus.to_records():
+            i, *data = rec
+            gf.bus(*data)
+
+        # Feed Branch (Not Transformers !) Data
+        for rec in gicbranch.to_records():
+            i, *data = rec
+            gf.line(*data)
+
+        # Feed Transformer Data
+        for rec in gicxfmr.to_records():
+            i, subnum, fbus, tbus, config, g1, g2, isauto, isblocked = rec
+            gf.xfmr(subnum, fbus, tbus, *config.split(" - "), 1/g1, 1/g2, isauto=='Yes', isblocked=='YES')
+
+        return gf.make()
+
+
+'''
+TODO - REMOVE ALL OF THE BELOW, bad practices and clunky. GICModel class to be used in future.
+The following three classes are helper-classes to help create GIC data. Not ideal formatting, but it works. Do not touch.
+'''
+
 
 class XFWiringType(Enum):
     GWYE = auto()
@@ -242,102 +509,6 @@ class XFWiringType(Enum):
             return XFWiringType.DELTA
         else:
             raise NotImplementedError
-
-
-'''
-Process:
-Add all substations
-Add all buses
-KNOWN: [Locations, Grounding Conductance, Nodes]
-Add all lines
-KNOWN: [Geographic Interface, Line Conductances]
-Add all windings
-Add all transformers (using windings)
-KNOWN: [Wiring Configurations, Winding Conductances, etc]
-Add all GIC Blocking Devices
-KNOWN: [Restricted Ground Paths]
-
-Internally Calculate Network Matrices...
-'''
-
-from scipy.sparse import bmat, diags, block_diag
-
-class GICData:
-
-    def __init__(self, subs: DataFrame, buses: DataFrame, lines: DataFrame, xfmrs: DataFrame) -> None:
-        
-
-        # Manifest Node IDs
-        self.nbus = len(buses)
-        self.nsubs = len(subs)
-        self.nlines = len(lines)
-
-        def nodeperm(field):
-            idx = buses.index[buses['Name']==lines[field]]
-            return coo_matrix((np.ones(self.nlines), (idx, lines.index), (self.nlines, self.nbus)))
-
-        # Manifest Line Incidence Matrix and Conductance Weights
-        Aline = nodeperm('FromBus') - nodeperm('ToBus')
-        Gline = diags(lines['G'])
-
-        # Determine High/Low Windings
-        getXBus = lambda x: (buses['Name']==xfmrs[x])
-        getBusV = lambda x: buses.loc[getXBus(x),'NomVolt'] 
-
-        fromIsHigh = getBusV('FromBus')>getBusV('ToBus')
-        xfmrs['HighBus'] = np.where(fromIsHigh, xfmrs['FromBus'],  ['ToBus'])
-
-        # Determine Winding Mappings (wSub, +- 1 at node index)
-        wSub, wBus = None, None
-
-        # In order used, Winding Conductances
-        Gwind = diags([xfmrs['G1'], xfmrs['G2']])
-
-        # Manifest Winding Incidence
-        A = bmat([
-            [wSub, wBus ]
-            [None, Aline]
-        ])
-
-        # Manifest all branch weights
-        Gdiag = block_diag([Gline, Gwind])
-
-        # Conductance Laplacian
-        G = A.T@Gdiag@A 
-
-        # Etc
-
-
-# Let us do this assuming it was all passed correctly.
-class GICFactory:
-
-    def __init__(self) -> None:
-
-        self.subdf = DataFrame(columns=['Name', 'SubG', 'Long', 'Lat'])
-        self.busdf = DataFrame(columns=['Name', 'NomVolt', 'SubID'])
-        self.linedf = DataFrame(columns=['Name', 'FromBus', 'ToBus', 'G'])
-        self.xfmrdf = DataFrame(columns=['Name', 'FromBus', 'ToBus', 'CFG1', 'CFG2', 'G1', 'G2', 'BD', 'Auto'])
-
-    def substation(self, name, subG, long, lat):
-        self.subdf.iloc[-1,:] = [id, subG, long, lat]
-    
-    def bus(self, name, nomvolt, subID):
-        self.busdf.iloc[-1,:] = [name, nomvolt, subID]
-
-    def line(self, name, fbus, tbus, g):
-        self.linedf.iloc[-1,:] = [name, fbus, tbus, g]
-
-    def xfmr(self, name, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto):
-        self.xfmrdf = [name, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto]
-
-    def make(self):
-        return GICData(self.subdf, self.busdf,self.linedf,self.xfmrdf)
-
-
-'''
-The following three classes are helper-classes to help create GIC data. Not ideal formatting, but it works. Do not touch.
-'''
-
 
 # Custom Winding Class
 class Winding:
@@ -857,27 +1028,6 @@ class GICTool:
             vec = zeros((self.nlines,1))
             vec[:,0] = self.lines['GICObjectInputDCVolt']
         return vec
-    
-    # TODO remove
-    def corner_factory(self):
-        '''Return a GICCorner Object that parses possible Efields'''
-
-        H = self.Hmat()
-        self.H = H
-
-        # Line Lengths
-        line_km = self.lines['GICLineDistance:1'].fillna(0)
-        L = diagflat(line_km)
-        self.L = L
-
-        # Line Angles
-        #line_ang = gictool.lines['GICLineAngle'].fillna(0)*pi/180 # North 0 Degrees
-        #ANG = line_ang.to_numpy()
-
-        E = eye(L.shape[0])
-        self.E = E
-
-        return GICCorners(H, L, E)
 
     def tesselations(self, tilewidth=0.5, num_spacers=1):
         '''Return Tessalized forms of the H matrix for Ex and Ey.'''
@@ -987,261 +1137,3 @@ class GICTool:
         '''Convert Electric Field data associated with a tesselation to a B3D Object.'''
         X, Y, W = self.tile_info
         return B3D.from_mesh(X[:-1]+W/2, Y[:-1]+W/2, EX, EY)
-
-
-# TODO remove, not applicable anymore
-
-class GICCorners:
-    '''Discrete Class for handling 'Corner' Analysis of plausible electric fields. Old methodology, not recomended to use.'''
-
-    def __init__(self, H, L, E) -> None:
-        '''
-        H: GIC matrix mapping line voltage to transformer currents
-        L: Line Lengths in km (Diagonal Matrix)
-        E: Electric Field Magnitude Max per line (Diagonal Matrix)
-        '''
-
-        # Needed GIC Matricies
-        self.H = H
-        self.L = L
-        self.E = E
-        self.HLE = H@L@E
-
-        # Signs of H
-        zero_tol = 1e-15
-        self.signH = sign(H)
-        self.signH[abs(H)<zero_tol] = 0 # Level of tolerance to be considered zero
-
-        # Unique Rows Only - Remove all zero rows
-        shu = unique(self.signH,axis=0)
-        self.signHUnique = shu[~all(shu==0,axis=1)]
-        self.nSHU = self.signHUnique.shape[0]
-
-        # Not necessary unless all corners are wanted
-        self.corner_matrix = None
-
-        # Flip matrix takes a while to compute so don't do so unless neeeded
-        self._flip_matrix = None
-
-    def corners(self):
-        '''Returns Matrix of Corner Permutations or creates it if non-existant'''
-
-        if self.corner_matrix is None:
-           
-            # Find unique Sign Groups of Columns of H
-            PGROUPS = self.find_equivalent_columns(self.HLE)
-            nPgroups = len(PGROUPS)
-
-            # CRNR - Group Combinations (Maps Permutation to Sign Group)
-            CRNR = zeros((nPgroups,2**nPgroups)) 
-
-            # JOIN - Assigns Combinations to Lines (Maps Sign Group to Lines)
-            nlines = self.L.shape[0]
-            JOIN = zeros((nlines, nPgroups))
-
-            ''' FILL CORNER DATA '''
-
-            # Creating +- polarity matrix (Columns = Different Possibilities, Rows = Group Sign)
-            for i, perm in enumerate(product(*[(1,-1)]*nPgroups)):
-                CRNR[:, i] = array(perm)
-
-            # Removing SECOND half of these permutations removes exact negative:
-            CRNR = self.remove_negative_columns(CRNR)
-
-            # Creating JOIN - Mapping Group to a Line or leaving out entirely
-            for grp, lineIDs in enumerate(PGROUPS):
-                refLine = self.signH[:,lineIDs[0]]
-                JOIN[lineIDs, grp] = 1
-
-                # Re-Polarize anti-columns
-                for id in lineIDs:
-                    if (refLine==-self.signH[:,id]).all():
-                        JOIN[id, grp] *= -1
-
-            nCRNR = CRNR.shape[1]
-            self.corner_matrix = JOIN@CRNR
-            print(f'Corners: {nCRNR}')
-            
-        return self.corner_matrix
-
-    def topology(self, remove_strictly_small = False, top_losses_only = False):
-        """
-        Calculates the XFMR losses of every corner
-        params:
-        - remove_strictly_small: Removes any corners that have strictly less losses than some other corner
-        - top_losses_only: Returns only corners in the top 10% of net losses
-        returns: 
-            Matrix (nXFMR x nCorners)
-        """
-
-        HLE = self.HLE
-        C = self.corner_matrix
-        TOPOLOGY = (HLE@C).T
-
-        # Determine if remove corners that are obviously obsolete
-        # Remove Corners that are absolutely less than another
-        if remove_strictly_small:
-            toremove = set()
-            TA = abs(TOPOLOGY)
-            for i, corner in enumerate(TA):
-                isLessThan = all(corner <= TA, axis=1)
-                isLessThan[i] = False
-
-                # If there is a corner strictly greater than this one
-                if any(isLessThan):
-                    toremove.update([i])
-
-            CRNR = delete(CRNR,list(toremove),axis=1)
-            TOPOLOGY = delete(TOPOLOGY, list(toremove), axis=0)
-            nCRNR = len(TOPOLOGY)
-
-        # Top Percentile
-        if top_losses_only:
-            NET = sum(abs(TOPOLOGY),axis=1)
-            TOP = percentile(NET, q=90)
-            TOPI = NET>TOP
-            TOPOLOGY = TOPOLOGY[TOPI]
-
-        return TOPOLOGY
-    
-    @property
-    def flip_matrix(self):
-
-        if self._flip_matrix is not None:
-            return self._flip_matrix 
-        
-        '''Return Matrix that performs applicable edge flips'''
-        PGROUPS_INITIAL = self.find_equivalent_columns(self.signH)
-        PGROUPS = []
-        for group in PGROUPS_INITIAL:
-            gC = abs(self.HLE[:,group]) # Abs Group Columns
-            gC = gC[:,gC[0,:].argsort()]
-
-            # Split group if not strictly increasing
-            for i in range(gC.shape[1]-1):
-                if (gC[:,i]>gC[:,i+1]).any():
-                    PGROUPS += [[g] for g in group]
-                    break 
-            # Otherwise Preserve
-            else:
-                PGROUPS += [group]
-
-        FLIP_MATRIX = ones((self.signH.shape[1],len(PGROUPS)))
-        for i, group in enumerate(PGROUPS):
-            FLIP_MATRIX[group,i] = -1
-
-        self._flip_matrix = (FLIP_MATRIX == -1)
-        return self._flip_matrix
-
-
-    def find_local_max_hist(self, p):
-        '''Generative Method to find largest local maximum'''
-
-        lss = sum(abs(self.HLE@p))
-        p_n = p*where(self.flip_matrix,-1,1)
-
-        yield (lss, p)
-
-        while True:
-            
-            NEIGHBIR_LOSSES = sum(abs(self.HLE@p_n),axis=0)
-            maxidx = argmax(NEIGHBIR_LOSSES)
-
-            # NOTE I changed this from > to >= - verify it works
-            if lss >= (lss := NEIGHBIR_LOSSES[maxidx]):
-                break
-
-            #print(NEIGHBIR_LOSSES, end='  ')
-            #print(f'{lss:.2f}')
-            # Yield is right here so that on last iteration it has maxidx but doesn't return a false positive
-            yield (lss, p_n[:,maxidx].copy()) # TODO the memory ref here could be wrong
-
-            # Rapid Update of Adjacent Edges based on path choice
-            p_n[self.flip_matrix[:,maxidx],:] *= -1
-
-            # Update Loss of bew location
-            #lss = NEIGHBIR_LOSSES[maxidx]
-
-    def greedy_search(self, verbose=True):
-        '''Return the total GICs and polarity vector results of greedy search.
-        The returned matrix will be similar to the shape of H.
-        Columns represent different lines.
-        Each row represents the initial guess of a unique row in signH, the set of polairties that
-        maximize the GICs on that row's transformer.'''
-
-        totalGICS = zeros(self.nSHU)
-        pmaxs = zeros_like(self.signHUnique)
-
-        for i, p in enumerate(self.signHUnique):
-
-            *_,sol = self.find_local_max_hist(p.reshape((-1,1)))
-            lss, pmax = sol 
-
-            totalGICS[i] = 100*lss
-            pmaxs[i,:] = pmax
-
-            if verbose:
-                print(f' Row ({i:03d}/{self.nSHU}) --- Max:{100*lss:.2f}')
-        
-        return totalGICS, pmaxs
-
-    def remove_negative_columns(self, matrix):
-        # Transpose the matrix to make it easier to compare columns
-        transposed_matrix = matrix.T
-        
-        # List to keep columns that are not negatives of others
-        columns_to_keep = []
-        
-        # Set to keep track of indices of columns to be removed
-        columns_to_remove = set()
-        
-        # Iterate over the columns of the transposed matrix
-        for i, col in enumerate(transposed_matrix):
-            if i not in columns_to_remove:
-                for j in range(i + 1, transposed_matrix.shape[0]):
-                    if array_equal(col, -transposed_matrix[j]):
-                        columns_to_remove.add(j)
-        
-        # Collect columns that are not in the remove set
-        for i in range(transposed_matrix.shape[0]):
-            if i not in columns_to_remove:
-                columns_to_keep.append(transposed_matrix[i])
-        
-        # Reconstruct the matrix from the columns to keep
-        new_matrix = array(columns_to_keep).T
-        
-        return new_matrix
-
-    def find_equivalent_columns(self, matrix, tolerance=1e-10):
-        '''Tolerance is for identifying zero columns so they are not added'''
-
-        # Transpose the matrix to make it easier to compare columns
-        transposed_matrix = matrix.T
-        
-        # Create a list to store sets of equivalent columns
-        equivalent_columns_sets = []
-        
-        # Create a set to track columns that have already been identified
-        identified_columns = set()
-        
-        # Iterate over the columns of the transposed matrix
-        for i, col in enumerate(transposed_matrix):
-            if i not in identified_columns and not all(abs(col) < tolerance):
-        
-                # Find all columns that are identical to the current column and not negatives
-                colI = transposed_matrix[i]
-                equivalent_columns = []
-                
-                for j in range(transposed_matrix.shape[0]):
-                    colJ = transposed_matrix[j]
-            
-                    if (colI == colJ).all() or  (colI == -colJ).all():
-                        equivalent_columns.append(j)
-
-                # Add the set of equivalent columns to the list
-                equivalent_columns_sets.append(equivalent_columns)
-                # Mark these columns as identified
-                identified_columns.update(equivalent_columns)
-        
-        return equivalent_columns_sets
-

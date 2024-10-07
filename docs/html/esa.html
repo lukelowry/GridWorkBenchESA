@@ -339,8 +339,94 @@ branches[‘BusNum’].map(busmap)</p>
 <dd></dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xfmrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L29-L179"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A model class that holds all associated GIC matricies. Model instantiation requires proper
+data input format. If using ESA, use GIC.model() to automatically generate an instance.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel.A">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel.A" title="Link to this definition">¶</a></dt>
+<dd><p>The General incidence Matrix of the GIC Network. The first N  columns are substation nuetral buses, and
+the remaining M are bus nodes. The first 2X rows are High and Low Windings, and the remaining are non-winding branches.</p>
+<p>Returns:
+(N+M)x(N+M) sparse matrix</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel.G">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">G</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel.G" title="Link to this definition">¶</a></dt>
+<dd><p>Conductance Laplacian of the GIC Network. The first N nodes are substation nuetral buses, and
+the remaining M nodes are bus nodes.</p>
+<p>Returns:
+(N+M)x(N+M) sparse matrix</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel.H">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">H</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel.H" title="Link to this definition">¶</a></dt>
+<dd><p>Linear GIC Function Matrix. This matrix maps induced line voltages to (signed) effective transformer GICs.</p>
+<p>Returns:
+XXX</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel.zeta">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zeta</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel.zeta" title="Link to this definition">¶</a></dt>
+<dd><p>Linear GIC Model. Returns the constant-current load (prior to absolute value) in per unit, for eahc bus.
+This matrix is provided as the fastest option to model GICs in power flow.</p>
+<p>Returns:
+XXX</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICModel.eff">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eff</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICModel.eff" title="Link to this definition">¶</a></dt>
+<dd><p>Effective GIC operator matrix. Calculates the effective transformer GICs when applied to the vector of branch GICs.
+(This includes non-winding branches, trim the dimension for a quicker product).</p>
+<p>Returns:
+XXX</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICFactory</span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L181-L251"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A helper class to assist in loading data for the GIC model. Mostly intended for use when not using Power World.</p>
+<p>If a Power World case is being used, we recommend you use the GIC.model() function.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory.substation">
+<span class="sig-name descname"><span class="pre">substation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subG</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">long</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L194-L195"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory.substation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory.bus">
+<span class="sig-name descname"><span class="pre">bus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">busnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nomvolt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnum</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L197-L198"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory.bus" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory.line">
+<span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fbus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tbus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L200-L201"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory.line" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory.xfmr">
+<span class="sig-name descname"><span class="pre">xfmr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fbus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tbus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocked</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isauto</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L203-L204"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory.xfmr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICFactory.make">
+<span class="sig-name descname"><span class="pre">make</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gridwb.workbench.apps.gic.GICModel" title="gridwb.workbench.apps.gic.GICModel"><span class="pre">GICModel</span></a></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L206-L251"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICFactory.make" title="Link to this definition">¶</a></dt>
+<dd><p>Execute the passed data and synthesize a GIC model.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GIC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Context</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L29-L226"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GIC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Context</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L254-L487"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PWApp</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.io">
@@ -349,14 +435,14 @@ branches[‘BusNum’].map(busmap)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.gictool">
-<span class="sig-name descname"><span class="pre">gictool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calc_all_windings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L32-L43"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.gictool" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">gictool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calc_all_windings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L258-L269"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.gictool" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a new instance of GICTool, which creates various matricies and metrics regarding GICs.
 Don’t set calc_all_windings=True unless you must</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.storm">
-<span class="sig-name descname"><span class="pre">storm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxfield</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solvepf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L46-L55"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.storm" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">storm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxfield</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solvepf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L271-L280"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.storm" title="Link to this definition">¶</a></dt>
 <dd><p>Configure Synthetic Storm with uniform Electric Field to be used in power flow.</p>
 <p>Parameters
 maxfield: Maximum Electric Field magnitude in Volts/km
@@ -366,25 +452,25 @@ solvepf: Use produced results in Power Flow</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.cleargic">
-<span class="sig-name descname"><span class="pre">cleargic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L57-L59"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.cleargic" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cleargic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L282-L284"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.cleargic" title="Link to this definition">¶</a></dt>
 <dd><p>Clear the Power World Manual GIC Calculations.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.loadb3d">
-<span class="sig-name descname"><span class="pre">loadb3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setuponload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L61-L64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.loadb3d" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">loadb3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setuponload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L286-L289"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.loadb3d" title="Link to this definition">¶</a></dt>
 <dd><p>Load B3D File for an Electric Field</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.minkv">
-<span class="sig-name descname"><span class="pre">minkv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kv</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L66-L68"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.minkv" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">minkv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kv</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L291-L293"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.minkv" title="Link to this definition">¶</a></dt>
 <dd><p>Set the minimum KV of lines to contribute to GIC Calculations</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.dBounddI">
-<span class="sig-name descname"><span class="pre">dBounddI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L70-L106"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dBounddI" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dBounddI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">J</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">V</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L295-L331"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dBounddI" title="Link to this definition">¶</a></dt>
 <dd><p>Interface Sensitivity w.r.t Transformer GIC Currents.
 Parameters:
 - eta: (nx1) Numpy Vector of Injection
@@ -397,7 +483,7 @@ Returns:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.dIdE">
-<span class="sig-name descname"><span class="pre">dIdE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L108-L131"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dIdE" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dIdE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L333-L356"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dIdE" title="Link to this definition">¶</a></dt>
 <dd><p>Compute the Jacobean between a mesh Efield 
 and (absolute) Transformer GICs</p>
 <p>Pass H and one other parameter:
@@ -407,13 +493,13 @@ and (absolute) Transformer GICs</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.signdiag">
-<span class="sig-name descname"><span class="pre">signdiag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L133-L135"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.signdiag" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">signdiag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L358-L360"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.signdiag" title="Link to this definition">¶</a></dt>
 <dd><p>Return a diagonal matrix of the sign of a vector</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.dIdEOLD">
-<span class="sig-name descname"><span class="pre">dIdEOLD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">PX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ey</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L138-L171"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dIdEOLD" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dIdEOLD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">PX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ey</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L363-L396"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.dIdEOLD" title="Link to this definition">¶</a></dt>
 <dd><p>Returns tuple (Ex Sensitivities, Ey Sensitivities) w.r.t Bus GIC load model
 which is presumed to be constant reactive current. Differential 1-Form
 Parameters:
@@ -429,32 +515,32 @@ Returns:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.settings">
-<span class="sig-name descname"><span class="pre">settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L176-L184"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.settings" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L400-L408"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.settings" title="Link to this definition">¶</a></dt>
 <dd><p>View Settings or pass a DF to Change Settings</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.calc_mode">
-<span class="sig-name descname"><span class="pre">calc_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L187-L191"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.calc_mode" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L410-L414"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.calc_mode" title="Link to this definition">¶</a></dt>
 <dd><p>GIC Calculation Mode (Either SnapShot, TimeVarying, 
 NonUniformTimeVarying, or SpatiallyUniformTimeVarying)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.pf_include">
-<span class="sig-name descname"><span class="pre">pf_include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L193-L195"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.pf_include" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pf_include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L416-L418"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.pf_include" title="Link to this definition">¶</a></dt>
 <dd><p>Enable GIC for Power Flow Calculations</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.ts_include">
-<span class="sig-name descname"><span class="pre">ts_include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L197-L199"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.ts_include" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">ts_include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L420-L422"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.ts_include" title="Link to this definition">¶</a></dt>
 <dd><p>Enable GIC for Time Domain</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.timevary_csv">
-<span class="sig-name descname"><span class="pre">timevary_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fpath</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L201-L226"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.timevary_csv" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">timevary_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fpath</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L424-L449"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.timevary_csv" title="Link to this definition">¶</a></dt>
 <dd><p>Pass a CSV filepath to upload Time Varying 
 Series Voltage Inputs for GIC</p>
 <p>Format Example</p>
@@ -464,11 +550,17 @@ Branch ‘1’ ‘2’ ‘2’, 0.1, 0.11, 0.14
 Branch ‘1’ ‘2’ ‘3’, 0.1, 0.11, 0.14</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GIC.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gridwb.workbench.apps.gic.GICModel" title="gridwb.workbench.apps.gic.GICModel"><span class="pre">GICModel</span></a></span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L451-L487"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GIC.model" title="Link to this definition">¶</a></dt>
+<dd><p>Generate the common linear GIC model with Power World Data</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.XFWiringType">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">XFWiringType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L229-L244"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.XFWiringType" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">XFWiringType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L496-L511"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.XFWiringType" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.XFWiringType.GWYE">
@@ -487,215 +579,115 @@ Branch ‘1’ ‘2’ ‘3’, 0.1, 0.11, 0.14</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.XFWiringType.from_str">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L234-L244"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.XFWiringType.from_str" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L501-L511"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.XFWiringType.from_str" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICRawSubstation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICRawSubstation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L251-L255"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICRawSubstation" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Substation format for GIC Calculations</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICRawBus">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICRawBus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">substation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L257-L263"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICRawBus" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Bus format for GIC calculations</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICRawLine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICRawLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frombus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.GICRawBus" title="gridwb.workbench.apps.gic.GICRawBus"><span class="pre">GICRawBus</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">tobus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.GICRawBus" title="gridwb.workbench.apps.gic.GICRawBus"><span class="pre">GICRawBus</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L265-L270"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICRawLine" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Raw Line information</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICRawWinding">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICRawWinding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.XFWiringType" title="gridwb.workbench.apps.gic.XFWiringType"><span class="pre">XFWiringType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L272-L277"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICRawWinding" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICRawTransformer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICRawTransformer</span></span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L280-L284"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICRawTransformer" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.Winding">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Winding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">busnum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nomvolt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L292-L316"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.Winding" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Winding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">busnum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nomvolt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L514-L538"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.Winding" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.ParsingXFMR">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParsingXFMR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hv_winding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.Winding" title="gridwb.workbench.apps.gic.Winding"><span class="pre">Winding</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_winding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.Winding" title="gridwb.workbench.apps.gic.Winding"><span class="pre">Winding</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">isauto</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isblocked</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mvabase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kparam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primarybus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secondarybus</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L318-L348"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.ParsingXFMR" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParsingXFMR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hv_winding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.Winding" title="gridwb.workbench.apps.gic.Winding"><span class="pre">Winding</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_winding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gridwb.workbench.apps.gic.Winding" title="gridwb.workbench.apps.gic.Winding"><span class="pre">Winding</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">isauto</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isblocked</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mvabase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kparam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primarybus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secondarybus</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L540-L570"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.ParsingXFMR" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICTool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gicxfmrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">customcalcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L354-L938"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICTool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gicxfmrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">customcalcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L576-L1139"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Generatic GIC Helper Object that creates common matricies and calculations</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_xfmr_data">
-<span class="sig-name descname"><span class="pre">init_xfmr_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L374-L374"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_xfmr_data" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_xfmr_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L626-L670"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_xfmr_data" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_calc_windings">
-<span class="sig-name descname"><span class="pre">init_calc_windings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L404-L448"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_calc_windings" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_calc_windings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L672-L723"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_calc_windings" title="Link to this definition">¶</a></dt>
 <dd><p>Manual Winding Calculations - Redundant but helps with PW verification</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_windings">
-<span class="sig-name descname"><span class="pre">init_windings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L450-L501"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_windings" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_windings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L725-L827"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_windings" title="Link to this definition">¶</a></dt>
 <dd><p>Substation Branch Connections are represented as negative integers</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_normal_branches">
-<span class="sig-name descname"><span class="pre">init_normal_branches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L528-L532"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_normal_branches" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_normal_branches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">branches</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L829-L865"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_normal_branches" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_genstepup">
-<span class="sig-name descname"><span class="pre">init_genstepup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L607-L643"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_genstepup" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_genstepup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L867-L873"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_genstepup" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_incidence">
-<span class="sig-name descname"><span class="pre">init_incidence</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L645-L651"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_incidence" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_incidence</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L875-L921"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_incidence" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_substation">
-<span class="sig-name descname"><span class="pre">init_substation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L673-L673"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_substation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_substation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L923-L930"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_substation" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_gmatrix">
-<span class="sig-name descname"><span class="pre">init_gmatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L701-L708"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_gmatrix" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_gmatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L932-L943"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_gmatrix" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_PLH">
-<span class="sig-name descname"><span class="pre">init_PLH</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L710-L721"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_PLH" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_PLH</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L945-L953"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_PLH" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.init_xfmr_params">
-<span class="sig-name descname"><span class="pre">init_xfmr_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L723-L731"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_xfmr_params" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_xfmr_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L955-L975"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.init_xfmr_params" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.Hmat">
-<span class="sig-name descname"><span class="pre">Hmat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduceXFMR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L733-L753"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.Hmat" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">Hmat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduceXFMR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L980-L999"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.Hmat" title="Link to this definition">¶</a></dt>
 <dd><p>Returns H Matrix, which maps line voltages to transformer GICS scaled by K (pre-absolute value)
 If the induced XFMR winginds are zero due to no length we can reduce matrix</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.IeffMat">
-<span class="sig-name descname"><span class="pre">IeffMat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduceXFMR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L758-L777"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.IeffMat" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">IeffMat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reduceXFMR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1001-L1019"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.IeffMat" title="Link to this definition">¶</a></dt>
 <dd><p>Returns a matrix, which maps line voltages to per-unit transformer effective currents (pre-absolute value)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.inputvec">
-<span class="sig-name descname"><span class="pre">inputvec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L779-L797"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.inputvec" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">inputvec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1021-L1030"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.inputvec" title="Link to this definition">¶</a></dt>
 <dd><p>Returns vector with default induced voltages (lines only unless specified)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.corner_factory">
-<span class="sig-name descname"><span class="pre">corner_factory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L799-L808"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.corner_factory" title="Link to this definition">¶</a></dt>
-<dd><p>Return a GICCorner Object that parses possible Efields</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.tesselations">
-<span class="sig-name descname"><span class="pre">tesselations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tilewidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_spacers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L811-L829"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.tesselations" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">tesselations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tilewidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_spacers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1032-L1120"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.tesselations" title="Link to this definition">¶</a></dt>
 <dd><p>Return Tessalized forms of the H matrix for Ex and Ey.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.tesselation_as_df">
-<span class="sig-name descname"><span class="pre">tesselation_as_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L831-L919"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.tesselation_as_df" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">tesselation_as_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1122-L1134"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.tesselation_as_df" title="Link to this definition">¶</a></dt>
 <dd><p>GICTool.tesselations() must have already been called. Get Index DF Version of Hx, Hy</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICTool.to_b3d">
-<span class="sig-name descname"><span class="pre">to_b3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">EX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EY</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L921-L933"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.to_b3d" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">to_b3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">EX</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EY</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1136-L1139"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICTool.to_b3d" title="Link to this definition">¶</a></dt>
 <dd><p>Convert Electric Field data associated with a tesselation to a B3D Object.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GICCorners</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L943-L1195"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Discrete Class for handling ‘Corner’ Analysis of plausible electric fields. Old methodology, not recomended to use.</p>
-<p>H: GIC matrix mapping line voltage to transformer currents
-L: Line Lengths in km (Diagonal Matrix)
-E: Electric Field Magnitude Max per line (Diagonal Matrix)</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.corners">
-<span class="sig-name descname"><span class="pre">corners</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L946-L973"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.corners" title="Link to this definition">¶</a></dt>
-<dd><p>Returns Matrix of Corner Permutations or creates it if non-existant</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.topology">
-<span class="sig-name descname"><span class="pre">topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_strictly_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_losses_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L975-L1014"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.topology" title="Link to this definition">¶</a></dt>
-<dd><p>Calculates the XFMR losses of every corner
-params:
-- remove_strictly_small: Removes any corners that have strictly less losses than some other corner
-- top_losses_only: Returns only corners in the top 10% of net losses
-returns:</p>
-<blockquote>
-<div><p>Matrix (nXFMR x nCorners)</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.flip_matrix">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">flip_matrix</span></span><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.flip_matrix" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.find_local_max_hist">
-<span class="sig-name descname"><span class="pre">find_local_max_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1057-L1083"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.find_local_max_hist" title="Link to this definition">¶</a></dt>
-<dd><p>Generative Method to find largest local maximum</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.greedy_search">
-<span class="sig-name descname"><span class="pre">greedy_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1086-L1112"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.greedy_search" title="Link to this definition">¶</a></dt>
-<dd><p>Return the total GICs and polarity vector results of greedy search.
-The returned matrix will be similar to the shape of H.
-Columns represent different lines.
-Each row represents the initial guess of a unique row in signH, the set of polairties that
-maximize the GICs on that row’s transformer.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.remove_negative_columns">
-<span class="sig-name descname"><span class="pre">remove_negative_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1114-L1135"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.remove_negative_columns" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="gridwb.workbench.apps.gic.GICCorners.find_equivalent_columns">
-<span class="sig-name descname"><span class="pre">find_equivalent_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/wyattlaundry/v1.3.5/gridwb/workbench\apps\gic.py#L1137-L1162"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gridwb.workbench.apps.gic.GICCorners.find_equivalent_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Tolerance is for identifying zero columns so they are not added</p>
 </dd></dl>
 
 </dd></dl>
