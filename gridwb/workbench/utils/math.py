@@ -6,6 +6,40 @@ import scipy.sparse as sp
 # Constants
 MU0 = 1.256637e-6
 
+# Matrix Helper Functions
+def normlap(A, retD=False):
+    '''Given a square Laplacian matrix, this function will return the normalized
+    Laplacian. If retD is True, the diagonal square root scaling matrix will be returned
+    aswell
+    Example Return:
+    
+    Y, D, Di = normlap(Y, True)
+
+    Y = normLap(Y)
+    
+    '''
+
+    # Get Diagonal and Invert for convenience
+    Yd = np.sqrt(A.diagonal())
+    Di = sp.diags(1/Yd)
+
+    # Return Normalized Laplacian with or without scaled diag
+    if retD:
+        D = sp.diags(Yd)
+        return Di@A@Di, D, Di
+    else:
+        return Di@A@Di
+
+
+def hermitify(A):
+    '''Given a (numpy) complex valued symmetric matrix (but not hermitian)
+    this function will return the hermitian version of the matrix.'''
+
+    if isinstance(A, np.ndarray):
+        return (np.triu(A).conjugate() + np.tril(A))/2
+    else:
+        return (np.triu(A.A).conjugate() + np.tril(A.A))/2
+
 
 class Operator(ABC):
     '''Abstract Mathematical Operator Object'''

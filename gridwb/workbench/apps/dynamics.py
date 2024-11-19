@@ -1,4 +1,4 @@
-from numpy import NaN, float32
+from numpy import nan, float32
 from pandas import DataFrame, concat
 
 # WorkBench Imports
@@ -112,7 +112,7 @@ class Dynamics(PWApp):
 
             # Won't work if first result is bad
             if len(dfSim.columns) < 2:
-                dfSim = DataFrame(NaN, columns=metaSim.index, index=[0])
+                dfSim = DataFrame(nan, columns=metaSim.index, index=[0])
                 dfSim.index.name = "time"
             else:
                 # Trim Data Size, Index by Time, Append to Main

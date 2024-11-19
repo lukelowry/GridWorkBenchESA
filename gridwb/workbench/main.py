@@ -135,6 +135,11 @@ class GridWorkBench:
 
         return Y
     
-    def ybus(self):
-        '''Returns the full y-bus as a dense Numpy Matrix'''
-        return self.io.esa.get_ybus(True)
+    def ybus(self, dense=False):
+        '''Returns the sparse Y-Bus Matrix'''
+        return self.io.esa.get_ybus(dense)
+    
+    def buscoords(self):
+        '''Retrive dataframe of bus latitude and longitude coordinates based on substation data'''
+        A, S = self.io[Bus, 'SubNum'],  self.io[Substation, ['Longitude', 'Latitude']]
+        return A.merge(S, on='SubNum') 

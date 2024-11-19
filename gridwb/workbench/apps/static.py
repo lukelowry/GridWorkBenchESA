@@ -1,7 +1,7 @@
 # Data Structure Imports
 import warnings
 from pandas import DataFrame, concat
-from numpy import NaN, exp, any, arange, nanmin, isnan, inf
+from numpy import nan, exp, any, arange, nanmin, isnan, inf
 from numpy.random import random
 
 # WorkBench Imports
@@ -110,7 +110,7 @@ class Statics(PWApp):
                 {
                     "Object": gtype,
                     "ID-A": keys.iloc[:, 0],
-                    "ID-B": keys.iloc[:, 1] if len(keys.columns) > 1 else NaN,
+                    "ID-B": keys.iloc[:, 1] if len(keys.columns) > 1 else nan,
                     "Metric": self.metric["Units"],
                     "Contingency": ctg,
                 }
@@ -126,7 +126,7 @@ class Statics(PWApp):
         except:
             print("Loading Does Not Converge.")
             df = DataFrame(
-                NaN, index=["Value", "Reference"], columns=range(len(ctgs))
+                nan, index=["Value", "Reference"], columns=range(len(ctgs))
             )
             return (meta, df)
 
@@ -143,7 +143,7 @@ class Statics(PWApp):
             try:
                 data["Value"] = get(field)
             except:
-                data["Value"] = NaN
+                data["Value"] = nan
 
             # Set Reference Values
             data["Reference"] = refSol

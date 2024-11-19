@@ -4,9 +4,10 @@ from numpy import unique, concatenate, sort, all, diag_indices, diff, expand_dim
 from numpy import any, delete, where, argwhere, argmax, sum, percentile, array_equal
 from numpy import errstate, vectorize
 from numpy.linalg import inv
+from numpy import concatenate as conc
 import numpy as np # TODO there is so much usage just import whole module
 
-from pandas import DataFrame, read_csv, MultiIndex, concat
+from pandas import DataFrame, read_csv, MultiIndex
 from scipy.sparse import coo_matrix, lil_matrix, hstack, vstack, bmat, diags, block_diag
 from enum import Enum, auto
 from itertools import product
@@ -31,97 +32,86 @@ class GICModel:
     '''A model class that holds all associated GIC matricies. Model instantiation requires proper
     data input format. If using ESA, use GIC.model() to automatically generate an instance.'''
 
-    def __init__(self, subs: DataFrame, buses: DataFrame, lines: DataFrame, xfmrs: DataFrame) -> None:
+    def __init__(self, subs: DataFrame, buses: DataFrame, lines: DataFrame, xfmrs: DataFrame, gens: DataFrame) -> None:
 
-        # Helper Function
+        # Helper Functions & Constants
+        MOHM = 1e6
         iv = lambda A: sinv(A.tocsc())
         
         # Manifest Node IDs
-        self.nbus, self.nsubs, self.nlines, self.nxfmr = len(buses), len(subs), len(lines), len(xfmrs)
+        self.nbus, self.nsubs, self.nlines, self.nxfmr, self.ngens = len(buses), len(subs), len(lines), len(xfmrs), len(gens)
 
-        # Extract High and Low Winding Conductance
-        MOHM = 1e6
-        GH , GL = xfmrs['HighG'].copy(), xfmrs['LowG'].copy()
-        Gline = lines['G'].copy()
-        GSUB = subs['SubG'].copy().to_numpy()
+        # High and Low Winding, Line, GUS, and Substation Conductance
+        GH , GL, Gline, Ggen, RSUB = xfmrs['HighG'].to_numpy(), xfmrs['LowG'].to_numpy(), lines['G'].to_numpy(), gens['G'].to_numpy(), subs['SubR'].to_numpy()
 
-        # Select based on Wiring Configuration
+        # Wiring Configuration and Device-Based Indexers
         HWYE, LWYE = xfmrs['CFGHigh']=='Gwye', xfmrs['CFGLow']=='Gwye'
         AUTO, BD = xfmrs['Auto'].to_numpy(bool), xfmrs['BD'].to_numpy(bool)
 
-        ''' BRANCH MAPPING '''
+        ''' INCIDENCE MAPPING '''
 
-        # Incidence Mapping
         def nodeperm(data, field, mount):
             obj = subs if mount=='SubNum' else buses
             m, n = len(data), len(obj)
             idx = obj.reset_index().set_index(mount).loc[data[field], 'index'].to_numpy()
             return coo_matrix((np.ones(m), (np.arange(m), idx)), shape=(m, n))
 
-        # Manifest Line Incidence Matrix and Conductance Weights
-        ZRO = lil_matrix((self.nlines, self.nsubs))
-        Aline = nodeperm(lines, 'FromBus', 'BusNum') - nodeperm(lines, 'ToBus', 'BusNum')
-        Aline = hstack([ZRO, Aline])
+        # Line and GSU Incidence Matrix 
+        Aline = hstack([
+            lil_matrix((self.nlines, self.nsubs)), 
+            nodeperm(lines, 'FromBus', 'BusNum') - nodeperm(lines, 'ToBus', 'BusNum')
+        ])
+        Agen = hstack([nodeperm(gens, 'BusNum', 'SubNum'), -nodeperm(gens, 'BusNum', 'BusNum')])
         
         # Determine Wnd Map (Substation, High and Low Bus Mounts)
-        SUB = nodeperm(xfmrs, 'SubNum', 'SubNum')
-        BH, BL = nodeperm(xfmrs, 'HighBus', 'BusNum'), nodeperm(xfmrs, 'LowBus', 'BusNum')
- 
-        # Grounded Wye Windings (From Bus -> to Sub Nuetral Bus)
-        # Auto Transformer # High Wnd(High Bus -> Low Bus) # Low Wnd (Low Bus -> Sub Nuetral) 
-        ZRO = lil_matrix((self.nxfmr, self.nsubs))
-        A_WYE_HIGH, A_WYE_LOW = hstack([-SUB, BH]).tolil(), hstack([-SUB , BL]).tolil() 
-        A_AUTO_HIGH, A_AUTO_LOW = hstack([ZRO, BH-BL]).tolil(), hstack([SUB, -BL]).tolil()
+        SUB, BH, BL = nodeperm(xfmrs, 'SubNum', 'SubNum'), nodeperm(xfmrs, 'HighBus', 'BusNum'), nodeperm(xfmrs, 'LowBus', 'BusNum')
 
-        # Merge Wiring Configurations
+        # Gwye (From B  ->  Sub Nuet.)    Auto - High (High Bus -> Low Bus), Low (Low Bus -> Sub Nuet.) 
+        A_WYE_HIGH , A_WYE_LOW  = hstack([-SUB, BH]).tolil(), hstack([-SUB , BL]).tolil() 
+        A_AUTO_HIGH, A_AUTO_LOW = hstack([lil_matrix((self.nxfmr, self.nsubs)), BH-BL]).tolil(), hstack([SUB, -BL]).tolil()
+
+        # Merge Wiring Configurations 
         A_WYE_HIGH[~HWYE|AUTO], A_WYE_LOW[~LWYE|AUTO] = 0, 0
-        A_AUTO_HIGH[~AUTO], A_AUTO_LOW[~AUTO] = 0, 0
+        A_AUTO_HIGH[~AUTO]    , A_AUTO_LOW[~AUTO]     = 0, 0
         AH, AL = A_WYE_HIGH + A_AUTO_HIGH, A_WYE_LOW + A_AUTO_LOW
 
-        # Total Incidence (High Wnd, Low Wnd, Lines/Other Branches)
-        A = vstack([AH, AL, Aline]).tolil()
+        # Create Total Incidence (High Wnd, Low Wnd, Lines/Other Branches)
+        A = vstack([AH, AL, Aline, Agen])
 
-        ''' CONDUCTANCE VALUES'''
+        ''' BRANCH CONDUCTANCE '''
 
-        # BLOCKING DEVICE(+ 1 Mega Ohm) # (Series Shunt/High R Lines) Conductances
-        # Wye: Make winding Ohms Large # Auto: Make Low Winding Ohms Large
-        GH.loc[HWYE&BD], GL.loc[LWYE&BD], GL.loc[AUTO&BD] = 1/MOHM, 1/MOHM, 1/MOHM
-        Gline.loc[Gline==0], GSUB[GSUB==0] = 1/MOHM, 1/MOHM
-        Ggnd = np.concatenate([GSUB, np.ones(self.nbus)/MOHM])
+        # GIC Blocking Device (1 Mega Ohm in Series) 
+        GH[BD&~AUTO], GL[BD], Gline[Gline==0], Ggen[Ggen==0], RSUB[RSUB==0] = 1/MOHM, 1/MOHM, 1/MOHM, 1/MOHM, MOHM 
 
-        # Total Branch Conductances & Substation Grounding Conductance
-        Gd = diags(concat([GH, GL, Gline], ignore_index=True))
-        Gs = diags(Ggnd)
+        # Total Branch Conductances (3-phase) & Substation Grounding Conductance
+        Gd, Gs = 3*diags(conc([GH, GL, Gline, Ggen])), diags(1/conc([RSUB, MOHM*np.ones(self.nbus)]))
 
-        ''' EFFECTIVE GICS '''
+        ''' EFFECTIVE GICS, PER-UNIT, LOSSES '''
 
-        # Determine Effective GIC extraction  # Equivilent to (Ph + N^(-1) Pl)
+        # Determine Effective GIC extraction, Equivilent to (Ph + N^(-1) Pl)
         Eff = hstack([
             eye(self.nxfmr), 
             diags(1/xfmrs['TurnsRatio']), 
             lil_matrix((self.nxfmr, self.nlines))
         ])
 
-        # Conductance Laplacian
-        G = A.T@Gd@A + Gs
+        # DC Current Base & K model values
+        base  = diags(1e3 * xfmrs['MVA'] * np.sqrt(2/3) / xfmrs['HighV'])
+        K, Px = diags(xfmrs['K']), nodeperm(xfmrs, 'FromBus', 'BusNum').T # Bus Assignment for PF modeling
 
-        # H Matrix
-        H = Eff@(Gd@A@iv(G)@A.T@Gd+Gd)/3
+        ''' FORMATTED CALCULATIONS '''
 
-        self._A = A
-        self._G = G
-        self._eff = Eff
-        self._H = H
-        return
-    
-        # TODO Perform Per-Unit Scaling
+        # Conductance Laplacian & Hmatrix 
+        G    = A.T@Gd@A + Gs
+        H    = Eff@(Gd-Gd@A@iv(G)@A.T@Gd)/3
+        zeta = K@iv(base)@H 
+
+        # User Retrieval & Cache for other functions
         # TODO eliminate dimensions where it is not needed (i.e. at the end when getting windings)
-        # TODO bus assignment
-
-        # Scale by K for partical one-matrix operations
-        K = None 
-        self._zeta = K@H
-    
+        self._A, self._G, self._H  = A, G, H
+        self._eff, self._base = Eff, base
+        self._zeta, self._Px = zeta, Px
+        
     @property
     def A(self):
         '''
@@ -148,7 +138,7 @@ class GICModel:
     def H(self):
         '''
         Linear GIC Function Matrix. This matrix maps induced line voltages to (signed) effective transformer GICs.
-        
+        Actual Current, not in per-unit.
         Returns:
         XXX
         '''
@@ -159,12 +149,21 @@ class GICModel:
         '''
         Linear GIC Model. Returns the constant-current load (prior to absolute value) in per unit, for eahc bus.
         This matrix is provided as the fastest option to model GICs in power flow.
+
+        In Per-Unit.
         
         Returns:
         XXX
         '''
         # TODO multiply by K and do per-unit
-        return self._H
+        return self._zeta
+    
+    @property
+    def Px(self):
+        '''
+        Permutation matrix mapping each transformer to the bus used to model losses (default: from-bus)
+        '''
+        return self._Px
 
     @property
     def eff(self):
@@ -186,13 +185,15 @@ class GICFactory:
 
     def __init__(self) -> None:
 
-        self.subdf = DataFrame(columns=['SubNum', 'SubG', 'Long', 'Lat'])
+        self.subdf = DataFrame(columns=['SubNum', 'SubR', 'Long', 'Lat'])
         self.busdf = DataFrame(columns=['BusNum', 'NomVolt', 'SubNum'])
         self.linedf = DataFrame(columns=['FromBus', 'ToBus', 'G'])
-        self.xfmrdf = DataFrame(columns=['SubNum', 'FromBus', 'ToBus', 'CFG1', 'CFG2', 'G1', 'G2', 'BD', 'Auto'])
+        self.xfmrdf = DataFrame(columns=['SubNum', 'FromBus', 'ToBus', 'CFG1', 'CFG2', 'G1', 'G2', 'BD', 'Auto', 'MVA', 'K'])
+        self.gendf = DataFrame(columns=['BusNum', 'G'])
 
-    def substation(self, subnum, subG, long, lat) -> None:
-        self.subdf.loc[len(self.subdf)] =  [subnum, subG, long, lat]
+    def substation(self, subnum, subR, long, lat) -> None:
+        '''Substation ID, Earth Resistance, Longitude, Latitude'''
+        self.subdf.loc[len(self.subdf)] =  [subnum, subR, long, lat]
     
     def bus(self, busnum, nomvolt, subnum) -> None:
         self.busdf.loc[len(self.busdf)] =  [busnum, nomvolt, subnum]
@@ -200,15 +201,18 @@ class GICFactory:
     def line(self, fbus, tbus, g) -> None:
         self.linedf.loc[len(self.linedf)] = [fbus, tbus, g]
 
-    def xfmr(self, subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto) -> None:
-        self.xfmrdf.loc[len(self.xfmrdf)] = [subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto]
+    def xfmr(self, subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto, mva=100, k=1) -> None:
+        self.xfmrdf.loc[len(self.xfmrdf)] = [subnum, fbus, tbus, cfg1, cfg2, g1, g2, blocked, isauto, mva, k]
+
+    def gen(self, busnum, g) -> None:
+        self.gendf.loc[len(self.gendf)] = [busnum, g]
 
     def make(self) -> GICModel:
         '''Execute the passed data and synthesize a GIC model.'''
 
         self.subdf = self.subdf.astype({
             'SubNum':'int64',
-            'SubG':'float64', 
+            'SubR':'float64', 
             'Long':'float64', 
             'Lat':'float64', 
         })
@@ -231,7 +235,13 @@ class GICFactory:
             'G1': 'float64', 
             'G2':'float64',
             'BD':'boolean', 
-            'Auto':'boolean'
+            'Auto':'boolean',
+            'MVA':'float64',
+            'K':'float64'
+        })
+        self.gendf = self.gendf.astype({
+            'BusNum':'int64', 
+            'G':'float64'
         })
 
         b, x = self.busdf, self.xfmrdf
@@ -240,7 +250,9 @@ class GICFactory:
         getBusV = lambda terminal: b.set_index('BusNum').loc[x[terminal],'NomVolt'].reset_index(drop=True)
         x['FromV'], x['ToV'] = getBusV('FromBus'), getBusV('ToBus')
         fromIsHigh = x['FromV']>x['ToV']
-        x['TurnsRatio'] = x[['FromV', 'ToV']].max(axis=1)/x[['FromV', 'ToV']].min(axis=1)
+        x['HighV']      = x[['FromV', 'ToV']].max(axis=1)
+        x['LowV']       = x[['FromV', 'ToV']].min(axis=1)
+        x['TurnsRatio'] = x['HighV']/x['LowV']
         x['HighBus']    = np.where(fromIsHigh , x['FromBus'],  x['ToBus'])
         x['LowBus']     = np.where(~fromIsHigh, x['FromBus'],  x['ToBus'])
         x['CFGHigh']    = np.where(fromIsHigh , x['CFG1']   ,  x['CFG2'])
@@ -248,7 +260,7 @@ class GICFactory:
         x['HighG']      = np.where(fromIsHigh , x['G1']     ,  x['G2'])
         x['LowG']       = np.where(~fromIsHigh, x['G1']     ,  x['G2'])
 
-        return GICModel(self.subdf, b, self.linedf, x)
+        return GICModel(self.subdf.copy(), b.copy(), self.linedf.copy(), x.copy(), self.gendf.copy())
 
 #  GWB App
 class GIC(PWApp):
@@ -449,13 +461,16 @@ class GIC(PWApp):
         print("GIC Time Varying Data Uploaded")
     
     def model(self) -> GICModel:
-        '''Generate the common linear GIC model with Power World Data'''
+        '''Generate the common linear GIC model with Power World Data.'''
+
+        # If done with a 'Direct' approach this iterative method would not be necessary. However, it is fast regardless
+        # and done so that users with non Power World data can easily use GICModel.
         
         gicsubs = self.io[Substation, ["SubNum", "GICSubGroundOhms", "Longitude", "Latitude"]]
         gicbus = self.io[Bus,["BusNum", "BusNomVolt", "SubNum"]]
 
         linefields = ["BusNum", "BusNum:1", "GICConductance"]
-        xfmrfields = ["SubNum", "BusNum", "BusNum:1", "XFConfiguration", "GICCoilRFrom", "GICCoilRTo", 'XFIsAutoXF','GICBlockDevice']
+        xfmrfields = ["SubNum", "BusNum", "BusNum:1", "XFConfiguration", "GICCoilRFrom", "GICCoilRTo", 'GICBlockDevice', 'XFIsAutoXF', 'XFMVABase', 'GICModelKUsed']
         
         branches = self.io[Branch,linefields+xfmrfields+['BranchDeviceType']]
         isXFMR = branches['BranchDeviceType']=='Transformer'
@@ -481,8 +496,8 @@ class GIC(PWApp):
 
         # Feed Transformer Data
         for rec in gicxfmr.to_records():
-            i, subnum, fbus, tbus, config, g1, g2, isauto, isblocked = rec
-            gf.xfmr(subnum, fbus, tbus, *config.split(" - "), 1/g1, 1/g2, isauto=='Yes', isblocked=='YES')
+            i, subnum, fbus, tbus, config, g1, g2, isblocked, isauto, mva, k = rec
+            gf.xfmr(subnum, fbus, tbus, *config.split(" - "), 1/g1, 1/g2, isblocked=='YES', isauto=='Yes', mva, k)
 
         return gf.make()
 

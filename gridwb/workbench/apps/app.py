@@ -1,5 +1,5 @@
 from typing import Any, Iterable
-from numpy import NaN
+from numpy import nan
 from pandas import DataFrame, concat
 from functools import wraps
 from itertools import product
@@ -143,7 +143,7 @@ def griditer(func):
                 # Catch failed simulation, note: problems if first sim is bad
                 if len(inner_df.index) != len(outer_df.index):
                     inner_df = DataFrame(
-                        NaN, columns=inner_df.columns, index=outer_df.index
+                        nan, columns=inner_df.columns, index=outer_df.index
                     )
 
                 outer_meta = concat(

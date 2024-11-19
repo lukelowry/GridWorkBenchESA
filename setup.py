@@ -93,6 +93,7 @@ setuptools.setup(
         "pandas >= 0.25",
         "numpy >= 1.19.5",
         "scipy",
+        "geopandas",
         "pywin32",
         "pypiwin32",       # TODO Double Check these to make sure we want them all
         "toolz",

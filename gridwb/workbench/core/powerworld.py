@@ -124,22 +124,33 @@ class PowerWorldIO(IModelIO):
         # Ensure Edit Mode
         self.edit_mode()
 
-        # [Type, [Fields]]
-        if len(args)==2:   gtype, where, fields = args[0], None, args[1]
+        # PARSE ARGUMENT FORMAT OPTIONS
 
-        # [Type, Where, [Fields]]
-        elif len(args)==3: gtype, where, fields = args
-        else: raise Exception
+        # Limited Data Passed NOTE useful when target data is not a properly named DF
+        if isinstance(args, list):
 
-        # Format as list
-        if isinstance(fields, str): fields = fields,
-        
-        # Retrieve active power world records with keys only
-        base = self[gtype,:]
+            # [Type, [Fields]] -> Target data listed by field, expects array/dataframe with respective ordering
+            if len(args)==2:   
+                gtype, where, fields = args[0], None, args[1]
 
-        # Assign Values based on index
-        if where is not None: base.loc[where, fields] = value
-        else: base.loc[:,fields] = value
+            # [Type, Where, [Fields]] -> Finiky but useful
+            elif len(args)==3: 
+                gtype, where, fields = args
+
+            # Format fields passed as list
+            if isinstance(fields, str): 
+                fields = fields,
+            
+            # Retrieve active power world records with keys only
+            base = self[gtype,:]
+
+            # Assign Values based on index
+            if where is not None: base.loc[where, fields] = value
+            else: base.loc[:,fields] = value
+
+        # [Type] -> Try and Create New (Requires properly formatted df)
+        else: 
+            gtype, base = args, value
             
         # Send to Power World
         self.esa.change_parameters_multiple_element_df(gtype.TYPE, base)

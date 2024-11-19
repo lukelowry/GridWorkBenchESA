@@ -12,12 +12,13 @@ from os.path import dirname, abspath, sep
 from numpy import array, linspace, meshgrid, where, nan, pi, vstack, log
 from numpy import histogram, diff, arange
 from scipy.stats import gaussian_kde
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator, CloughTocher2DInterpolator
 import geopandas as gpd
 import shapely.vectorized
 from cmath import polar
 
 # MPL
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
@@ -65,12 +66,12 @@ def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
     fig, ax = plt.subplots(1,2, figsize=figsize)
     ax[0].scatter(alpha, freq, c =  density, zorder=2)
     ax[1].scatter(damp, freq, c =  density, zorder=2)
-    formatPlot(ax[0], xlabel='Alpha Decay')
-    formatPlot(ax[1], xlabel='Damping (%)')
+    formatPlot(ax[0], xlabel='Exponential Decay', ylabel='Angular Frequnecy', title='Laplace Domain')
+    formatPlot(ax[1], xlabel='Damping (%)', ylabel='Angular Frequnecy', title='Damping Domain')
 
     return ax
 
-def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour', interp=300, cmap='rocket', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest'):
+def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour', interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest'):
     '''Plot Spatial data with a country or state border
     
     '
@@ -85,7 +86,7 @@ def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour'
         - 'US'
     '''
 
-    cmap = plt.colormaps[cmap] 
+    cmap = mpl.colormaps[cmap] 
 
     #Base Figure
     if ax is None:
@@ -113,6 +114,8 @@ def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour'
         interp = LinearNDInterpolator(cartcoord, z)
     elif method=='nearest':
         interp = NearestNDInterpolator(cartcoord, z)
+    elif method=='cl':
+        interp = CloughTocher2DInterpolator(cartcoord, z)
     Z0 = interp(X, Y)
 
     # Use Bound if Givven
