@@ -6,33 +6,31 @@
 # Imports
 import numpy as np
 from pandas import DataFrame, Series
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, diags
 
 from .grid.components import *
-from .apps import Dynamics, Statics, GIC
+from .apps import GIC
 from .grid.common import arc_incidence, InjectionVector
 from .core import *
 
 class GridWorkBench:
-    def __init__(self, fname=None, set=GridSet.Light):
+    def __init__(self, fname=None):
 
-        self.context = Context(fname, set)
+        self.context = Context(fname)
         self.io = self.context.getIO()
-        self.dm = self.context.getDataMaintainer()
+
+        # Temp disable - my IO getter is more reliable
+        # NOTE disable statics until it knowns to disable DM
+        #self.dm = self.context.getDataMaintainer()
 
         # Applications
         #self.dyn = Dynamics(self.context)
-        self.statics = Statics(self.context)
+        #self.statics = Statics(self.context)
         self.gic = GIC(self.context)
 
     def __getitem__(self, arg):
         '''Local Indexing of retrieval'''
-        return self.dm.get_df(arg)
-    
-    def ext(self,**args):
-        '''External Data Retrieval'''
-        # Same as above but get from PW
-        pass
+        return self.io[arg]
 
     '''
     Disabled Feature as Instance Creation is not Stable
@@ -100,17 +98,39 @@ class GridWorkBench:
         '''
         busNums = self.io[Bus]
         return Series(busNums.index, busNums['BusNum'])
-        
+    
+    def lines(self):
+        '''
+        Retrieves and returns all transmission line data. Convenience function.
+        '''
+
+        # Get Data
+        branches = self.io[Branch, :]
+
+        # Return requested Records
+        return branches.loc[branches['BranchDeviceType']=='Line']
+    
+    def xfmrs(self):
+        '''
+        Retrieves and returns all transformer data. Convenience function.
+        '''
+
+        # Get Data
+        branches = self.io[Branch, :]
+
+        # Return requested Records
+        return branches.loc[ branches['BranchDeviceType']=='Transformer']
     
     def incidence(self):
         '''
-        Returns a SparseIncidence Matrix of the branch network of the grid.
-        
+        Returns:
+        Sparse Incidence Matrix of the branch network of the grid.
+
         Dimensions: (Number of Branches)x(Number of Buses)
         '''
 
+        # Retrieve
         branches = self.io[Branch,['BusNum', 'BusNum:1']]
-        nbranches = len(branches)
 
         # Column Positions 
         bmap = self.busmap()
@@ -118,6 +138,7 @@ class GridWorkBench:
         toBus = branches['BusNum:1'].map(bmap).to_numpy()
 
         # Sparse Arc-Incidence Matrix
+        nbranches = len(branches)
         A = lil_matrix((nbranches,len(bmap)))
         A[np.arange(nbranches), fromBus] = -1
         A[np.arange(nbranches), toBus] = 1
@@ -143,3 +164,84 @@ class GridWorkBench:
         '''Retrive dataframe of bus latitude and longitude coordinates based on substation data'''
         A, S = self.io[Bus, 'SubNum'],  self.io[Substation, ['Longitude', 'Latitude']]
         return A.merge(S, on='SubNum') 
+    
+    def length_laplacian(self):
+        '''
+        Returns a distance-based Laplacian that approximates the second spatial derivative.
+        Transformer lengths are assumed to be 1 meter.
+        '''
+
+        # Get branch elgnths
+        ell = self.lengths()
+
+        # Branch Weight (km^-2)
+        W = diags(1/ell**2)
+
+        # Line Only Incidence
+        A = self.incidence()
+
+        # Laplacian
+        return A.T@W@A
+    
+    def lengths(self):
+        '''
+        Returns lengths of each branch in kilometers.
+        Transformer lengths are assumed to be 1 meter.
+        '''
+
+        # This is distance in kilometers
+        field = 'LineLengthByParameters:2'
+        ell = self.io[Branch,field][field]
+
+        # Assume XFMR 1 meter long
+        ell.loc[ell==0] = 0.001
+
+        return ell
+
+    
+    def lineprop(self):
+        '''Returns approximation of propagation constants for each branch'''
+
+        branches = self.io[Branch,['LineR','LineG', 'LineC', 'LineX']]
+
+        # Length (Set Xfmr to 1 meter)
+        ell = self.lengths()
+
+        # Series Parameters
+        R = branches['LineR']
+        X = branches['LineX']
+        Z = (R + 1j*X)/ell
+
+        # Shunt Parameters
+        G = branches['LineG']
+        C = branches['LineC']
+        Y = (G + 1j*C)/ell
+
+        # Correct Zero-Values
+        Z[Z==0] = 0.000446+ 0.002878j
+        Y[Y==0] = 0.000463j
+
+        # Propagation Parameter
+        return  np.sqrt(Y*Z)
+    
+
+    def proplap(self):
+        '''
+        Returns the propagation laplacian, which is a manifold representation
+        of the telgeraphers equations near synchronous frequnecy
+        Branch Weights are (1/length^2 - gamma^2)
+        '''
+
+        ell = self.lengths()
+        GAM = self.lineprop()
+
+        # Branch Weight m^-2
+        W = diags(1/ell**2 - GAM**2)/1e6 
+
+        # Line Only Incidence
+        A = self.incidence()
+
+        # Laplacian
+        return A.T@W@A
+    
+

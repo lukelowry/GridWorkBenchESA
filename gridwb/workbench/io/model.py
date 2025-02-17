@@ -35,22 +35,5 @@ class IModelIO(ABC):
     """
 
     @abstractmethod
-    def download(self) -> DataFrame:
-        pass
-
-    """
-    Pass DF
-    Modify Remote Grid Model
-
-    --------------- Data ----------------------
-
-    [ObjectType  ][Field ][isKey?][Value]
-
-    [GridType.Bus][BusNum][True  ][45   ]
-    [GridType.Bus][MW    ][False ][27   ]
-    [GridType.Sub][SubNum][True  ][1    ]
-    """
-
-    @abstractmethod
     def upload(self, df) -> bool:
         pass

@@ -3,7 +3,7 @@ Convenience Module for performing power-flow related taks through Power World
 """
 
 # Main Grid Work Bench Class
-from .main import GridWorkBench, GridSet
+from .main import GridWorkBench
 
 # Utility Classes
 from .utils import *

@@ -2,12 +2,13 @@ from abc import ABC
 from numpy import diff
 import numpy as np
 import scipy.sparse as sp
+from typing import Any
 
 # Constants
 MU0 = 1.256637e-6
 
 # Matrix Helper Functions
-def normlap(A, retD=False):
+def normlap(L, retD=False):
     '''Given a square Laplacian matrix, this function will return the normalized
     Laplacian. If retD is True, the diagonal square root scaling matrix will be returned
     aswell
@@ -20,15 +21,15 @@ def normlap(A, retD=False):
     '''
 
     # Get Diagonal and Invert for convenience
-    Yd = np.sqrt(A.diagonal())
+    Yd = np.sqrt(L.diagonal())
     Di = sp.diags(1/Yd)
 
     # Return Normalized Laplacian with or without scaled diag
     if retD:
         D = sp.diags(Yd)
-        return Di@A@Di, D, Di
+        return Di@L@Di, D, Di
     else:
-        return Di@A@Di
+        return Di@L@Di
 
 
 def hermitify(A):
@@ -195,8 +196,6 @@ class DifferentialOperator(Operator):
         #return np.sum(incidince.A,axis=0, keepdims=True).T
 
 
-    
-
 class MeshSelector:
 
     def __init__(self, dop: DifferentialOperator) -> None:
@@ -225,3 +224,23 @@ class MeshSelector:
 
 
         # TODO Generic versions of above
+
+
+class Chebyshev:
+    '''A functional class that helps in the synthesis and evaluation of Chebyshev polynomials'''
+
+    def __init__(self, a=-1, b=1) -> None:
+        self.a = a 
+        self.b = b 
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        '''Returns a function that evaluates n-th order Chebyshev polynomial in specified domain'''
+        n = args[0]
+
+        mid = (self.b+self.a)/2
+        scale = (self.b-self.a)/2
+
+        def func(t):
+            return np.cos(n*np.arccos((t-mid)/scale))
+        
+        return func

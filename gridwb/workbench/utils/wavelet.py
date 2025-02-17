@@ -1,153 +1,163 @@
-from typing import Any
+
 import numpy as np
 from functools import partial
 import scipy.sparse as sp
+from numpy import pi
 
-class Chebyshev:
-    '''A functional class that helps in the synthesis and evaluation of Chebyshev polynomials'''
+class WaveletCoeff:
+    '''Stores Necessary Information about signals wavelet transform'''
 
-    def __init__(self, a=-1, b=1) -> None:
-        self.a = a 
-        self.b = b 
+    def __init__(self, C, trange, srange) -> None:
+        self.C = C 
+        self.trange = trange 
+        self.srange = srange
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        '''Returns a function that evaluates n-th order Chebyshev polynomial in specified domain'''
-        n = args[0]
+def sech(t):
+    return 1/np.cosh(t)
 
-        mid = (self.b+self.a)/2
-        scale = (self.b-self.a)/2
+class ModWavelet:
 
-        def func(t):
-            return np.cos(n*np.arccos((t-mid)/scale))
+    def __init__(self, alpha=1, beta=1) -> None:
+        self.alpha = alpha
+        self.beta = beta
+
+        # Searching spectra through a+b at scale=1 finds this value
+        self.gmax = np.max(self.g(np.linspace(0,alpha+beta,1000)))
+
+    def __call__(self, t):
+        # Note when a 'proper' scaling is done
+        # The entire function is divided by the square root of scale
+        return np.sqrt(2*self.alpha)*np.exp(1j*self.beta*t)*sech(self.alpha*t)
+    
+    def g(self, xi, s=1):
+        '''Evaluates the Spectrum of Wavelet at given scale S'''
+        #a = xi * s * np.sqrt(2 * pi) / (4*self.alpha)
+        #b = pi/(2*self.alpha)*(s*xi-self.beta)
+        #return a * sech(b)
+
+        A = pi/self.alpha 
+        B = self.beta/2/self.alpha 
+
+        return sech(A*s*xi - B) - sech(A*s*xi)*sech(B)
+    
+    def h(self, xi, lmin):
+        '''Evaluates scaling function, requires 'lmin' which is the smallest spectra.'''
+        return self.gmax/np.cosh((2*xi/lmin)**2)
+    
+    def coeff(self, a, b, f, t):
+        '''
+        Performs inner product to determine a wavelet coefficient
+        a -> Time Locality of Wavelet
+        b -> Scale of Wavelet
+        f -> Function to be transformed
+        t -> Domain of function
+        '''
         
-        return func
+        wav = self((t-a)/b)
+        wav /= np.sqrt(b)
 
+        # Depends on use case if I want to normalize
+        # 'edge' wavelets are severly distroted by this
+        #wav /= np.linalg.norm(wav)
 
-
-class WKernel:
-    '''
-    Example Class use case
-
-    # Create Wavelet Kernel, pass Eigenvalues and Eigenvectors
-    wk = WKernel()
-    wk.seteig(eigvals, eigvects)
-
+        return np.dot(np.conjugate(wav), f)
     
-    # Plot Scaling Functions
-    t = np.linspace(0, 2, 1000)
-    fig, ax = plt.subplots()
-    for i in range(wk.J): 
-        ax.plot(t,wk.g(t, i))
-
-    '''
-
-    def __init__(self, J=4, K=2**4, x1=1/20, x2=2/20, alpha=2, beta=2, lmax=2) -> None:
-        self.J = J 
-        self.K = K 
-        self.x1 = x1 
-        self.x2 = x2 
-        self.alpha = alpha 
-        self.beta = beta 
-        self.lmax = lmax 
-
-        # Minimum Eigen Parameter Determined by K
-        self.lmin = lmax/K 
-
-        # Maximum Scale
-        self.smax = x2/self.lmin 
-
-        # Minimum Scale
-        self.smin = x1/lmax
-
-        # Cubic Spline
-        self.coeff = self.cspline(x1, x2, alpha, beta)
-        self.spline = self.cfunc(self.coeff)
-
-    def __left(self, x):
-        return (x/self.x1)**self.alpha
-    
-    def __right(self, x):
-        f = lambda t:  (self.x2/t)**self.beta
-        return np.piecewise(
-            x, 
-            [x==0, x!=0], 
-            [0   , f]
-        )
-    
-    def __scale(self, i):
-        '''Returns the i-th discrete scale based on the finite
-        scale restrictions of the SGWT 
+    def coeffs(self,t, f, times=None, scales=(0,3), numscales=5):
         '''
-        return self.smax*(self.smin/self.smax)**(i/(self.J-1))
-    
-    # I got cubic to work
-    def cspline(self, x1, x2, a, b):
-        '''Returns coefficients of cubic spline given parameters of left and right functions'''
-        A = np.array([
-            [3*x1**3  , 2*x1**2,  x1, 0],
-            [  x1**3  ,   x1**2,  x1, 1],
-            [3*x2**3  , 2*x2**2,  x2, 0],
-            [  x2**3  ,   x2**2,  x2, 1],
-        ])
-        b = np.array([[
-            a, 1, -b, 1
-        ]]).T
-
-        return np.linalg.inv(A)@b
-
-    def cfunc(self, coeff):
-        '''Returns function given cubic coefficients that can be used to evaluate'''
-        a, b, c, d = coeff 
-
-        def f(t):
-            return a*t**3 + b*t**2 + c*t + d
+        Performs inner product to determine a wavelet coefficients 
+        at the specified scales and time localities
         
-        return f
+        t -> Domain of function
+        f -> Function to be transformed
+        times -> N Locations in Time
+        scales -> M Scales of Wavelet
+
+        Returns
+        NxM wavelet coefficient matrix
+        '''
+
+        # Wavelet Transform
+        trange = times.min(), times.max()
+        A = times
+        B = np.logspace(*scales, numscales, base=2)
+        C = np.zeros((A.shape[0],B.shape[0]), dtype=complex)
+
+        for i, a in enumerate(A):
+            for j, b in enumerate(B):
+                C[i, j] = self.coeff(a, b, f, t)
+
+        return WaveletCoeff(C, trange, scales)
     
-    def g(self, t, s=None):
-        '''
-        Scaling Function, Cublic Spline Piecewise
-        s -> Scale of Function
-        '''
+class SGWT:
+    '''Given a wavelet kernel and GFT basis, this will perform helper functions.'''
 
-        if s is not None:
-            ts = t* self.__scale(s)
-        else:
-            ts = t
-
-        A = ts < self.x1 
-        C = ts > self.x2  
-        B = ~(A|C)
-        return np.piecewise(
-            ts,
-            [A, B, C],
-            [self.__left, self.spline, self.__right]
-        )
-
-    def seteig(self, lam: np.ndarray, U: np.ndarray):
-        '''Assign the Eigenvalues and Eigenvectors of the
-        Laplacian matrix to create wavelet coefficient space.
-        Not required to use this object.
-        lam -> vector of ordered real eigenvalues
-        U -> orthonormal eigenvector matrix
-        '''
-        self.lam = lam 
+    def __init__(self, ker: ModWavelet, U, Lam, scales) -> None:
+        self.ker = ker 
         self.U = U
+        self.Lam = Lam 
+        self.scales = scales 
 
-    def wavelet(self, m, s):
-        ''' 
-        Generate the space (node) and scale (duration) wavelet basis vectors
-        m - Index of Node
-        s - Scale
+        self.AbsLam = np.abs(Lam)
+
+        '''DETERMINE SCALING FUNCTION IN SPECTRAL DOMAIN'''
+
+        # Get largest scale wavelet kernel
+        gLarge = self.ker.g(self.AbsLam, 2**self.scales[-1])
+
+        # Find curve peak and identify the lambda that does this
+        largestIDX = np.argmax(gLarge)
+        lmin = self.AbsLam[largestIDX]
+
+        # Scaling function
+        self.h = sp.diags(self.ker.h(self.AbsLam, lmin))
+
+        '''CONSTANTS'''
+        self.Cg = np.sum(self.ker.g(self.AbsLam)**2/np.abs(Lam))
+
+    def wavelet(self, J=None, n=None):
         '''
-        # Impulse at node # NOTE when normalized, bus scale by D index
-        Xm = self.U[[m]].conj().T #* D.A[m,m]
+        Returns the graph wavelet of given scale and localized at a given node.
+        If n=None, then each localization will be returned (column vectors)
+        If J=None, then each scale will be returned
+        Otherwise the J-th scale is returned
+        '''
 
-        # Scaling Function
-        G = self.g(self.lam, s)
+        # Evaluate g at this scale and diagonalize, then ->
+        scaling_func = self.ker.g(self.AbsLam, s=2**self.scales[J])
+        g = sp.diags(scaling_func)
 
-        # The wavelet Vector
-        WAV = self.U@sp.diags(G)@Xm
+        # Calculate Wavelets of this scale for each vertex localization
+        if n is None:
+            return self.U@g@self.U.T.conj()
+        else:
+            return self.U@g@self.U.T.conj()[:,n]
+        
+    def transformation(self):
+        '''Effectively same as SGWT.wavelet, except it returns a matrix for all coefficients to be calculated.
+        When multipled, all cofficents are determined. The first n rows are for the smallest scale, localized at each node.
+        The blocks repeat for each scale.
+        '''
 
-        # Return 1D vector
-        return WAV[:,0]
+        # SCaling Functions in Vertex-Domain, then ->
+        return np.vstack([
+            self.U@sp.diags(self.ker.g(self.AbsLam, s=2**i)) for i in self.scales
+        ])@self.U.T.conj()  # Post-Multiply the GFT conversion!
+    
+    def psuedoinv(self):
+        '''Returns the psuedo inverse of the transformation'''
+        T = self.transformation()
+
+        # Adjoint
+        Th = T.conj().T
+
+        return np.linalg.inv(Th@T)@Th
+    
+    def scalingvec(self, n):
+        '''Returns the scaling function localized at node n. None returns all'''
+
+        if n is None:
+            return self.U@self.h@self.U.T.conj()
+        else:
+            return self.U@self.h@self.U.T.conj()[:,n]
+
+    

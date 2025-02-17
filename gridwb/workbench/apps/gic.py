@@ -272,11 +272,11 @@ class GIC(PWApp):
         Don't set calc_all_windings=True unless you must
         '''
 
-        gicxfmrs = self.dm.get_df(GICXFormer)
-        branches = self.dm.get_df(Branch)
-        gens = self.dm.get_df(Gen)
-        subs = self.dm.get_df(Substation)
-        buses = self.dm.get_df(Bus)
+        gicxfmrs = self.io[GICXFormer,:]
+        branches = self.io[Branch,:]
+        gens = self.io[Gen,:]
+        subs = self.io[Substation,:]
+        buses = self.io[Bus,:]
 
         return GICTool(gicxfmrs, branches, gens, subs, buses, customcalcs=calc_all_windings)
 

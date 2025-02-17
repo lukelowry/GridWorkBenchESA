@@ -9,6 +9,7 @@ From old GWB. Probably remove.
 
 # MISC
 from os.path import dirname, abspath, sep
+from matplotlib.pylab import Axes
 from numpy import array, linspace, meshgrid, where, nan, pi, vstack, log
 from numpy import histogram, diff, arange
 from scipy.stats import gaussian_kde
@@ -71,7 +72,7 @@ def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
 
     return ax
 
-def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour', interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest'):
+def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Contour', usecbar=True, interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest'):
     '''Plot Spatial data with a country or state border
     
     '
@@ -144,12 +145,13 @@ def scatter_map(values, long, lat, shape='Texas', ax=None, title='Texas Contour'
     else:
         im = ax.pcolormesh(X, Y, Z0, cmap=cmap, norm=norm)
 
-    cb = plt.gcf().colorbar(im, ax=ax)
+    if usecbar:
+        cb = plt.gcf().colorbar(im, ax=ax)
 
-    # Color Bar
-    if radians:
-        cb.set_ticks(ticks=[-pi,-pi/2,0,pi/2,pi], labels=[r'$-\pi$',r'$-\pi/2$',r'$0$',r'$\pi/2$',r'$\pi$'])
-        
+        # Color Bar
+        if radians:
+            cb.set_ticks(ticks=[-pi,-pi/2,0,pi/2,pi], labels=[r'$-\pi$',r'$-\pi/2$',r'$0$',r'$\pi/2$',r'$\pi$'])
+            
 
     # Highlight a Specific Point
     if highlight is not None:

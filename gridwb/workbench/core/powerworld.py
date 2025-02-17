@@ -3,7 +3,6 @@ from pandas import DataFrame
 from os import path
 from numpy import unique
 
-from .datamaintainer import GridDataMaintainer
 from ..grid.components import *
 from ..utils.decorators import timing
 from ..io.model import IModelIO
@@ -17,7 +16,6 @@ fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
 # Power World Read/Write
 class PowerWorldIO(IModelIO):
     esa: SAW
-    dm: DataMaintainer
 
     def TSInit(self):
         ''' Initialize Transient Stability Parameters '''
@@ -37,15 +35,6 @@ class PowerWorldIO(IModelIO):
 
         # Attempt and Initialize TS so we get initial values
         self.TSInit()
-
-    @timing
-    def download(self, set: list[Type[GObject]]) -> GridDataMaintainer:
-        '''
-        Get all Data from PW. What data is downloaded
-        depends on the selected Set.
-        '''
-        self.dm = GridDataMaintainer({gclass: self.get(gclass) for gclass in set})
-        return self.dm
 
     def upload(self, model: dict[Type[GObject], DataFrame]) -> bool:
         '''
@@ -127,7 +116,7 @@ class PowerWorldIO(IModelIO):
         # PARSE ARGUMENT FORMAT OPTIONS
 
         # Limited Data Passed NOTE useful when target data is not a properly named DF
-        if isinstance(args, list):
+        if isinstance(args, tuple) or isinstance(args, list):
 
             # [Type, [Fields]] -> Target data listed by field, expects array/dataframe with respective ordering
             if len(args)==2:   
@@ -258,6 +247,44 @@ class PowerWorldIO(IModelIO):
         '''
         self.esa.RunScriptCommand("ResetToFlatStart()")
 
+    ''' Playin Signal Section'''
+
+    def clearsignals(self):
+        '''Clears all playin signals'''
+        self.esa.RunScriptCommand('DELETE(PLAYINSIGNAL);')
+
+    def setsignals(self, name, times, signals):
+        '''
+        Sets Playin signals
+        Parameters:
+        name: Name of PlayIn Configuration
+        times: 1D Array of times of Length N
+        signals: N x M where M is number of Signals
+        Power World blocks signal data from being written for some reason so we must set through AUX command.'''
+
+        # Format Data Header
+        cmd = 'DATA (PLAYINSIGNAL, [TSName, TSTime'
+
+        for idx in range(signals.shape[1]):
+
+            cmd += ', TSSignal'
+
+            if idx > 0:
+                cmd += ':'+ str(idx)
+        
+        cmd += ']){\n' 
+
+        # Format each time record
+        for t, row in zip(times, signals):
+            cmd += f'"{name}"\t{t:.6f}'
+            for d in row:
+                cmd += f'\t{d:.6f}'
+            cmd += '\n'
+
+        cmd += '}\n'
+
+        # Execute
+        self.esa.exec_aux(cmd)
 
     # Skip Contingencies
     def skipallbut(self, ctgs):
@@ -361,7 +388,7 @@ class PowerWorldIO(IModelIO):
         self.esa.RunScriptCommand(f'DeleteState(USER,{statename});')
                 
     def __set_sol_opts(self, name, value):
-        settings = self.dm.get_df(Sim_Solution_Options)
+        settings = self[Sim_Solution_Options]
         settings['name'] = value
         self.upload({
             Sim_Solution_Options: settings

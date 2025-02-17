@@ -21,7 +21,6 @@ class PWApp:
     def __init__(self, context: Context) -> None:
         # Application Interface
         self.io = context.getIO()
-        self.dm = context.getDataMaintainer()
 
         # Conditions for griditer feature
         self.conditions: dict[Condition, list[Any]] = {}
