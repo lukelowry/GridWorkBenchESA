@@ -24,9 +24,9 @@ class Statics(PWApp):
     def __init__(self, context: Context) -> None:
         super().__init__(context)
 
-        gens = self.dm.get_df(Gen)
-        buses = self.dm.get_df(Bus)
-        loads = self.dm.get_df(Load)
+        gens = self.io[Gen, :]
+        buses = self.io[Bus, :]
+        loads = self.io[Load, :]
 
         zipfields = ['LoadSMW', 'LoadSMVR','LoadIMW', 'LoadIMVR','LoadZMW', 'LoadZMVR']
         

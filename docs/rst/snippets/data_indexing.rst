@@ -8,8 +8,27 @@ file), like so (adapt the path for your system):
 
     >>> wb = GridWorkBench(CASE) 
 
-Retrieve key fields for loads:
+Retrieve Buses:
 
 .. code:: python
 
     >>> wb[Bus]
+
+Retrieve Buses and all fields:
+
+.. code:: python
+
+    >>> wb[Bus, :]
+
+
+Retrieve Specific Field:
+
+.. code:: python
+
+    >>> wb[Bus, "BusAngle"]
+
+Retrieve Specific Fields:
+
+.. code:: python
+
+    >>> wb[Bus, ["BusAngle", "SubNum"]]

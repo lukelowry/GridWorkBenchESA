@@ -10,7 +10,7 @@
           <link rel="stylesheet" href="_static/theme.css " type="text/css" />
       
       <!-- sphinx script_files -->
-        <script src="_static/documentation_options.js?v=4720776d"></script>
+        <script src="_static/documentation_options.js?v=8d563738"></script>
         <script src="_static/doctools.js?v=9bcbadda"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
 
@@ -256,8 +256,20 @@ file), like so (adapt the path for your system):</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wb</span> <span class="o">=</span> <span class="n">GridWorkBench</span><span class="p">(</span><span class="n">CASE</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Retrieve key fields for loads:</p>
+<p>Retrieve Buses:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wb</span><span class="p">[</span><span class="n">Bus</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Retrieve Buses and all fields:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wb</span><span class="p">[</span><span class="n">Bus</span><span class="p">,</span> <span class="p">:]</span>
+</pre></div>
+</div>
+<p>Retrieve Specific Field:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wb</span><span class="p">[</span><span class="n">Bus</span><span class="p">,</span> <span class="s2">&quot;BusAngle&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Retrieve Specific Fields:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">wb</span><span class="p">[</span><span class="n">Bus</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;BusAngle&quot;</span><span class="p">,</span> <span class="s2">&quot;SubNum&quot;</span><span class="p">]]</span>
 </pre></div>
 </div>
 </section>

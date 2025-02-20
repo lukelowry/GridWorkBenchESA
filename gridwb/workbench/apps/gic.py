@@ -91,7 +91,7 @@ class GICModel:
         # Determine Effective GIC extraction, Equivilent to (Ph + N^(-1) Pl)
         Eff = hstack([
             eye(self.nxfmr), 
-            diags(1/xfmrs['TurnsRatio']), 
+            diags(xfmrs['TurnsRatio']), 
             lil_matrix((self.nxfmr, self.nlines))
         ])
 
@@ -111,6 +111,7 @@ class GICModel:
         self._A, self._G, self._H  = A, G, H
         self._eff, self._base = Eff, base
         self._zeta, self._Px = zeta, Px
+        self._Gd = Gd
         
     @property
     def A(self):
@@ -991,7 +992,7 @@ class GICTool:
         
     # Below are accessing tools (Don't know best way yet)
     # Final step causes some problems, summing on busses
-
+   
     def Hmat(self, reduceXFMR=True):
         '''
         Returns H Matrix, which maps line voltages to transformer GICS scaled by K (pre-absolute value)

@@ -35,28 +35,6 @@ class PowerWorldIO(IModelIO):
 
         # Attempt and Initialize TS so we get initial values
         self.TSInit()
-
-    def upload(self, model: dict[Type[GObject], DataFrame]) -> bool:
-        '''
-        Send All WB DataFrame Data to PW
-        WARNING: Be careful what is passed to this function.
-
-        Parameters:
-        model: A dictionary with Object Types as keys. The dat associated with this key
-            is a Dataframe holding data with atleast respective keys.
-        '''
-        self.edit_mode()
-        for gclass, gset in model.items():
-            # Only Pass Params That are Editable
-            df = gset[gset.columns].copy()
-            try:
-                #self.esa.change_parameters_multiple_element_df(gclass.TYPE, df)
-                self.esa.change_and_confirm_params_multiple_element(gclass.TYPE, df)
-            except CommandNotRespectedError:
-                print(f'Power World did not accept the changes for {gclass.TYPE}')
-            except:
-                print(f"Failed to Write Data for {gclass.TYPE}")
-        self.run_mode()
     
     def __getitem__(self, index) -> DataFrame | None:
         '''Retrieve Data frome Power world with Indexor Notation
@@ -286,7 +264,8 @@ class PowerWorldIO(IModelIO):
         # Execute
         self.esa.exec_aux(cmd)
 
-    # Skip Contingencies
+    '''
+    Depricated until .upload removed
     def skipallbut(self, ctgs):
         ctgset = self.get(TSContingency)
 
@@ -295,7 +274,8 @@ class PowerWorldIO(IModelIO):
         ctgset.loc[ctgset["TSCTGName"].isin(ctgs), "CTGSkip"] = "NO"
 
         self.upload({TSContingency: ctgset})
-
+    '''
+        
     # Execute Dynamic Simulation for Non-Skipped Contingencies
     def TSSolveAll(self):
         self.esa.RunScriptCommand("TSSolveAll()")
@@ -387,6 +367,8 @@ class PowerWorldIO(IModelIO):
         self.esa.RunScriptCommand('EnterMode(RUN);')
         self.esa.RunScriptCommand(f'DeleteState(USER,{statename});')
                 
+    '''
+    Depricated until .upload removed
     def __set_sol_opts(self, name, value):
         settings = self[Sim_Solution_Options]
         settings['name'] = value
@@ -394,12 +376,10 @@ class PowerWorldIO(IModelIO):
             Sim_Solution_Options: settings
         })
 
-    '''Sim Solution Options'''
-
     def max_iterations(self, n: int):
         self.__set_sol_opts('MaxItr', n)
 
     def zbr_threshold(self, v: float):
         self.__set_sol_opts('ZBRThreshold', v)
 
-    
+    '''

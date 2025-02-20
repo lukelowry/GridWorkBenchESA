@@ -1,13 +1,7 @@
 from abc import ABC, abstractmethod
 
-from pandas import DataFrame
-
-
 class IModelIO(ABC):
     '''Standard Interface for Model Interaction'''
-
-    # Data Structure Template
-    Template = DataFrame(columns=["ObjectID", "ObjectType", "Field", "IsKey", "Value"])
 
     def __init__(self, fname: str = None):
         self.fname = fname
@@ -20,20 +14,3 @@ class IModelIO(ABC):
     def open(self):
         pass
 
-    """
-    Download Grid Data
-    Return as DataFrame
-
-    --------------- Data ----------------------
-
-    [ObjectType  ][Field ][isKey?][Value]
-
-    [GridType.Bus][BusNum][True  ][45   ]
-    [GridType.Bus][MW    ][False ][27   ]
-    [GridType.Sub][SubNum][True  ][1    ]
-
-    """
-
-    @abstractmethod
-    def upload(self, df) -> bool:
-        pass

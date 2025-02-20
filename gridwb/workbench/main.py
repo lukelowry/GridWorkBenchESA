@@ -32,49 +32,20 @@ class GridWorkBench:
         '''Local Indexing of retrieval'''
         return self.io[arg]
 
-    '''
-    Disabled Feature as Instance Creation is not Stable
-    def __call__(self, arg):
-        return self.dm.get_inst(arg)
-    '''
-
-    # TODO function that prints out number and type of datasets
-    def summary(self):
-        pass
-
-    def commit(self, gclass=None):
-        '''Send ALL local data to remote model.
-        Not recommended.'''
-        if gclass is None:
-            self.io.upload(self.all)
-        else:
-            self.io.upload(self.all[gclass])
-
     def save(self):
         '''Save Open the Power World File'''
         self.io.save()
 
-    def sudos(self):
-        '''DANGEROUS. Uploads all local data to power world and saves the file.'''
-        self.commit()
-        self.save()
-
-    # TODO Remove - New Indexing method is superior
-    def change(self, gtype, data: DataFrame):
-        '''
-        Inteded for a Quick data update to external model.
-
-        Parameters: 
-        gtype: Object Type (GWB Class)
-        data: DF of fields with keys and (preferably only) fields to be updated.
-        '''
-        self.io.upload({
-            gtype: data
-        })
-
     def pflow(self, getvolts=True) -> DataFrame | None:
-        '''Solve Power Flow in external system.
-        By default bus voltages will be returned.'''
+        """Solve Power Flow in external system.
+        By default bus voltages will be returned.
+
+        :param getvolts: flag to indicate the voltages should be returned after power flow, 
+            defaults to True
+        :type getvolts: bool, optional
+        :return: Dataframe of bus number and voltage if requested
+        :rtype: DataFrame or None
+        """
 
         # Solve Power Flow through External Tool
         self.io.pflow()
@@ -148,7 +119,7 @@ class GridWorkBench:
     def ybranch(self):
         '''Return Admittance of Lines in Complex Form'''
 
-        branches = self.all[Branch]
+        branches = self[Branch, ['LineR:2', 'LineX:2']]
         R = branches['LineR:2']
         X = branches['LineX:2']
         Z = R + 1j*X 
