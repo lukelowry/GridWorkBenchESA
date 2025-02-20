@@ -4,16 +4,10 @@ Gridworkbench (ESA Fork)
    :target: https://pypi.org/project/esa/
 .. image:: https://img.shields.io/pypi/pyversions/esa.svg
    :target: https://pypi.org/project/esa/
-.. image:: https://img.shields.io/discord/1114563747651006524
-   :target: https://discord.gg/V9v8NRCT
 .. image:: https://joss.theoj.org/papers/10.21105/joss.02289/status.svg
    :target: https://doi.org/10.21105/joss.02289
 .. image:: https://img.shields.io/pypi/l/esa.svg
    :target: https://github.com/mzy2240/ESA/blob/master/LICENSE
-.. image:: https://pepy.tech/badge/esa/month
-   :target: https://pepy.tech/project/esa
-.. image:: https://img.shields.io/badge/coverage-100%25-brightgreen
-   :target: https://pypi.org/project/esa/
 
 GridWorkbench is a syntax-sugar fork to make data access as easy as possible.
 
@@ -29,11 +23,7 @@ ESA is well tested and fully `documented`_.
 ----------------
 
 For quick-start directions, installation instructions, API reference,
-examples, and more, please check out ESA's `documentation`_.
-
-If you have your own copy of the ESA repository, you can also view the
-documentation locally by navigating to the directory ``docs/html`` and
-opening ``index.html`` with your web browser.
+examples, and more, please check read `documentation`_.
 
 
 Installation
