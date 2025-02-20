@@ -16,6 +16,12 @@ def sech(t):
     return 1/np.cosh(t)
 
 class ModWavelet:
+    '''
+    Description:
+        Generalized Wavelet Object, with scaling and generating kernels.
+    Parameters:
+        Filter-Defining parameters alpha & beta
+    '''
 
     def __init__(self, alpha=1, beta=1) -> None:
         self.alpha = alpha
@@ -30,7 +36,13 @@ class ModWavelet:
         return np.sqrt(2*self.alpha)*np.exp(1j*self.beta*t)*sech(self.alpha*t)
     
     def g(self, xi, s=1):
-        '''Evaluates the Spectrum of Wavelet at given scale S'''
+        '''
+        Description:
+            Evaluates the Spectrum of Wavelet at given scale S
+        Parameters:
+            xi: Scalar or Array of spectral values to evaluate g.
+            s: Scale at which to evaluate.
+        '''
         #a = xi * s * np.sqrt(2 * pi) / (4*self.alpha)
         #b = pi/(2*self.alpha)*(s*xi-self.beta)
         #return a * sech(b)
@@ -41,7 +53,10 @@ class ModWavelet:
         return sech(A*s*xi - B) - sech(A*s*xi)*sech(B)
     
     def h(self, xi, lmin):
-        '''Evaluates scaling function, requires 'lmin' which is the smallest spectra.'''
+        '''
+        Description:
+            Evaluates scaling function, requires 'lmin' which is the smallest spectra.
+        '''
         return self.gmax/np.cosh((2*xi/lmin)**2)
     
     def coeff(self, a, b, f, t):

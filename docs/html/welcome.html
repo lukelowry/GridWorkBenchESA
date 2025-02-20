@@ -11,7 +11,7 @@
       
       <!-- sphinx script_files -->
         <script src="_static/documentation_options.js?v=4720776d"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/doctools.js?v=9bcbadda"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
 
       
@@ -22,7 +22,7 @@
   <link rel="index" title="Index" href="genindex.html" />
   <link rel="search" title="Search" href="search.html" />
   <link rel="next" title="Installation" href="installation.html" />
-  <link rel="prev" title="Easy SimAuto (ESA) Documentation" href="index.html" /> 
+  <link rel="prev" title="Grid Workbench Documentation" href="index.html" /> 
   </head>
 
   <body>
@@ -41,7 +41,7 @@
 
   
     <div class="nav-item">
-      <a href="https://github.com/mzy2240/ESA"
+      <a href="https://github.com/wyattlaundry/GridWorkBenchESA"
         class="nav-link external">
           Github <outboundlink></outboundlink>
       </a>
@@ -71,7 +71,7 @@
 
   
     <div class="nav-item">
-      <a href="https://github.com/mzy2240/ESA"
+      <a href="https://github.com/wyattlaundry/GridWorkBenchESA"
         class="nav-link external">
           Github <outboundlink></outboundlink>
       </a>
@@ -101,7 +101,7 @@
   
     <div class="sidebar-group">
       <p class="caption">
-        <span class="caption-text"><a href="index.html#easy-simauto-esa-documentation">Contents:</a></span>
+        <span class="caption-text"><a href="index.html#grid-workbench-documentation">Contents:</a></span>
       </p>
       <ul class="current">
         
@@ -113,19 +113,9 @@
             
               <ul>
                 
-                  <li class="toctree-l2"><a href="#citation" class="reference internal">Citation</a></li>
-                
                   <li class="toctree-l2"><a href="#what-is-gwb" class="reference internal">What Is GWB?</a></li>
                 
-                  <li class="toctree-l2"><a href="#about-simauto" class="reference internal">About SimAuto</a></li>
-                
-                  <li class="toctree-l2"><a href="#who-should-use-gwb" class="reference internal">Who Should Use GWB?</a></li>
-                
                   <li class="toctree-l2"><a href="#why-use-gwb" class="reference internal">Why Use GWB?</a></li>
-                
-                  <li class="toctree-l2"><a href="#projects-that-use-gwb" class="reference internal">Projects That Use GWB</a></li>
-                
-                  <li class="toctree-l2"><a href="#disclaimer-and-credits" class="reference internal">Disclaimer and Credits</a></li>
                 
                   <li class="toctree-l2"><a href="#changelog" class="reference internal">Changelog</a></li>
                 
@@ -207,7 +197,7 @@
   <ul class="page-nav">
   <li class="prev">
     <a href="index.html"
-       title="previous chapter">← Easy SimAuto (ESA) Documentation</a>
+       title="previous chapter">← Grid Workbench Documentation</a>
   </li>
   <li class="next">
     <a href="installation.html"
@@ -221,29 +211,13 @@
             
   <section id="introduction">
 <span id="welcome"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
-<p>This is the official documentation for Gridworkbench! If you encounter issues
-with ESA or the documentation, please file an issue on XXX.</p>
-<section id="citation">
-<span id="id1"></span><h2>Citation<a class="headerlink" href="#citation" title="Link to this heading">¶</a></h2>
-<p>If you use ESA in any of your work, please use the citation below.</p>
-<div class="highlight-latex notranslate"><div class="highlight"><pre><span></span>@article<span class="nb">{</span>ESA,
-  doi = <span class="nb">{</span>10.21105/joss.02289<span class="nb">}</span>,
-  url = <span class="nb">{</span>https://doi.org/10.21105/joss.02289<span class="nb">}</span>,
-  year = <span class="nb">{</span>2020<span class="nb">}</span>,
-  publisher = <span class="nb">{</span>The Open Journal<span class="nb">}</span>,
-  volume = <span class="nb">{</span>5<span class="nb">}</span>,
-  number = <span class="nb">{</span>50<span class="nb">}</span>,
-  pages = <span class="nb">{</span>2289<span class="nb">}</span>,
-  author = <span class="nb">{</span>Brandon L. Thayer and Zeyu Mao and Yijing Liu and Katherine Davis and Thomas J. Overbye<span class="nb">}</span>,
-  title = <span class="nb">{</span>Easy SimAuto (ESA): A Python Package that Simplifies Interacting with PowerWorld Simulator<span class="nb">}</span>,
-  journal = <span class="nb">{</span>Journal of Open Source Software<span class="nb">}</span>
-<span class="nb">}</span>
-</pre></div>
-</div>
-</section>
+<p>This is the official documentation for Gridworkbench!</p>
 <section id="what-is-gwb">
 <span id="what-is-esa"></span><h2>What Is GWB?<a class="headerlink" href="#what-is-gwb" title="Link to this heading">¶</a></h2>
-<p>ESA is a “Pip-installable” Python package that eases interaction with
+<p>The primary purpose of this fork is to add syntax sugar to
+the excellent python interface that ESA created.</p>
+<p>ESA a “Pip-installable” Python package that eases
+interaction with
 the PowerWorld Simulator Automation Server (SimAuto). PowerWorld
 Simulator is a powerful, commercial-grade electric grid simulation tool
 with a wide range of capabilities. Information on Simulator can be found
@@ -251,536 +225,33 @@ with a wide range of capabilities. Information on Simulator can be found
 information on SimAuto can be found <a class="reference external" href="https://www.powerworld.com/products/simulator/add-ons-2/simauto">here</a>.
 Since ESA directly interfaces with SimAuto, ESA users will need a
 PowerWorld license and installation that also includes SimAuto.</p>
-<p>ESA makes working with SimAuto, well, easy. Users don’t have to worry
-about input or output data type conversions, data mapping,
-determining whether SimAuto has reported an error, and more.
-Additionally, ESA uses the scientific computing packages you know and
-love, including Numpy and Pandas. In addition to wrapping 100% of the
-functions provided by SimAuto, ESA provides helper functions that
-further ease development. Below is a quick motivating example (also
-found in <a class="reference internal" href="snippets.html#increase-loading"><span class="std std-ref">Increase Loading in Case</span></a>) that shows how easy it is to use
-SimAuto.</p>
-<p>This simple example uniformly increases the loading in a power system
-model by 50%.</p>
-<p>If you want to follow along, you’ll first need to define your own
-<code class="docutils literal notranslate"><span class="pre">CASE_PATH</span></code> constant (the file path to a PowerWorld <code class="docutils literal notranslate"><span class="pre">.pwb</span></code> case
-file), like so (adapt the path for your system):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">CASE_PATH</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;C:\Users\myuser\git\ESA\tests\cases\ieee_14\IEEE 14 bus_pws_version_21.pwb&quot;</span>
-</pre></div>
-</div>
-<p>Then, import the SimAuto wrapper (SAW) class and initialize an instance:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">esa</span> <span class="kn">import</span> <span class="n">SAW</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">saw</span> <span class="o">=</span> <span class="n">SAW</span><span class="p">(</span><span class="n">CASE_PATH</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Retrieve key fields for loads:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">kf</span> <span class="o">=</span> <span class="n">saw</span><span class="o">.</span><span class="n">get_key_field_list</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">kf</span>
-<span class="go">[&#39;BusNum&#39;, &#39;LoadID&#39;]</span>
-</pre></div>
-</div>
-<p>Pull load data including active and reactive power demand:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load_frame</span> <span class="o">=</span> <span class="n">saw</span><span class="o">.</span><span class="n">GetParametersMultipleElement</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">kf</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;LoadSMW&#39;</span><span class="p">,</span> <span class="s1">&#39;LoadSMVR&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">load_frame</span>
-<span class="go">    BusNum LoadID    LoadSMW   LoadSMVR</span>
-<span class="go">0        2      1  21.699999  12.700000</span>
-<span class="go">1        3      1  94.199997  19.000000</span>
-<span class="go">2        4      1  47.799999  -3.900000</span>
-<span class="go">3        5      1   7.600000   1.600000</span>
-<span class="go">4        6      1  11.200000   7.500000</span>
-<span class="go">5        9      1  29.499999  16.599999</span>
-<span class="go">6       10      1   9.000000   5.800000</span>
-<span class="go">7       11      1   3.500000   1.800000</span>
-<span class="go">8       12      1   6.100000   1.600000</span>
-<span class="go">9       13      1  13.500001   5.800000</span>
-<span class="go">10      14      1  14.900000   5.000000</span>
-</pre></div>
-</div>
-<p>To learn more about variables such as <code class="docutils literal notranslate"><span class="pre">LoadSMW</span></code>, see
-<a class="reference internal" href="overview.html#powerworld-variables"><span class="std std-ref">PowerWorld Variables</span></a>.</p>
-<p>Uniformly increase loading by 50% and solve the power flow:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">load_frame</span><span class="p">[[</span><span class="s1">&#39;LoadSMW&#39;</span><span class="p">,</span> <span class="s1">&#39;LoadSMVR&#39;</span><span class="p">]]</span> <span class="o">*=</span> <span class="mf">1.5</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">saw</span><span class="o">.</span><span class="n">change_parameters_multiple_element_df</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">load_frame</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">saw</span><span class="o">.</span><span class="n">SolvePowerFlow</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Let’s confirm that the loading did indeed increase:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">new_loads</span> <span class="o">=</span> <span class="n">saw</span><span class="o">.</span><span class="n">GetParametersMultipleElement</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">kf</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;LoadSMW&#39;</span><span class="p">,</span> <span class="s1">&#39;LoadSMVR&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_loads</span>
-<span class="go">    BusNum LoadID     LoadSMW   LoadSMVR</span>
-<span class="go">0        2      1   32.549998  19.050001</span>
-<span class="go">1        3      1  141.299999  28.500000</span>
-<span class="go">2        4      1   71.699995  -5.850000</span>
-<span class="go">3        5      1   11.400000   2.400000</span>
-<span class="go">4        6      1   16.800001  11.250000</span>
-<span class="go">5        9      1   44.250000  24.900000</span>
-<span class="go">6       10      1   13.500001   8.700000</span>
-<span class="go">7       11      1    5.250000   2.700000</span>
-<span class="go">8       12      1    9.150000   2.400000</span>
-<span class="go">9       13      1   20.250002   8.700000</span>
-<span class="go">10      14      1   22.350000   7.500000</span>
-</pre></div>
-</div>
-<p>Clean up when done:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">saw</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Easy, isn’t it?</p>
-</section>
-<section id="about-simauto">
-<span id="id2"></span><h2>About SimAuto<a class="headerlink" href="#about-simauto" title="Link to this heading">¶</a></h2>
-<p>From PowerWorld’s <a class="reference external" href="https://www.powerworld.com/products/simulator/add-ons-2/simauto">SimAuto page</a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&quot;The Simulator Automation Server (SimAuto) allows you to take
-advantage of the power of automation to extend the functionality of
-PowerWorld Simulator to any external program that you write. Using
-Simulator Automation Server you can launch and control PowerWorld
-Simulator from within another application, enabling you to: access
-the data of a Simulator case, perform defined Simulator functions
-and other data manipulations, and send results back to your original
-application, to a Simulator auxiliary file, or to a Microsoft® Excel
-spreadsheet.&quot;
-</pre></div>
-</div>
-<p>In essence, SimAuto is PowerWorld Simulator’s application programming
-interface (API). As such, SimAuto users can perform <em>almost</em> any task
-that can be done through Simulator’s graphic user interface (GUI), but
-via their own program. This opens up a wealth of opportunity to perform
-tasks such as:</p>
-<ul class="simple">
-<li><p>Task automation</p></li>
-<li><p>Sensitivity analysis</p></li>
-<li><p>Co-simulation</p></li>
-<li><p>Machine learning</p></li>
-<li><p>And more!</p></li>
-</ul>
-<p>For more SimAuto details, here are some PowerWorld links:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://www.powerworld.com/products/simulator/add-ons-2/simauto">SimAuto Description</a></p></li>
-<li><p><a class="reference external" href="https://www.powerworld.com/WebHelp/">PowerWorld Web Help</a></p></li>
-<li><p><a class="reference external" href="https://www.powerworld.com/WebHelp/#MainDocumentation_HTML/Simulator_Automation_Server.htm%3FTocPath%3DAutomation%2520Server%2520Add-On%2520(SimAuto)%7C_____1">SimAuto Documentation</a></p></li>
-</ul>
-<p>Since SimAuto strives to be accessible to “any external” program and
-uses Windows <a class="reference external" href="https://docs.microsoft.com/en-us/windows/win32/com/the-component-object-model">COM</a>,
-it can be cumbersome, tedious, and difficult to use. That’s where ESA
-comes in!</p>
-<section id="simauto-functions">
-<h3>SimAuto Functions<a class="headerlink" href="#simauto-functions" title="Link to this heading">¶</a></h3>
-<p>Here’s a listing of the currently (as of 2020-06-17, Simulator version
-21) available SimAuto functions (documented <a class="reference external" href="https://www.powerworld.com/WebHelp/#MainDocumentation_HTML/Simulator_Automation_Server.htm%3FTocPath%3DAutomation%2520Server%2520Add-On%2520(SimAuto)%7C_____1">here</a>):</p>
-<ul class="simple">
-<li><p>ChangeParameters</p></li>
-<li><p>ChangeParametersSingleElement</p></li>
-<li><p>ChangeParametersMultipleElement</p></li>
-<li><p>CloseCase</p></li>
-<li><p>GetFieldList</p></li>
-<li><p>GetParametersSingleElement</p></li>
-<li><p>GetParametersMultipleElement</p></li>
-<li><p>GetParameters</p></li>
-<li><p>GetSpecificFieldList</p></li>
-<li><p>GetSpecificFieldMaxNum</p></li>
-<li><p>ListOfDevices</p></li>
-<li><p>LoadState</p></li>
-<li><p>OpenCase</p></li>
-<li><p>ProcessAuxFile</p></li>
-<li><p><a class="reference internal" href="overview.html#runscriptcommand"><span class="std std-ref">RunScriptCommand</span></a></p></li>
-<li><p>SaveCase</p></li>
-<li><p>SaveState</p></li>
-<li><p>SendToExcel (not recommended for use with ESA as documented in
-<a class="reference internal" href="esa.html#esa-saw-api"><span class="std std-ref">Workbench Module</span></a>)</p></li>
-<li><p>TSGetContingencyResults</p></li>
-<li><p>WriteAuxFile</p></li>
-</ul>
-<p>For ESA’s implementation/wrapping of these methods, see
-<a class="reference internal" href="esa.html#esa-saw-api"><span class="std std-ref">Workbench Module</span></a>.</p>
-</section>
-<section id="simauto-properties">
-<h3>SimAuto Properties<a class="headerlink" href="#simauto-properties" title="Link to this heading">¶</a></h3>
-<p>Here’s a listing of the currently (as of 2020-06-17, Simulator version
-21) available SimAuto properties (documented <a class="reference external" href="https://www.powerworld.com/WebHelp/#MainDocumentation_HTML/Simulator_Automation_Server.htm%3FTocPath%3DAutomation%2520Server%2520Add-On%2520(SimAuto)%7C_____1">here</a>):</p>
-<ul class="simple">
-<li><p>ExcelApp (like <code class="docutils literal notranslate"><span class="pre">SendToExcel</span></code> function, not recommended for use
-with ESA)</p></li>
-<li><p>CreateIfNotFound</p></li>
-<li><p>CurrentDir</p></li>
-<li><p>ProcessID</p></li>
-<li><p>RequestBuildDate</p></li>
-<li><p>UIVisible (Simulator versions &gt;= 20)</p></li>
-</ul>
-<p>For ESA’s implementation/wrapping of these properties, see
-<a class="reference internal" href="esa.html#esa-saw-api"><span class="std std-ref">Workbench Module</span></a>.</p>
-</section>
-</section>
-<section id="who-should-use-gwb">
-<h2>Who Should Use GWB?<a class="headerlink" href="#who-should-use-gwb" title="Link to this heading">¶</a></h2>
-<p>ESA is useful for a wide range of audiences, including:</p>
-<ul class="simple">
-<li><p>Industry practitioners (e.g. power system planners, energy traders, etc.)</p></li>
-<li><p>Power system researchers</p></li>
-<li><p>Researchers from other domains who wish to perform co-simulation
-with power system models</p></li>
-<li><p>University students and faculty</p></li>
-<li><p>Power system enthusiasts</p></li>
-</ul>
-<p>ESA users should be proficient in Python, and it’s recommended that
-users get familiar with Numpy and Pandas, as ESA makes significant use
-of these packages. ESA users do not need to have any knowledge
-whatsoever related to how the Windows COM API works, nor do users need
-to be familiar with PyWin32.</p>
-<p>Ultimately, ESA is a tool for interacting with PowerWorld Simulator -
-thus, users should have some familiarity with Simulator. Users do not
-need to directly understand how to use SimAuto, as ESA abstracts those
-details away. Advanced users will have a solid understanding of
-PowerWorld variables and object types, and will make extensive use of
-the <code class="docutils literal notranslate"><span class="pre">RunScriptCommand</span></code> method to enable the execution of PowerWorld
-functions previously only accessible via <a class="reference external" href="https://github.com/mzy2240/ESA/blob/master/docs/Auxiliary%20File%20Format.pdf">“Auxiliary Files”</a>.</p>
 </section>
 <section id="why-use-gwb">
-<h2>Why Use GWB?<a class="headerlink" href="#why-use-gwb" title="Link to this heading">¶</a></h2>
-<p>Simply put, ESA makes working with SimAuto a breeze! ESA has the
-following desirable properties:</p>
+<span id="about-simauto"></span><h2>Why Use GWB?<a class="headerlink" href="#why-use-gwb" title="Link to this heading">¶</a></h2>
+<p>Gridworkbench has many advantages that will kick-start your
+power system research:</p>
 <ul class="simple">
 <li><p>Free, open-source, non-restrictive license</p></li>
 <li><p>Fully documented, including a plethora of examples and common issues</p></li>
-<li><p>Fully tested - rest assured that all functions work as intended</p></li>
-<li><p>Abstracts away all interactions with Windows COM</p></li>
-<li><p>Automatically parses errors from PowerWorld</p></li>
-<li><p>Automatically transforms data into the correct types</p></li>
-<li><p>Wraps all available SimAuto functions</p></li>
-<li><p>Provides additional helper functions to further simplify
-interactions with SimAuto</p></li>
-<li><p>Provides functions to interact with PowerWorld Simulator interface,
-without the hassle of creating and loading the display auxiliary
-files</p></li>
-<li><p>Provides native (but much more performant) methods of contingency
-analysis and sensitivity analysis</p></li>
-<li><p>Returns useful data types such as Pandas DataFrames, unlocking a
-whole new realm of analysis and control capabilities</p></li>
-<li><p>Gets data from a power system model for other application, like
-graph analysis or signal processing</p></li>
-<li><p>Co-simulation with other domains such as transportation,
-communication, or natural gas</p></li>
-<li><p>Task automation, like dynamic model tuning and relay setting
-tuning</p></li>
-<li><p>AI &amp; ML friendly</p></li>
-<li><p>Compatible with several modern Python versions</p></li>
-<li><p>Lightweight and fast</p></li>
+<li><p>Language Library means you don’t need to remeber power world ObjectFields</p></li>
+<li><p>Beginner friendly</p></li>
+<li><p>Graph based analysis is built-in.</p></li>
 </ul>
-<p>Whether you’re an energy trader, transmission planner, or academic
-researcher, ESA will help simplify your simulation an analysis work
-flows.</p>
-</section>
-<section id="projects-that-use-gwb">
-<h2>Projects That Use GWB<a class="headerlink" href="#projects-that-use-gwb" title="Link to this heading">¶</a></h2>
-<p>ESA has already been utilized in several research projects past and
-present. If you use ESA in your work, please file an issue on
-<a class="reference external" href="https://github.com/mzy2240/ESA/issues">GitHub</a> and we’ll list your
-project here! Please cite ESA if you use it in your work: see
-<a class="reference internal" href="#citation"><span class="std std-ref">Citation</span></a>.</p>
-<ul class="simple">
-<li><p>In <a class="reference external" href="https://github.com/blthayer/gym-powerworld">gym-powerworld</a>,
-ESA was used to create a standardized reinforcement learning
-environment for power system voltage control. This environment was
-then <a class="reference external" href="https://github.com/blthayer/drl-powerworld">used to carry out deep reinforcement learning (DRL)
-experiments</a>
-in which the algorithm attempts to learn how to best control grid
-voltages under a diverse set of grid conditions.</p></li>
-<li><p>In <a class="reference external" href="https://ieeexplore.ieee.org/abstract/document/9042493">this paper</a>,
-ESA was leveraged to create and simulate different electric grid
-scenarios where load, renewable generation levels, generation
-capacities, scheduled outages, and unit commitment were all varied.
-The resulting scenarios were used in the
-<a class="reference external" href="https://gocompetition.energy.gov/">Grid Optimization (GO) competition</a>
-hosted by the U.S. Department of Energy (DOE).</p></li>
-<li><p>Geomagnetic disturbances (GMDs) affect the magnetic and electric field
-of the earth, inducing dc voltage sources superimposed on transmission
-lines. In an accepted paper by Martinez et al. entitled
-“Undergraduate Research on Design Considerations for a GMD
-Mitigation Systems” (to be published in mid-late 2020), a
-planning-based GMD mitigation strategy was developed for large power
-systems. ESA is leveraged to programmatically place GIC blocking
-devices in test systems per the proposed algorithm, thus minimizing
-the effects of GMDs on the power grid.</p></li>
-<li><p>ESA is used by an ongoing research project entitled “Real Time
-Monitoring Applications for the Power Grid under Geomagnetic
-Disturbances (GMD)”: Recently, a real-world GMD monitoring system
-consisting of six magnetometers was deployed in Texas. The resulting
-magnetic field measurements are coupled with ground conductivity models
-to calculate real-time electric fields. These can then be fed to a grid
-model of Texas using ESA to enable calculation of real-time
-geomagnetically induced currents (GICs) for monitoring and
-visualization.</p></li>
-<li><p>ESA is used by an ongoing research project entitled “Contingency
-Analysis Based on Graph Theory Concepts and Line Outage Distribution
-Factors (LODF).” In this project, ESA is leveraged to extract the
-topology of the power system model and obtain the LODF matrix.</p></li>
-<li><p>ESA can be used with Julia programming language now via <a class="reference external" href="https://github.com/mzy2240/EasySimauto.jl">EasySimauto.jl</a>.
-Julia is a fast and amazing language, and it is currently widely used in the
-research and scientific computing area. EasySimauto.jl is by far the simplest way
-to interact with PowerWorld Simulator from Julia.</p></li>
-</ul>
-</section>
-<section id="disclaimer-and-credits">
-<h2>Disclaimer and Credits<a class="headerlink" href="#disclaimer-and-credits" title="Link to this heading">¶</a></h2>
-<section id="disclaimer">
-<h3>Disclaimer<a class="headerlink" href="#disclaimer" title="Link to this heading">¶</a></h3>
-<p>As noted in <a class="reference external" href="https://github.com/mzy2240/ESA/blob/master/LICENSE">ESA’s license</a>, no warranty
-is provided, and the authors cannot be held liable for any issues
-related to using ESA. If you encounter an issue, find a bug, or would
-like to provide feedback, please file a ticket on <a class="reference external" href="https://github.com/mzy2240/ESA/issues">Github</a>.</p>
-</section>
-<section id="credits-and-thanks">
-<h3>Credits and Thanks<a class="headerlink" href="#credits-and-thanks" title="Link to this heading">¶</a></h3>
-<p>ESA was developed at Texas A&amp;M University by <a class="reference external" href="https://github.com/mzy2240">Zeyu Mao</a>, <a class="reference external" href="https://github.com/blthayer">Brandon Thayer</a>, and <a class="reference external" href="https://github.com/SmartJingJing123">Yijing Liu</a>. Significant guidance and
-oversight was provided by <a class="reference external" href="https://engineering.tamu.edu/electrical/profiles/overbye-thomas.html">Professor Thomas Overbye</a>,
-who is a co-founder of PowerWorld Corporation, and <a class="reference external" href="https://engineering.tamu.edu/electrical/profiles/davis-katherine.html">Professor Katherine
-Davis</a>, who is one of the original authors of SimAuto.
-Funding was provided by the Texas A&amp;M Engineering Experiment Station’s
-<a class="reference external" href="https://smartgridcenter.tamu.edu/">Smart Grid Center</a>, the U.S.
-Department of Energy (DOE) under award DE-OE0000895 and the Sandia
-National Laboratories’ directed R&amp;D project #222444.</p>
-<p>The authors of ESA would like to give a special thank you to our users.
-Additionally, we’ve received help from some of our colleagues along the
-way, including (but not limited to!) Wei Trinh, Diana Wallison and Xiangtian Zheng.
-Thank you!</p>
-<p>We hope you enjoy using ESA as much as we’ve enjoyed creating it.</p>
-</section>
+<p>Using GWB is the quickest way to interface with large grid models. No more struggling
+with field names and obscure function arguments. Just code!</p>
 </section>
 <section id="changelog">
-<span id="id3"></span><h2>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h2>
+<span id="id1"></span><h2>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h2>
 <p>Changes made with each ESA release are listed here. Please note that
-versions prior to 1.0.0 are not listed here, but are still available on
-<a class="reference external" href="https://pypi.org/project/esa/#history">PyPi</a>.</p>
-<section id="version-1-3-5">
-<h3>Version 1.3.5<a class="headerlink" href="#version-1-3-5" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix bug in <cite>get_lodf_matrix</cite> that causes mismatched column names and column values</p></li>
-<li><p>Add new parameter ignore_new_branch to <cite>get_lodf_matrix</cite> to ensure the returned matrix is square</p></li>
-<li><p>Fix bug associated with filename format in <cite>DetermineBranchesThatCreateIslands</cite></p></li>
-<li><p>Fix bug associated with filename format in <cite>DetermineShortestPath</cite></p></li>
-<li><p>Fix bug in test of <cite>ListOfDevices</cite> associated with dataframe index data type</p></li>
-<li><p>Fix bug in test of <cite>clean_df_or_series</cite> associated with dataframe index data type</p></li>
-</ul>
-</section>
-<section id="version-1-3-4">
-<h3>Version 1.3.4<a class="headerlink" href="#version-1-3-4" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add <cite>DetermineBranchesThatCreateIslands</cite></p></li>
-<li><p>Add <cite>DeterminePathDistance</cite></p></li>
-<li><p>Add <cite>DetermineShortestPath</cite></p></li>
-<li><p>Add <cite>RunScriptCommand2</cite></p></li>
-<li><p>Add <cite>ProgramInformation</cite> property</p></li>
-</ul>
-</section>
-<section id="version-1-3-3">
-<h3>Version 1.3.3<a class="headerlink" href="#version-1-3-3" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the <cite>get_shift_factor_matrix</cite> function when the system is large</p></li>
-</ul>
-</section>
-<section id="version-1-3-2">
-<h3>Version 1.3.2<a class="headerlink" href="#version-1-3-2" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the fast sensitivity analysis methods to match PW results</p></li>
-</ul>
-</section>
-<section id="version-1-3-1">
-<h3>Version 1.3.1<a class="headerlink" href="#version-1-3-1" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the <cite>get_lodf_matrix</cite> function when the system is large</p></li>
-</ul>
-</section>
-<section id="version-1-3-0">
-<h3>Version 1.3.0<a class="headerlink" href="#version-1-3-0" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Improve the <cite>get_lodf_matrix</cite> function to support DCPS (DC with phase shifter) and MLCDF</p></li>
-<li><p>Add a new example for the built-in contingency analysis</p></li>
-<li><p>Fix typos and bugs</p></li>
-</ul>
-</section>
-<section id="version-1-2-9">
-<h3>Version 1.2.9<a class="headerlink" href="#version-1-2-9" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the scipy sparse linalg import issue</p></li>
-<li><p>Add the function to quickly identify the N-2 islanding contingencies</p></li>
-<li><p>Add the functions for robustness and ecological analysis</p></li>
-<li><p>Preliminary support for Streamlit (getting close to thread-safe)</p></li>
-<li><p>Add the support for Python 3.10</p></li>
-</ul>
-</section>
-<section id="version-1-2-8">
-<h3>Version 1.2.8<a class="headerlink" href="#version-1-2-8" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Native support on sensitivity analysis (ISF, PTDF, LODF) for better performance</p></li>
-</ul>
-</section>
-<section id="version-1-2-7">
-<h3>Version 1.2.7<a class="headerlink" href="#version-1-2-7" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Officially support PW23</p></li>
-<li><p>Support obtaining LODF matrix from large case (&gt;1000)</p></li>
-<li><p>Fix the self-loop issue when generating inter-substation level graph model</p></li>
-</ul>
-</section>
-<section id="version-1-2-6">
-<h3>Version 1.2.6<a class="headerlink" href="#version-1-2-6" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add functions to obtain branch and shunt impedance</p></li>
-<li><p>Add a helper function to convert dataframe into auxiliary(aux/axd) data section</p></li>
-</ul>
-</section>
-<section id="version-1-2-5">
-<h3>Version 1.2.5<a class="headerlink" href="#version-1-2-5" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add one example for fast contingency analysis (N-1 &amp; N-2)</p></li>
-<li><p>Supports changing system models based on temperature</p></li>
-</ul>
-</section>
-<section id="version-1-2-4">
-<h3>Version 1.2.4<a class="headerlink" href="#version-1-2-4" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Supports latest PW22 (Nov and Dec build) and PW23</p></li>
-</ul>
-</section>
-<section id="version-1-2-3">
-<h3>Version 1.2.3<a class="headerlink" href="#version-1-2-3" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the AOT import error</p></li>
-</ul>
-</section>
-<section id="version-1-2-2">
-<h3>Version 1.2.2<a class="headerlink" href="#version-1-2-2" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Fix the AOT version-dependent issue</p></li>
-<li><p>Update the dependency version</p></li>
-</ul>
-</section>
-<section id="version-1-2-1">
-<h3>Version 1.2.1<a class="headerlink" href="#version-1-2-1" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Greatly improve the fast contingency analysis by taking advantage of
-SIMD, JIT and AOT. Now it could finish a N-1 and N-2 contingency analysis of
-a synthetic 2000 bus grid in less than 15 seconds!</p></li>
-<li><p>Adjust the release process to include AOT functions</p></li>
-</ul>
-</section>
-<section id="version-1-2-0">
-<h3>Version 1.2.0<a class="headerlink" href="#version-1-2-0" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Optimize the process to use the same order as shown in simulator
-(note: if pw_order is used, all data in the dataframe will be string type)</p></li>
-<li><p>Add a method to obtain the incidence matrix</p></li>
-<li><p>Implement a modified fast N-1 and N-2 contingency analysis algorithm.
-The algorithm is originally developed by Prof. Kostya Turitsyn from MIT and
-the implementation has been slightly modified and adapted to work with ESA.</p></li>
-<li><p>Add a few helper functions to facilitate contingency analysis powered by the simulator.</p></li>
-</ul>
-</section>
-<section id="version-1-1-0">
-<h3>Version 1.1.0<a class="headerlink" href="#version-1-1-0" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Allow users to use the same order as shown in simulator for all the
-dataframes</p></li>
-<li><p>Add a helper function to generate LODF matrix</p></li>
-</ul>
-</section>
-<section id="version-1-0-9">
-<h3>Version 1.0.9<a class="headerlink" href="#version-1-0-9" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Update the pre-install process and the common issues</p></li>
-<li><p>Update the helper function ‘get_ybus’ with a new argument to accept
-external ybus file</p></li>
-</ul>
-</section>
-<section id="version-1-0-8">
-<h3>Version 1.0.8<a class="headerlink" href="#version-1-0-8" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add new helper function ‘to_graph’. The new function could help
-generate NetworkX graph model from the case, in two different levels:
-bus-as-node and substation-as-node. Parallel lines are preserved, and
-directedgraph is supported (currently the direction is fixed to be
-the same as real power flow).</p></li>
-</ul>
-</section>
-<section id="version-1-0-7">
-<h3>Version 1.0.7<a class="headerlink" href="#version-1-0-7" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add new functions: get_ybus, get_jacobian</p></li>
-</ul>
-</section>
-<section id="version-1-0-6">
-<h3>Version 1.0.6<a class="headerlink" href="#version-1-0-6" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Hopefully finally fixing locale-based issues. Fixes began in 1.0.4,
-and continued in 1.0.5.</p></li>
-<li><p>Finalizing JOSS paper. Once published, the citation will be added to
-the top-level README and the documentation.</p></li>
-</ul>
-</section>
-<section id="version-1-0-5">
-<h3>Version 1.0.5<a class="headerlink" href="#version-1-0-5" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>It turns out version 1.0.4 did not fully/correctly handle automatic
-locale setting. This version should now properly handle different
-decimal delimiters automatically.</p></li>
-<li><p>Bug fix: The <code class="docutils literal notranslate"><span class="pre">additional_fields</span></code> parameter to <code class="docutils literal notranslate"><span class="pre">SAW</span></code>’s
-<code class="docutils literal notranslate"><span class="pre">get_power_flow_results</span></code> was permanently adding the
-<code class="docutils literal notranslate"><span class="pre">additional_fields</span></code> to the corresponding list in the <code class="docutils literal notranslate"><span class="pre">SAW</span></code>
-object’s <code class="docutils literal notranslate"><span class="pre">SAW.POWER_FLOW_FIELDS</span></code> attribute.</p></li>
-</ul>
-</section>
-<section id="version-1-0-4">
-<h3>Version 1.0.4<a class="headerlink" href="#version-1-0-4" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Added support for other locales by automatically detecting the
-system’s decimal delimiter. This should allow users in Europe and
-elsewhere to leverage ESA. Thanks to
-<a class="reference external" href="https://github.com/robinroche">robinroche</a> for pointing out the
-problem during our <a class="reference external" href="https://joss.theoj.org/">JOSS</a> review in
-<a class="reference external" href="https://github.com/openjournals/joss-reviews/issues/2289#issuecomment-643482550">this comment</a>.</p></li>
-</ul>
-</section>
-<section id="version-1-0-3">
-<h3>Version 1.0.3<a class="headerlink" href="#version-1-0-3" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>New SAW attribute, <code class="docutils literal notranslate"><span class="pre">build_date</span></code></p></li>
-<li><p>New SAW attribute, <code class="docutils literal notranslate"><span class="pre">version</span></code></p></li>
-<li><p>New SAW helper method, <code class="docutils literal notranslate"><span class="pre">get_version_and_builddate</span></code></p></li>
-<li><p>Add argument <code class="docutils literal notranslate"><span class="pre">additional_fields</span></code> for <code class="docutils literal notranslate"><span class="pre">get_power_flow_results</span></code> method
-which provides an easy and consistent way to add more fields to the power
-flow result</p></li>
-<li><p>Updating so that ESA is compatible with Simulator version 17. Note
-that this does not imply ESA has been tested with versions 16, 18, 19,
-or 20. However, ESA <em>should</em> work with all these versions.</p></li>
-<li><p>Added case files for Simulator versions 16-22(beta) and renamed the cases
-accordingly (suffixed with <code class="docutils literal notranslate"><span class="pre">pws_version_&lt;version</span> <span class="pre">goes</span> <span class="pre">here&gt;.pwb</span></code>.</p></li>
-<li><p>Updated documentation to discuss different versions of Simulator.</p></li>
-</ul>
-</section>
-<section id="version-1-0-2">
-<h3>Version 1.0.2<a class="headerlink" href="#version-1-0-2" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add area number to the power flow result</p></li>
-<li><p>Update the citation section</p></li>
-<li><p>Fix a bug in the test file that will result in a failure if some
-default names are changed in PowerWorld</p></li>
-</ul>
-</section>
-<section id="version-1-0-1">
-<h3>Version 1.0.1<a class="headerlink" href="#version-1-0-1" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Add new functions: update_ui, OpenOneline and CloseOneline</p></li>
-<li><p>Add documents to meet the requirement of JOSS</p></li>
-<li><p>Add one more example into the documentation</p></li>
-<li><p>Update the coverage_to_rst.py so that it’s more clear that the errors
-that get printed during testing are as expected.</p></li>
-<li><p>Update the release process</p></li>
-<li><p>Fix minor typos</p></li>
-</ul>
-</section>
+versions prior to 1.0.0 are not listed here.</p>
 <section id="version-1-0-0">
 <h3>Version 1.0.0<a class="headerlink" href="#version-1-0-0" title="Link to this heading">¶</a></h3>
-<p>ESA version 1.0.0 is the first ESA release in which 100% of SimAuto
-functions are wrapped, and testing coverage is at 100%.</p>
+<p>GWB version 1.0.0 is the first complete release with documented support.</p>
+<ul class="simple">
+<li><p>Syntax Sugar for Data Retrieval</p></li>
+<li><p>GIC Support</p></li>
+<li><p>Python 3.11</p></li>
+</ul>
 </section>
 </section>
 </section>
@@ -791,7 +262,7 @@ functions are wrapped, and testing coverage is at 100%.</p>
             <div class="inner"><ul class="page-nav">
   <li class="prev">
     <a href="index.html"
-       title="previous chapter">← Easy SimAuto (ESA) Documentation</a>
+       title="previous chapter">← Grid Workbench Documentation</a>
   </li>
   <li class="next">
     <a href="installation.html"
@@ -800,7 +271,7 @@ functions are wrapped, and testing coverage is at 100%.</p>
 </ul><div class="footer" role="contentinfo">
       &#169; Copyright 2024, Luke Lowery.
     <br>
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.4.7 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.0 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
 </div>
             </div>
           </div>

@@ -16,50 +16,17 @@ GWB Quick Start
 The following example is also presented in the :ref:`quick-start`
 section.
 
-.. include:: snippets/quick_start_14.rst
+.. include:: snippets/quick_start.rst
 
 .. _increase-loading:
 
-Increase Loading in Case
+Data Indexing
 ------------------------
 
 The following example is also presented in the :ref:`what-is-esa`
 section.
 
-.. include:: snippets/increase_loading_14.rst
+.. include:: snippets/data_indexing.rst
 
-Add Lines to Case
------------------
 
-.. include:: snippets/add_lines_2000.rst
-
-Transient Stability Analysis
-----------------------------
-
-.. include:: snippets/ts_mycontingency_200.rst
-
-Fast Contingency Analysis
--------------------------
-
-.. include:: snippets/fast_contingency_analysis_2000.rst
-
-Contingency Analysis using PW Built-in capability
--------------------------------------------------
-
-.. include:: snippets/pw_contingency_analysis_2000.rst
-
-Create Simple Graph Model
--------------------------
-
-.. include:: snippets/simple_graph_2000.rst
-
-Created Graph Model with Edges Weighted by Branch Impedance
------------------------------------------------------------
-
-.. include:: snippets/weighted_graph_14.rst
-
-Plot Histogram of Line Flows with Matplotlib
---------------------------------------------
-
-.. include:: snippets/line_loading_matplotlib_2000.rst
 

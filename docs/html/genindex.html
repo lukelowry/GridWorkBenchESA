@@ -11,7 +11,7 @@
       
       <!-- sphinx script_files -->
         <script src="_static/documentation_options.js?v=4720776d"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/doctools.js?v=9bcbadda"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
 
       
@@ -39,7 +39,7 @@
 
   
     <div class="nav-item">
-      <a href="https://github.com/mzy2240/ESA"
+      <a href="https://github.com/wyattlaundry/GridWorkBenchESA"
         class="nav-link external">
           Github <outboundlink></outboundlink>
       </a>
@@ -69,7 +69,7 @@
 
   
     <div class="nav-item">
-      <a href="https://github.com/mzy2240/ESA"
+      <a href="https://github.com/wyattlaundry/GridWorkBenchESA"
         class="nav-link external">
           Github <outboundlink></outboundlink>
       </a>
@@ -246,6 +246,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GICFactory.bus">bus() (GICFactory method)</a>
 </li>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.buscoords">buscoords() (GridWorkBench method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.busmap">busmap() (GridWorkBench method)</a>
 </li>
   </ul></td>
@@ -264,9 +266,11 @@
 </li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.cleargic">cleargic() (GIC method)</a>
 </li>
+      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.clearram">clearram() (PowerWorldIO method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.clearram">clearram() (PowerWorldIO method)</a>
+      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.clearsignals">clearsignals() (PowerWorldIO method)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.commit">commit() (GridWorkBench method)</a>
 </li>
@@ -292,17 +296,13 @@
 </li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.XFWiringType.DELTA">DELTA (XFWiringType attribute)</a>
 </li>
-      <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.dIdE">dIdE() (GIC method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.dIdE">dIdE() (GIC method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.dIdEOLD">dIdEOLD() (GIC method)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.utils.exceptions.DivergenceException">DivergenceException</a>
-</li>
-      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.dm">dm (PowerWorldIO attribute)</a>
-</li>
-      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.download">download() (PowerWorldIO method)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.utils.datawiz.dropFields">dropFields() (in module gridwb.workbench.utils.datawiz)</a>
 </li>
@@ -314,13 +314,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.edit_mode">edit_mode() (PowerWorldIO method)</a>
 </li>
-      <li><a href="esa.html#gridwb.workbench.apps.gic.GICModel.eff">eff (GICModel property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.esa">esa (PowerWorldIO attribute)</a>
+      <li><a href="esa.html#gridwb.workbench.apps.gic.GICModel.eff">eff (GICModel property)</a>
 </li>
-      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.ext">ext() (GridWorkBench method)</a>
+      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.esa">esa (PowerWorldIO attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -351,6 +349,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GICModel.G">G (GICModel property)</a>
+</li>
+      <li><a href="esa.html#gridwb.workbench.apps.gic.GICFactory.gen">gen() (GICFactory method)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.utils.exceptions.GeneratorLimitException">GeneratorLimitException</a>
 </li>
@@ -549,12 +549,20 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.length_laplacian">length_laplacian() (GridWorkBench method)</a>
+</li>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.lengths">lengths() (GridWorkBench method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GICFactory.line">line() (GICFactory method)</a>
 </li>
-      <li><a href="esa.html#gridwb.workbench.apps.static.Statics.load_df">load_df (Statics attribute)</a>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.lineprop">lineprop() (GridWorkBench method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.lines">lines() (GridWorkBench method)</a>
+</li>
+      <li><a href="esa.html#gridwb.workbench.apps.static.Statics.load_df">load_df (Statics attribute)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.static.Statics.load_nom">load_nom (Statics attribute)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.loadb3d">loadb3d() (GIC method)</a>
@@ -632,10 +640,10 @@
         <li><a href="esa.html#gridwb.plot.generic.Scatter.plot">(Scatter method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.plot.map.plot_compass">plot_compass() (in module gridwb.plot.map)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.plot.map.plot_lines">plot_lines() (in module gridwb.plot.map)</a>
 </li>
       <li><a href="esa.html#gridwb.plot.map.plot_mesh">plot_mesh() (in module gridwb.plot.map)</a>
@@ -648,7 +656,11 @@
 </li>
       <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO">PowerWorldIO (class in gridwb.workbench.core.powerworld)</a>
 </li>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.proplap">proplap() (GridWorkBench method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.static.Statics.pushstate">pushstate() (Statics method)</a>
+</li>
+      <li><a href="esa.html#gridwb.workbench.apps.gic.GICModel.Px">Px (GICModel property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -657,8 +669,6 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="esa.html#gridwb.workbench.apps.static.Statics.randload">randload() (Statics method)</a>
-</li>
-      <li><a href="esa.html#gridwb.workbench.apps.static.random">random() (in module gridwb.workbench.apps.static)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -692,10 +702,12 @@
 </li>
       <li><a href="esa.html#gridwb.workbench.apps.static.Statics.setload">setload() (Statics method)</a>
 </li>
-      <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.settings">settings() (GIC method)</a>
+      <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.setsignals">setsignals() (PowerWorldIO method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.settings">settings() (GIC method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.GIC.signdiag">signdiag() (GIC method)</a>
 </li>
       <li><a href="esa.html#gridwb.workbench.core.powerworld.PowerWorldIO.skipallbut">skipallbut() (PowerWorldIO method)</a>
@@ -778,6 +790,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="esa.html#gridwb.workbench.main.GridWorkBench.xfmrs">xfmrs() (GridWorkBench method)</a>
+</li>
       <li><a href="esa.html#gridwb.workbench.apps.gic.XFWiringType">XFWiringType (class in gridwb.workbench.apps.gic)</a>
 </li>
   </ul></td>
@@ -815,7 +829,7 @@
 </ul><div class="footer" role="contentinfo">
       &#169; Copyright 2024, Luke Lowery.
     <br>
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.4.7 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.2.0 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a> 0.9.1.
 </div>
             </div>
           </div>
