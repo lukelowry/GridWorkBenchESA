@@ -9,7 +9,7 @@ from pandas import DataFrame, Series
 from scipy.sparse import lil_matrix, diags
 
 from .grid.components import *
-from .apps import GIC
+from .apps import GIC, Statics
 from .grid.common import arc_incidence, InjectionVector
 from .core import *
 
@@ -25,7 +25,7 @@ class GridWorkBench:
 
         # Applications
         #self.dyn = Dynamics(self.context)
-        #self.statics = Statics(self.context)
+        self.statics = Statics(self.context)
         self.gic = GIC(self.context)
 
     def __getitem__(self, arg):
@@ -181,16 +181,21 @@ class GridWorkBench:
         # Series Parameters
         R = branches['LineR']
         X = branches['LineX']
-        Z = (R + 1j*X)/ell
+        Z = R + 1j*X
 
         # Shunt Parameters
         G = branches['LineG']
-        C = branches['LineC']
-        Y = (G + 1j*C)/ell
+        B = branches['LineC']
+        Y = G + 1j*B
+
 
         # Correct Zero-Values
         Z[Z==0] = 0.000446+ 0.002878j
         Y[Y==0] = 0.000463j
+
+        # By Length
+        Y /= ell 
+        Z /= ell
 
         # Propagation Parameter
         return  np.sqrt(Y*Z)

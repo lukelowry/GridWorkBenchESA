@@ -174,6 +174,9 @@ class SGWT:
         '''Returns the psuedo inverse of the transformation'''
         T = self.transformation()
 
+        # I Need to call psuedo inv instead because
+        # I think this is wrong
+
         # Adjoint
         Th = T.conj().T
 

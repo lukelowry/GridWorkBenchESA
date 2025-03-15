@@ -39,19 +39,17 @@ class Statics(PWApp):
         self.genpmin = gens['GenMWMin']
 
         # Create DF that stores loads for all buses
-        l = buses[['BusNum', 'BusName_NomVolt']].copy()#.merge(loads, how='left')
+        l = buses[['BusNum', 'BusName_NomVolt']].copy()
         l.loc[:,zipfields] = 0.0
         l['LoadID'] = 99 # NOTE Random Large ID so that it does not interfere
         l['LoadStatus'] = 'Closed'
         l = l.fillna(0)
-        self.io.upload({Load: l})
+
+        # Send to PW
+        self.io[Load] = l
 
         # Smaller DF just for updating Constant Power at Buses for Injection Interface Functions
         self.DispatchPQ = l[['BusNum', 'LoadID'] + zipfields].copy()
-
-        # Initial Gen Settings and Bus Voltages
-        self.G0 = self.dm.get_df(Gen)[Gen.keys + ['GenMW', 'GenMVR', 'GenAVRAble', 'GenAGCAble']].copy() # Initial Gen Settings
-        self.B0 = self.dm.get_df(Bus)[['BusNum', 'BusPUVolt']].copy()
     
 
     # Configuration Extraction TODO Way to Prevent Mis-Type Errors
@@ -67,11 +65,10 @@ class Statics(PWApp):
         '''Temporarily Change the Load with random variation and scale'''
 
         if self.load_nom is None or self.load_df is None:
-            self.load_df = self.io.get_quick(Load, 'LoadMW')
+            self.load_df = self.io[Load, 'LoadMW']
             self.load_nom = self.load_df['LoadMW']
             
-        self.load_df['LoadMW'] = scale*self.load_nom* exp(sigma*random(len(self.load_nom)))
-        self.io.upload({Load: self.load_df})
+        self.io[Load, 'LoadMW'] = scale*self.load_nom* exp(sigma*random(len(self.load_nom)))
 
 
     @griditer
@@ -159,12 +156,12 @@ class Statics(PWApp):
     def gensAbovePMax(self, p=None, isClosed=None, tol=0.001):
         '''Returns True if any CLOSED gens are outside P limits. Active function.'''
         if p is None:
-            p = self.io.get_quick(Gen, 'GenMW')['GenMW']
+            p = self.io[Gen, 'GenMW']['GenMW']
 
         isHigh = p > self.genpmax + tol
         isLow = p < self.genpmin - tol
         if isClosed is None:
-            isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+            isClosed = self.io[Gen, 'GenStatus']['GenStatus'] =='Closed'
         violation = isClosed & (isHigh | isLow)
 
         return any(violation)
@@ -173,12 +170,12 @@ class Statics(PWApp):
     def gensAboveQMax(self, q=None, isClosed=None, tol=0.001):
         '''Returns True if any CLOSED gens are outside Q limits. Active function.'''
         if q is None:
-            q = self.io.get_quick(Gen, 'GenMVR')['GenMVR']
+            q = self.io[Gen, 'GenMVR']['GenMVR']
 
         isHigh = q > self.genqmax + tol
         isLow = q < self.genqmin - tol
         if isClosed is None:
-            isClosed = self.io.get_quick(Gen, 'GenStatus')['GenStatus'] =='Closed'
+            isClosed = self.io[Gen, 'GenStatus']['GenStatus'] =='Closed'
         violation = isClosed & (isHigh | isLow)
 
         return any(violation)
@@ -464,22 +461,26 @@ class Statics(PWApp):
         ZP: Constant Resistance
         ZQ: Constant Reactance'''
 
+        fields = ['BusNum', 'LoadID']
+
         if SP is not None:
+            fields.append('LoadSMW')
             self.DispatchPQ.loc[:,'LoadSMW'] = SP
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadSMW']]})
         if SQ is not None:
+            fields.append('LoadSMVR')
             self.DispatchPQ.loc[:,'LoadSMVR'] = SQ
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadSMVR']]})
         if IP is not None:
+            fields.append('LoadIMW')
             self.DispatchPQ.loc[:,'LoadIMW'] = IP
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadIMW']]})
         if IQ is not None:
+            fields.append('LoadIMVR')
             self.DispatchPQ.loc[:,'LoadIMVR'] = IQ
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadIMVR']]})
         if ZP is not None:
+            fields.append('LoadZMW')
             self.DispatchPQ.loc[:,'LoadZMW'] = ZP
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadZMW']]})
         if ZQ is not None:
+            fields.append('LoadZMVR')
             self.DispatchPQ.loc[:,'LoadZMVR'] = ZQ
-            self.io.upload({Load:self.DispatchPQ.loc[:,['BusNum','LoadID','LoadZMVR']]})
+
+        self.io[Load] = self.DispatchPQ.loc[:,fields]
 
