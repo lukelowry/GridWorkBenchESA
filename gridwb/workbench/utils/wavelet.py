@@ -1,4 +1,5 @@
 
+from typing import Any
 import numpy as np
 from functools import partial
 import scipy.sparse as sp
@@ -7,11 +8,17 @@ from numpy import pi
 from numpy import block, diag, real, imag
 from scipy.linalg import schur, pinv
 from abc import ABC, abstractmethod
+from scipy.sparse.linalg import eigsh
+
+from gridwb.workbench.utils.cheby import Chebyshev, Recurrence
 
  
 def sech(t):
     return 1/np.cosh(t)
 
+def eigmax(L):
+    '''Finds Largest Eigenvalue (intended for Sparse Laplacians)'''
+    return eigsh(L, k=1, which='LA', return_eigenvectors=False)
 
 def takagi(M):
    n = M.shape[0]
@@ -27,40 +34,36 @@ TIME - DOMAIN
 '''
 
 class Morlet:
+    '''
+    A morlet wavelet analyzer.
+    '''
+    
 
-    def __init__(self, sig=1) -> None:
+    def __init__(self, sig=2*pi) -> None:
+
+        # It is convention to use atleast sig > 5 to prevent locality issues
         self.sig = sig
+
+        # Constants of normalization
         self.csig = (1+np.exp(-sig**2)-2*np.exp(-3/4*sig**2))**(-1/2)
         self.ksig = np.exp(-1/2*sig**2)
-        self.alpha = 2
 
-    def window(self, t):
-        #y = self.csig*np.pi**(-1/4)*np.exp(-t**2/2)*(np.exp(1j*self.sig*t) - self.ksig)
-        #y = np.exp(1j*self.sig*t)*(1/np.cosh(2*t))
-        y = np.sqrt(2*self.alpha)*np.exp(1j*self.sig*t)*(1/np.cosh(self.alpha*t))
+        # This is just the aggregate scalars of function
+        self.alpha = self.csig/pi**(1/4)
+
+    def eval(self, t):
+        '''Evaluates at unity scale centered at t=0'''
+        y = self.alpha*np.exp(-t**2/2)*(np.exp(1j*self.sig*t) - self.ksig)
         return y
     
     def fourier(self, w):
         y = self.csig*np.pi**(-1/4)*(np.exp(-(self.sig-w)**2/2) - self.ksig*np.exp(-w**2/2))
         return y.real
     
-    def centralw(self):
-
-        f = lambda w: w-self.sig/(1-np.exp(-self.sig*w))
-        df = lambda w: 1-self.sig**2*np.exp(-self.sig*w)/(1-np.exp(-self.sig*w))**2
-
-        w0 = self.sig
-
-        for i in range(10):
-            w0 -= f(w0)/df(w0)
-            print(f(w0), df(w0))
-            
-        return w0
-    
     def transform(self, a, b, f, t):
         '''Performs inner product based on parameters'''
         
-        wav = self.window((t-a)/b)
+        wav = self.eval((t-a)/b)
         wav /= np.sqrt(b)
         #wav /= np.linalg.norm(wav)
 
@@ -220,7 +223,7 @@ class SGWT:
 
         # SCaling Functions in Vertex-Domain, then ->
         T = np.vstack([
-            self.U@sp.diags(g) for g in self.g_all
+            self.U@sp.diags(g) for g in self.g_all # TODO
         ])@self.U.T.conj()  # Post-Multiply the GFT conversion!
 
         self.T = T 
@@ -235,3 +238,111 @@ class SGWT:
 
         return pinv(self.T)
     
+
+'''
+FAST CHEBYSHEV
+'''
+
+class FastSGWT:
+
+    def __init__(self, L, nscales=10, K=500, pow=2) -> None:
+
+        # Graph Laplacian
+        self.L = L
+
+        # Set Power of the wavelet kernel
+        self.pow = pow
+
+        # Number of discrete scales
+        self.nscales = nscales
+        self.scales = self.__makescales(nscales)
+
+        # Determine node count from laplacian
+        self.nbus = L.shape[0]
+
+        # Calculate max eigenvalue
+        self.emax = eigmax(L)
+
+        # Recurrance Operator
+        self.R = self.Rmatrix()
+
+        # Chebyshev object & domain
+        self.T = Chebyshev((0, self.emax)) # ((1e-6, self.emax))
+
+        # Order of approximation (chebyshev)
+        self.K = K
+        self.setK(K)
+
+    def __makescales(self, nscales):
+        return np.logspace(2, 5, nscales)
+    
+    def __kernelcoeff(self, N=None):
+
+        # N is the number of Chebyshev sample/anchor nodes
+        if N is None:
+            N = self.K
+
+        # Calculates Coefficients for each scaled kerenel 
+        # Each col Order (k) and each row spatial scale
+        Cs = np.array([self.T.coeff(partial(self.g,s=s), self.K, N) for s in self.scales])
+
+        # NOTE in the summation process, we divide the first-order coefficient by 2.
+        # We pre-compute that here so we can standardize in integration
+        Cs[:,0] /= 2
+
+        return Cs
+    
+    def __itercheby(self, up, upp):
+        # Recurrence Function
+        return self.R@up - upp
+    
+        
+    def __allocatewav(self):
+        return np.zeros((self.nscales, self.nbus))
+
+    def g(self, x,s=1):
+        return (2*s*x/(1+(s*x)**2))**self.pow
+
+    def Rmatrix(self):
+
+        # Recurrance matrix
+        # NOTE R matrix is technically without the 2, 
+        # but it is easier to include it here
+        I = np.eye(self.nbus)
+        a = self.emax/2
+        R = 2*(self.L-a*I)/a
+
+        return R
+    
+    
+    def setK(self, K):
+        ''' 
+        Description:
+            Calls functions that should be called if K is changed.
+            Example: updates kernel functions  when order of model is changed
+        '''
+        # Store K
+        self.K = K 
+
+        # Update kernel coefficients
+        self.Cs = self.__kernelcoeff()
+
+    def __call__(self, *args: Any, **kwds: Any):
+        
+        # Function to transform
+        f = args[0]
+
+        # Seed Vectors
+        u0, u1 = f, 0.5*self.R@f
+
+        # Manages Recurrance formula
+        recurr = Recurrence(u0, u1, self.K, self.__itercheby)
+
+        # Allocate Wavelet Coeff Storage
+        WAVS = self.__allocatewav()
+
+        # Looping Through Cheby Orders
+        for i, u in enumerate(recurr): 
+            WAVS += self.Cs[:,[i]]*u
+
+        return WAVS

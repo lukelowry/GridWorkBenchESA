@@ -1,5 +1,5 @@
 from abc import ABC
-from numpy import diff
+from numpy import diff, pi
 import numpy as np
 import scipy.sparse as sp
 from typing import Any
@@ -226,21 +226,3 @@ class MeshSelector:
         # TODO Generic versions of above
 
 
-class Chebyshev:
-    '''A functional class that helps in the synthesis and evaluation of Chebyshev polynomials'''
-
-    def __init__(self, a=-1, b=1) -> None:
-        self.a = a 
-        self.b = b 
-
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        '''Returns a function that evaluates n-th order Chebyshev polynomial in specified domain'''
-        n = args[0]
-
-        mid = (self.b+self.a)/2
-        scale = (self.b-self.a)/2
-
-        def func(t):
-            return np.cos(n*np.arccos((t-mid)/scale))
-        
-        return func

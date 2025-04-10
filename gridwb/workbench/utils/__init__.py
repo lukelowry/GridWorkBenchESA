@@ -6,3 +6,4 @@ from .printer import *
 from .debug import *
 from .math import *
 from .wavelet import *
+from .cheby import *

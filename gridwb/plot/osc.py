@@ -72,7 +72,7 @@ def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
 
     return ax
 
-def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Contour', usecbar=True, interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest'):
+def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Contour', usecbar=True, interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest', extrap=(0,0,0,0)):
     '''Plot Spatial data with a country or state border
     
     '
@@ -85,6 +85,8 @@ def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Con
     shape:
         - 'Texas'
         - 'US'
+    extrap:
+        (xleft, xright, ydown, yup) percents to extend
     '''
 
     cmap = mpl.colormaps[cmap] 
@@ -106,8 +108,19 @@ def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Con
 
     # Post-Interpolation Input Values to Plot
     cartcoord = list(zip(x, y))
-    X = linspace(min(x), max(x), interp)
-    Y = linspace(min(y), max(y), interp)
+
+    xmin, xmax = min(x), max(x)
+    xdist = xmax-xmin
+    xmin -= extrap[0]*xdist
+    xmax += extrap[1]*xdist
+
+    ymin, ymax = min(y), max(y)
+    ydist = ymax-ymin
+    ymin -= extrap[2]*ydist
+    ymax += extrap[3]*ydist
+
+    X = linspace(xmin, xmax, interp)
+    Y = linspace(ymin, ymax, interp)
     X, Y = meshgrid(X, Y)
 
     # Interpolation Function
@@ -156,3 +169,4 @@ def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Con
     # Highlight a Specific Point
     if highlight is not None:
         ax.plot(x[highlight], y[highlight],hlMarker) 
+

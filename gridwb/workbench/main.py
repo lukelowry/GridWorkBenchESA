@@ -136,10 +136,16 @@ class GridWorkBench:
         A, S = self.io[Bus, 'SubNum'],  self.io[Substation, ['Longitude', 'Latitude']]
         return A.merge(S, on='SubNum') 
     
-    def length_laplacian(self):
+    def length_laplacian(self, dense=False):
         '''
-        Returns a distance-based Laplacian that approximates the second spatial derivative.
-        Transformer lengths are assumed to be 1 meter.
+        Description:
+            A distance-based Laplacian that approximates the second spatial derivative.
+            Formulated is such a way that the eigenvalues are the spatial frequnecy squared
+            Therefore 1/lambda is the wavelength
+        Parameters:
+            None
+        Returns:
+            nd
         '''
 
         # Get branch elgnths
@@ -152,7 +158,13 @@ class GridWorkBench:
         A = self.incidence()
 
         # Laplacian
-        return A.T@W@A
+        Lap = A.T@W@A
+
+        # Type handling
+        if dense:
+            return np.asarray(Lap)
+        else:
+            return Lap
     
     def lengths(self):
         '''
