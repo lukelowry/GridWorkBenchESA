@@ -16,6 +16,9 @@ from .core import *
 class GridWorkBench:
     def __init__(self, fname=None):
 
+        if fname is None:
+            return
+
         self.context = Context(fname)
         self.io = self.context.getIO()
 
@@ -58,6 +61,8 @@ class GridWorkBench:
             vpu['BusPUVolt'] *= np.exp(1j*rad)
             vpu.columns = ['Bus Number', 'Voltage']
             return vpu
+        
+    ''' LOCATION FUNCTIONS '''
 
     def busmap(self):
         '''
@@ -70,6 +75,18 @@ class GridWorkBench:
         busNums = self.io[Bus]
         return Series(busNums.index, busNums['BusNum'])
     
+    
+    def buscoords(self, astuple=True):
+        '''Retrive dataframe of bus latitude and longitude coordinates based on substation data'''
+        A, S = self.io[Bus, 'SubNum'],  self.io[Substation, ['Longitude', 'Latitude']]
+        LL = A.merge(S, on='SubNum') 
+        if astuple:
+            return LL['Longitude'], LL['Latitude']
+        return LL
+    
+    
+    ''' BRANCH FUNCTIONS '''
+
     def lines(self):
         '''
         Retrieves and returns all transmission line data. Convenience function.
@@ -92,6 +109,35 @@ class GridWorkBench:
         # Return requested Records
         return branches.loc[ branches['BranchDeviceType']=='Transformer']
     
+
+    def ybranch(self):
+        '''Return Admittance of Lines in Complex Form'''
+
+        branches = self[Branch, ['LineR:2', 'LineX:2']]
+        R = branches['LineR:2']
+        X = branches['LineX:2']
+        Z = R + 1j*X 
+        Y = 1/Z
+
+        return Y
+    
+        
+    def lengths(self):
+        '''
+        Returns lengths of each branch in kilometers.
+        Transformer lengths are assumed to be 1 meter.
+        '''
+
+        # This is distance in kilometers
+        field = 'LineLengthByParameters:2'
+        ell = self.io[Branch,field][field]
+
+        # Assume XFMR 1 meter long
+        ell.loc[ell==0] = 0.001
+
+        return ell
+
+
     def incidence(self):
         '''
         Returns:
@@ -116,39 +162,25 @@ class GridWorkBench:
 
         return A
     
-    def ybranch(self):
-        '''Return Admittance of Lines in Complex Form'''
-
-        branches = self[Branch, ['LineR:2', 'LineX:2']]
-        R = branches['LineR:2']
-        X = branches['LineX:2']
-        Z = R + 1j*X 
-        Y = 1/Z
-
-        return Y
-    
+    ''' LAPLACIAN FUNCTIONS '''
+        
     def ybus(self, dense=False):
         '''Returns the sparse Y-Bus Matrix'''
         return self.io.esa.get_ybus(dense)
-    
-    def buscoords(self):
-        '''Retrive dataframe of bus latitude and longitude coordinates based on substation data'''
-        A, S = self.io[Bus, 'SubNum'],  self.io[Substation, ['Longitude', 'Latitude']]
-        return A.merge(S, on='SubNum') 
     
     def length_laplacian(self, dense=False):
         '''
         Description:
             A distance-based Laplacian that approximates the second spatial derivative.
-            Formulated is such a way that the eigenvalues are the spatial frequnecy squared
-            Therefore 1/lambda is the wavelength
+            Eigenvalues are the wavenumber squared
+            Therefore sqrt(2pi/lambda) is the wavelength
         Parameters:
             None
         Returns:
             nd
         '''
 
-        # Get branch elgnths
+        # Get branch legnths
         ell = self.lengths()
 
         # Branch Weight (km^-2)
@@ -165,21 +197,6 @@ class GridWorkBench:
             return np.asarray(Lap)
         else:
             return Lap
-    
-    def lengths(self):
-        '''
-        Returns lengths of each branch in kilometers.
-        Transformer lengths are assumed to be 1 meter.
-        '''
-
-        # This is distance in kilometers
-        field = 'LineLengthByParameters:2'
-        ell = self.io[Branch,field][field]
-
-        # Assume XFMR 1 meter long
-        ell.loc[ell==0] = 0.001
-
-        return ell
 
     
     def lineprop(self):

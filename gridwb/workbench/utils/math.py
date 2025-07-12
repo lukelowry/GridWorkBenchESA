@@ -3,9 +3,54 @@ from numpy import diff, pi
 import numpy as np
 import scipy.sparse as sp
 from typing import Any
+from scipy.sparse.linalg import eigsh
 
 # Constants
 MU0 = 1.256637e-6
+
+def eigmax(L):
+    '''
+    Description
+        Finds Largest Eigenvalue (intended for Sparse Laplacians)
+    '''
+    return eigsh(L, k=1, which='LA', return_eigenvectors=False)[0]
+
+
+def sorteig(Lam, U):
+    '''
+    Description:
+        Sorts eigen decomp by eigenvalue magnitude (least to greatest)
+    Returns:
+        Eigenvalues, Eigenvectors
+    '''
+    idx = np.argsort(np.abs(Lam))
+    return Lam[idx], U[:,idx]
+
+# TODO rename to 'pathlap' so periodicity is an option
+def periodiclap(N, periodic=True):
+    '''
+    Description:
+        Creates a branchless periodic discrete graph laplacian
+    Returns:
+        Dense nd-array
+    '''
+
+    O = np.ones(N)
+
+    L = sp.diags(
+        [2*O, -O[:1], -O[:1]],
+        offsets=[0, 1, -1], 
+        shape=(N,N)
+    ).toarray()
+
+    if periodic:
+        L[0, -1] = -1
+        L[-1, 0] = -1
+    else:
+        L[0, 0] = 1
+        L[-1, -1] = 1
+
+    return L
 
 # Matrix Helper Functions
 def normlap(L, retD=False):
@@ -171,7 +216,7 @@ class DifferentialOperator(Operator):
         return sp.hstack([Dy, -Dx])
     
     def laplacian(self):
-        '''Central Difference Based Finite Divergence'''
+        '''Central Difference Based Discrete Laplacian'''
 
         Dxf, Dyf = self.forward_diffs()
         return Dxf.T@Dxf + Dyf.T@Dyf
@@ -192,8 +237,6 @@ class DifferentialOperator(Operator):
         pass
 
     
-    #def ext_der(incidince):
-        #return np.sum(incidince.A,axis=0, keepdims=True).T
 
 
 class MeshSelector:

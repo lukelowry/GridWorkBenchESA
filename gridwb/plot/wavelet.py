@@ -1,76 +1,19 @@
 
-'''
+import numpy as np
 
-Plots geared toward oscillation metrics. 
-
-From old GWB. Probably remove.
-
-'''
 
 # MISC
 from os.path import dirname, abspath, sep
 from matplotlib.pylab import Axes
 from numpy import array, linspace, meshgrid, where, nan, pi, vstack, log
-from numpy import histogram, diff, arange
-from scipy.stats import gaussian_kde
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator, CloughTocher2DInterpolator
 import geopandas as gpd
 import shapely.vectorized
-from cmath import polar
 
 # MPL
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-
-# GWB
-from .generic import formatPlot
-
-def freqhist(evals, bins=60, rng=(0,2), tstep=0.1):
-    '''Plot the frequency distribution in Hz of a set of Eigen Values'''
-
-    # Formatting
-    fig, ax = plt.subplots(figsize=(18,5))
-    formatPlot(ax, xlim=rng, xlabel='Frequency (Hz)', ylabel='Count', title='Frequency Occurance Histogram', tstep=tstep)
-
-    # Data
-    freqs = evals.imag/2/pi
-    freqs = freqs[(freqs < rng[1]) & (freqs>rng[0])]
-    hist, bin_edges = histogram(freqs, bins=bins)
-
-    # Plot
-    ax.bar(bin_edges[:-1], hist, width=diff(bin_edges), edgecolor='black', align='edge', zorder=4)
-
-def plot_eigs(evals, plotFunc=None, figsize=(18,9)):
-    '''
-    Plots the complex eigen values in two panes: standard and damped format.
-    plotFunc is a function that should return true or false
-    indicating if that eigenvalue should be plotted
-    '''
-    hz = lambda e: e.imag/2/pi
-    damping = lambda e: 0 if e==0 else -100*e.real/polar(e)[0]
-
-    if plotFunc is None:
-        eigvals = [e for e in evals]
-    else:
-        eigvals = [e for e in evals if plotFunc(e)]
-
-    alpha = [e.real for e in eigvals]
-    damp = [damping(e) for e in eigvals]
-    freq = [hz(o) for o in eigvals]
-
-    # Colorings
-    xy = vstack([freq,alpha])
-    density = log(gaussian_kde(xy)(xy))
-
-    # Plotting
-    fig, ax = plt.subplots(1,2, figsize=figsize)
-    ax[0].scatter(alpha, freq, c =  density, zorder=2)
-    ax[1].scatter(damp, freq, c =  density, zorder=2)
-    formatPlot(ax[0], xlabel='Exponential Decay', ylabel='Angular Frequnecy', title='Laplace Domain')
-    formatPlot(ax[1], xlabel='Damping (%)', ylabel='Angular Frequnecy', title='Damping Domain')
-
-    return ax
 
 def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Contour', usecbar=True, interp=300, cmap='plasma', norm=None, highlight=None, hlMarker='go', radians=False, method='nearest', extrap=(0,0,0,0)):
     '''Plot Spatial data with a country or state border
@@ -170,3 +113,38 @@ def scatter_map(values, long, lat, shape='Texas', ax:Axes=None, title='Texas Con
     if highlight is not None:
         ax.plot(x[highlight], y[highlight],hlMarker) 
 
+
+def plotwave(W, ax, L1, L2, method='nearest', zero_scale=False, cmap='seismic', mx = None, mn = None):
+
+    if zero_scale:
+        norm = (0, np.max(W))
+    else:
+        norm = (-np.max(W), np.max(W))
+    if mx is not None:
+        if mn is None:
+            norm = (-mx, mx)
+        else:
+            norm= (mn, mx)
+
+    scatter_map(W, L1, L2,method=method,cmap=cmap, 
+                ax=ax, title=f'', norm=norm, usecbar=False,
+                extrap=(0.2, 0.1, 0, 0.1)
+    )
+
+    ax.set_xticks([],[])  
+    ax.set_yticks([],[]) 
+    ax.set_axis_off()
+
+def quickwave(W, ax, L1, L2, method='nearest', cmap='seismic', norm=None):
+
+    if norm is None:
+        norm = (np.min(W), np.max(W))
+
+    scatter_map(W, L1, L2,method=method,cmap=cmap, 
+                ax=ax, title=f'', norm=norm, usecbar=False,
+                extrap=(0.2, 0.1, 0, 0.1)
+    )
+
+    ax.set_xticks([],[])  
+    ax.set_yticks([],[]) 
+    ax.set_axis_off()
