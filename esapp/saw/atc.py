@@ -1,8 +1,8 @@
 """Available Transfer Capability (ATC) specific functions."""
 import pandas as pd
-from typing import List
+from typing import List, Union
 
-from ._enums import YesNo
+from ._enums import YesNo, KeyFieldType, FileFormat
 from ._helpers import format_list, pack_args
 
 
@@ -235,7 +235,7 @@ class ATCMixin:
         """
         return self._run_script("ATCTakeMeToScenario", rl, g, i)
 
-    def ATCDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: str = "PRIMARY"):
+    def ATCDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
         """Writes out all information related to ATC analysis to an auxiliary file.
 
         Saves the same information as the ATCWriteResultsAndOptions script command.
@@ -267,7 +267,7 @@ class ATCMixin:
         app = YesNo.from_bool(append)
         return self._run_script("ATCDataWriteOptionsAndResults", f'"{filename}"', app, key_field)
 
-    def ATCWriteAllOptions(self, filename: str, append: bool = True, key_field: str = "PRIMARY"):
+    def ATCWriteAllOptions(self, filename: str, append: bool = True, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
         """Writes out all information related to ATC analysis (deprecated name).
 
         .. deprecated::
@@ -348,7 +348,7 @@ class ATCMixin:
     def ATCWriteScenarioMinMax(
         self,
         filename: str,
-        filetype: str = "CSV",
+        filetype: Union[FileFormat, str] = FileFormat.CSV,
         append: bool = False,
         fieldlist: List[str] = None,
         operation: str = "MIN",
@@ -417,7 +417,7 @@ class ATCMixin:
         fields = ", " + format_list(fieldlist) if fieldlist else ""
         return self.RunScriptCommand(f'ATCWriteToExcel("{worksheet_name}"{fields});')
 
-    def ATCWriteToText(self, filename: str, filetype: str = "TAB", fieldlist: List[str] = None):
+    def ATCWriteToText(self, filename: str, filetype: Union[FileFormat, str] = FileFormat.TAB, fieldlist: List[str] = None):
         """Writes Multiple Scenario ATC analysis results to text files.
 
         Parameters

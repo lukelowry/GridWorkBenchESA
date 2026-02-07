@@ -3,7 +3,10 @@ from typing import List, Union
 import os, re
 import pandas as pd
 
-from ._enums import YesNo, format_filter, format_filter_areazone
+from ._enums import (
+    YesNo, format_filter, format_filter_areazone,
+    PowerWorldMode, FileFormat,
+)
 from ._helpers import (format_list, get_temp_filepath,
                        parse_aux_content, build_aux_string)
 
@@ -194,13 +197,14 @@ class GeneralMixin:
         c = YesNo.from_bool(create_if_not_found)
         return self._run_script("SetCurrentDirectory", f'"{directory}"', c)
 
-    def EnterMode(self, mode: str) -> None:
+    def EnterMode(self, mode: Union[PowerWorldMode, str]) -> None:
         """Enters PowerWorld Simulator into a specific operating mode.
 
         Parameters
         ----------
-        mode : str
-            The mode to enter. Must be either "RUN" or "EDIT".
+        mode : Union[PowerWorldMode, str]
+            The mode to enter. Must be PowerWorldMode.RUN, PowerWorldMode.EDIT,
+            or the equivalent strings "RUN" / "EDIT".
 
         Returns
         -------
@@ -213,9 +217,10 @@ class GeneralMixin:
         PowerWorldError
             If the SimAuto call fails.
         """
-        if mode.upper() not in ["RUN", "EDIT"]:
+        m = mode.value if isinstance(mode, PowerWorldMode) else mode.upper()
+        if m not in [PowerWorldMode.RUN.value, PowerWorldMode.EDIT.value]:
             raise ValueError("Mode must be either 'RUN' or 'EDIT'.")
-        return self._run_script("EnterMode", mode.upper())
+        return self._run_script("EnterMode", m)
 
     def StoreState(self, statename: str) -> None:
         """Stores the current state of the PowerWorld case under a given name.
@@ -303,7 +308,7 @@ class GeneralMixin:
         c = YesNo.from_bool(create_if_not_found)
         return self._run_script("LoadAux", f'"{filename}"', c)
 
-    def ImportData(self, filename: str, filetype: str, header_line: int = 1, create_if_not_found: bool = False):
+    def ImportData(self, filename: str, filetype: Union[FileFormat, str] = FileFormat.CSV, header_line: int = 1, create_if_not_found: bool = False):
         """Imports data from a file in various formats into PowerWorld Simulator.
 
         Parameters

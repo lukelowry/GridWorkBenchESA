@@ -6,7 +6,7 @@ from typing import Union
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from ._enums import YesNo
+from ._enums import YesNo, JacobianForm
 from ._helpers import get_temp_filepath
 
 
@@ -44,7 +44,7 @@ class MatrixMixin:
             _cleanup = False
         else:
             _tempfile_path = get_temp_filepath(".mat")
-            self._run_script("SaveYbusInMatlabFormat", f'"{_tempfile_path}"', "NO")
+            self._run_script("SaveYbusInMatlabFormat", f'"{_tempfile_path}"', YesNo.NO)
             _cleanup = True
         try:
             with open(_tempfile_path, "r") as f:
@@ -175,7 +175,7 @@ class MatrixMixin:
             os.unlink(g_matrix_path)
             os.unlink(id_file_path)
 
-    def get_jacobian(self, full: bool = False, form: str = 'R') -> Union[np.ndarray, csr_matrix]:
+    def get_jacobian(self, full: bool = False, form: Union[JacobianForm, str] = JacobianForm.RECTANGULAR) -> Union[np.ndarray, csr_matrix]:
         """Get the power flow Jacobian matrix.
 
         This method calls the `SaveJacobian` script command to write the Jacobian
@@ -188,9 +188,8 @@ class MatrixMixin:
         full : bool, optional
             If True, returns a dense NumPy array. If False (default), returns a
             SciPy CSR sparse matrix.
-        form : str, optional
-            Jacobian coordinate form: 'R' for rectangular, 'P' for polar,
-            'DC' for B' matrix. Defaults to 'R'.
+        form : Union[JacobianForm, str], optional
+            Jacobian coordinate form. Defaults to JacobianForm.RECTANGULAR.
 
         Returns
         -------
@@ -204,9 +203,10 @@ class MatrixMixin:
         FileNotFoundError
             If the temporary matrix file is not created.
         """
+        f = form.value if isinstance(form, JacobianForm) else form
         jac_file_path, id_file_path = self._make_temp_matrix_files()
         try:
-            self._run_script("SaveJacobian", f'"{jac_file_path}"', f'"{id_file_path}"', "M", form)
+            self._run_script("SaveJacobian", f'"{jac_file_path}"', f'"{id_file_path}"', "M", f)
             with open(jac_file_path, "r") as f:
                 mat_str = f.read()
             sparse_matrix = self._parse_real_matrix(mat_str, "Jac")
@@ -215,7 +215,7 @@ class MatrixMixin:
             os.unlink(jac_file_path)
             os.unlink(id_file_path)
 
-    def get_jacobian_with_ids(self, full: bool = False, form: str = 'R'):
+    def get_jacobian_with_ids(self, full: bool = False, form: Union[JacobianForm, str] = JacobianForm.RECTANGULAR):
         """Get the power flow Jacobian matrix along with row/column ID mapping.
 
         Returns both the Jacobian matrix and a list of identifiers describing
@@ -227,9 +227,8 @@ class MatrixMixin:
         full : bool, optional
             If True, returns a dense NumPy array. If False (default), returns a
             SciPy CSR sparse matrix.
-        form : str, optional
-            Jacobian coordinate form: 'R' for rectangular, 'P' for polar,
-            'DC' for B' matrix. Defaults to 'R'.
+        form : Union[JacobianForm, str], optional
+            Jacobian coordinate form. Defaults to JacobianForm.RECTANGULAR.
 
         Returns
         -------
@@ -238,9 +237,10 @@ class MatrixMixin:
             - jacobian_matrix: The Jacobian as either dense array or sparse CSR matrix
             - row_ids: List of strings describing each row/column
         """
+        f = form.value if isinstance(form, JacobianForm) else form
         jac_file_path, id_file_path = self._make_temp_matrix_files()
         try:
-            self._run_script("SaveJacobian", f'"{jac_file_path}"', f'"{id_file_path}"', "M", form)
+            self._run_script("SaveJacobian", f'"{jac_file_path}"', f'"{id_file_path}"', "M", f)
 
             with open(jac_file_path, "r") as f:
                 mat_str = f.read()
@@ -317,7 +317,7 @@ class MatrixMixin:
             data.append(float(real))
         return csr_matrix((data, (np.asarray(row) - 1, np.asarray(col) - 1)), shape=(n, n))
 
-    def SaveJacobian(self, jac_filename: str, jid_filename: str, file_type: str = "M", jac_form: str = "R"):
+    def SaveJacobian(self, jac_filename: str, jid_filename: str, file_type: str = "M", jac_form: Union[JacobianForm, str] = JacobianForm.RECTANGULAR):
         """Saves the Jacobian Matrix to a text file or a file formatted for use with Matlab.
 
         Parameters
@@ -328,10 +328,11 @@ class MatrixMixin:
             File to save a description of what each row and column of the Jacobian represents.
         file_type : str, optional
             "M" for Matlab form, "TXT" for text file, "EXPM" for Matlab exponential form. Defaults to "M".
-        jac_form : str, optional
-            "R" for AC Jacobian in Rectangular coordinates, "P" for Polar, "DC" for B' matrix. Defaults to "R".
+        jac_form : Union[JacobianForm, str], optional
+            Jacobian coordinate form. Defaults to JacobianForm.RECTANGULAR.
         """
-        return self._run_script("SaveJacobian", f'"{jac_filename}"', f'"{jid_filename}"', file_type, jac_form)
+        f = jac_form.value if isinstance(jac_form, JacobianForm) else jac_form
+        return self._run_script("SaveJacobian", f'"{jac_filename}"', f'"{jid_filename}"', file_type, f)
 
     def SaveYbusInMatlabFormat(self, filename: str, include_voltages: bool = False):
         """Saves the YBus to a file formatted for use with Matlab."""

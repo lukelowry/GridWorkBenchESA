@@ -158,413 +158,147 @@ enums instead of raw strings provides IDE autocomplete, type checking, and preve
 
 .. code-block:: python
 
-    from esapp.saw import SolverMethod, FilterKeyword, LinearMethod
+    from esapp.saw import SolverMethod, FilterKeyword, BusType
 
-    # Use enums for type-safe parameters
     saw.SolvePowerFlow(SolverMethod.RECTNEWT)
-    saw.GetParametersMultipleElement("Bus", ["BusNum", "BusPUVolt"], FilterKeyword.ALL)
-
-**SolverMethod** - Power flow solution algorithms
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``RECTNEWT``
-     - Rectangular Newton-Raphson (default)
-   * - ``POLARNEWT``
-     - Polar Newton-Raphson
-   * - ``GAUSSSEIDEL``
-     - Gauss-Seidel iterative method
-   * - ``FASTDEC``
-     - Fast Decoupled method
-   * - ``ROBUST``
-     - Robust solver for difficult cases
-   * - ``DC``
-     - DC power flow (linear approximation)
-
-**LinearMethod** - Sensitivity analysis methods (PTDF, LODF, shift factors)
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``DC``
-     - DC linear method (most common default)
-   * - ``AC``
-     - AC linear method
-   * - ``DCPS``
-     - DC linear with post-solution adjustment
-
-**JacobianForm** - Jacobian matrix coordinate forms
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``RECTANGULAR``
-     - AC Jacobian in Rectangular coordinates ("R")
-   * - ``POLAR``
-     - AC Jacobian in Polar coordinates ("P")
-   * - ``DC``
-     - B' matrix / DC approximation
-
-**FilterKeyword** - Special filter keywords (passed unquoted)
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``ALL``
-     - Select all objects of the type
-   * - ``SELECTED``
-     - Only objects currently selected in PowerWorld
-   * - ``AREAZONE``
-     - Objects in the active area/zone filter
-
-**YesNo** - Boolean flags for PowerWorld commands
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``YES``
-     - Affirmative / enable option
-   * - ``NO``
-     - Negative / disable option
-
-Use ``YesNo.from_bool(value)`` to convert Python booleans.
-
-**ObjectType** - PowerWorld object type identifiers
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``BUS``
-     - Bus/node
-   * - ``BRANCH``
-     - Branch (line or transformer)
-   * - ``GEN``
-     - Generator
-   * - ``LOAD``
-     - Load
-   * - ``SHUNT``
-     - Shunt device
-   * - ``AREA``
-     - Control area
-   * - ``ZONE``
-     - Zone
-   * - ``OWNER``
-     - Owner
-   * - ``INTERFACE``
-     - Interface (flowgate)
-   * - ``INJECTIONGROUP``
-     - Injection group
-   * - ``BUSSHUNT``
-     - Bus shunt
-   * - ``SUPERBUS``
-     - Super bus (aggregated)
-   * - ``TRANSFORMER``
-     - Transformer specifically
-   * - ``LINE``
-     - Transmission line specifically
-   * - ``SUPERAREA``
-     - Super area (aggregated)
-
-**KeyFieldType** - Result output key field types
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``PRIMARY``
-     - Primary key fields (e.g., BusNum)
-   * - ``SECONDARY``
-     - Secondary key fields (e.g., BusName)
-   * - ``LABEL``
-     - Label-based identification
-
-**FileFormat** - Import/export file formats
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``CSV``
-     - Comma-separated values
-   * - ``CSVCOLHEADER``
-     - CSV with column headers
-   * - ``CSVNOHEADER``
-     - CSV without headers
-   * - ``AUX``
-     - PowerWorld auxiliary format
-   * - ``AUXCSV``
-     - Hybrid auxiliary/CSV format
-   * - ``TAB``
-     - Tab-separated format
-   * - ``PTI``
-     - PTI/PSS-E format
-   * - ``TXT``
-     - Text format
-   * - ``PWB``
-     - PowerWorld case format
-   * - ``AXD``
-     - Oneline diagram format
-   * - ``GE``
-     - GE EPC format
-   * - ``CF``
-     - Custom format
-   * - ``UCTE``
-     - UCTE format
-   * - ``AREVAHDB``
-     - AREVA HDB format
-   * - ``OPENNETEMS``
-     - OPENNET EMS format
-
-**ObjectIDHandling** - Contingency export object ID modes
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``NO``
-     - Standard object references
-   * - ``YES_MS_3W``
-     - Include multi-section and 3-winding IDs
-
-**BranchDistanceMeasure** - Distance metrics for topology analysis
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``REACTANCE``
-     - Use reactance (X) as distance measure
-   * - ``IMPEDANCE``
-     - Use impedance magnitude (Z) as distance measure
-
-**BranchFilterMode** - Branch filter modes for topology traversal
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``ALL``
-     - All branches
-   * - ``SELECTED``
-     - Only selected branches
-   * - ``CLOSED``
-     - Only closed branches
-
-**IslandReference** - Island reference options
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``EXISTING``
-     - Use existing island configuration
-   * - ``NO``
-     - No area reference
-
-**ScalingBasis** - Load/generation scaling basis
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``MW``
-     - Absolute MW/MVAR values
-   * - ``FACTOR``
-     - Multiplier factor
-
-**InterfaceLimitSetting** - Interface limit configuration
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``AUTO``
-     - Automatic limit calculation
-   * - ``NONE``
-     - No limit applied
-
-**ShuntModel** - Shunt model types for line tapping
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``CAPACITANCE``
-     - Capacitive shunt model
-   * - ``INDUCTANCE``
-     - Inductive shunt model
-
-**BranchDeviceType** - Branch device types for bus splitting
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``Line``
-     - Transmission line
-   * - ``Breaker``
-     - Circuit breaker
-
-**StarBusHandling** - Star bus handling for case append
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``NEAR``
-     - Map to nearest bus (default)
-   * - ``MAX``
-     - Map to maximum impedance bus
-
-**MultiSectionLineHandling** - Multi-section line handling for case append
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``MAINTAIN``
-     - Maintain multisection line structure (default)
-   * - ``EQUIVALENCE``
-     - Convert to equivalent circuits
-
-**OnelineLinkMode** - Oneline diagram linking modes
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``LABELS``
-     - Link objects by labels (default)
-   * - ``NUMBERS``
-     - Link objects by numbers
-
-**RatingSetPrecedence** - Rating set precedence for weather-based ratings
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``NORMAL``
-     - Use normal rating set
-   * - ``CTG``
-     - Use contingency rating set
-
-**RatingSet** - Rating set identifiers (A-O, DEFAULT, NO)
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``DEFAULT``
-     - Use default rating
-   * - ``NO``
-     - Don't update rating
-   * - ``A`` - ``O``
-     - Rating sets A through O
-
-**FieldListColumn** - Column names for ``GetFieldList`` results
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``KEY_FIELD``
-     - Whether the field is a key field
-   * - ``INTERNAL_FIELD_NAME``
-     - PowerWorld internal field name
-   * - ``FIELD_DATA_TYPE``
-     - Data type of the field
-   * - ``DESCRIPTION``
-     - Human-readable description
-   * - ``DISPLAY_NAME``
-     - Display name in PowerWorld UI
-   * - ``ENTERABLE``
-     - Whether the field can be edited
-
-**SpecificFieldListColumn** - Column names for ``GetSpecificFieldList`` results
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``VARIABLENAME_LOCATION``
-     - Variable name with location
-   * - ``FIELD``
-     - Field identifier
-   * - ``COLUMN_HEADER``
-     - Column header label
-   * - ``FIELD_DESCRIPTION``
-     - Human-readable description
-   * - ``ENTERABLE``
-     - Whether the field can be edited
-
-**TSGetResultsMode** - Transient stability results save mode
-
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
-
-   * - Value
-     - Description
-   * - ``SINGLE``
-     - Single combined output file
-   * - ``SEPARATE``
-     - Separate files per object
-   * - ``JSIS``
-     - JSIS format output
+    saw.GetParametersMultipleElement("Bus", ["BusNum"], FilterKeyword.ALL)
+
+.. currentmodule:: esapp.saw
+
+Power Flow & Matrices
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: SolverMethod
+   :members:
+   :undoc-members:
+
+.. autoclass:: LinearMethod
+   :members:
+   :undoc-members:
+
+.. autoclass:: JacobianForm
+   :members:
+   :undoc-members:
+
+Bus Classification
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: BusType
+   :members:
+   :undoc-members:
+
+.. autoclass:: BusCtrl
+   :members:
+   :undoc-members:
+
+.. autoclass:: Role
+   :members:
+   :undoc-members:
+
+Data Filters & Object Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: FilterKeyword
+   :members:
+   :undoc-members:
+
+.. autoclass:: ObjectType
+   :members:
+   :undoc-members:
+
+.. autoclass:: KeyFieldType
+   :members:
+   :undoc-members:
+
+Boolean & Option Flags
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: YesNo
+   :members:
+
+File Formats
+~~~~~~~~~~~~
+
+.. autoclass:: FileFormat
+   :members:
+   :undoc-members:
+
+Transient Stability
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: TSGetResultsMode
+   :members:
+   :undoc-members:
+
+Topology & Sensitivity
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: BranchDistanceMeasure
+   :members:
+   :undoc-members:
+
+.. autoclass:: BranchFilterMode
+   :members:
+   :undoc-members:
+
+.. autoclass:: ScalingBasis
+   :members:
+   :undoc-members:
+
+.. autoclass:: IslandReference
+   :members:
+   :undoc-members:
+
+.. autoclass:: InterfaceLimitSetting
+   :members:
+   :undoc-members:
+
+Case Operations
+~~~~~~~~~~~~~~~
+
+.. autoclass:: StarBusHandling
+   :members:
+   :undoc-members:
+
+.. autoclass:: MultiSectionLineHandling
+   :members:
+   :undoc-members:
+
+.. autoclass:: OnelineLinkMode
+   :members:
+   :undoc-members:
+
+.. autoclass:: ShuntModel
+   :members:
+   :undoc-members:
+
+.. autoclass:: BranchDeviceType
+   :members:
+   :undoc-members:
+
+.. autoclass:: ObjectIDHandling
+   :members:
+   :undoc-members:
+
+Ratings
+~~~~~~~
+
+.. autoclass:: RatingSetPrecedence
+   :members:
+   :undoc-members:
+
+.. autoclass:: RatingSet
+   :members:
+   :undoc-members:
+
+Field Metadata
+~~~~~~~~~~~~~~
+
+.. autoclass:: FieldListColumn
+   :members:
+
+.. autoclass:: SpecificFieldListColumn
+   :members:
 
 Helper Functions
 ----------------

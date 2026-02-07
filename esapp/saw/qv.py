@@ -4,14 +4,16 @@ from pathlib import Path
 
 import pandas as pd
 
-from esapp.saw._enums import YesNo
+from typing import Union
+
+from esapp.saw._enums import YesNo, KeyFieldType
 from ._helpers import get_temp_filepath
 
 
 class QVMixin:
     """Mixin for QV analysis functions."""
 
-    def QVDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: str = "PRIMARY"):
+    def QVDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
         """
         Write all QV analysis information to an auxiliary file.
 
