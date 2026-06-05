@@ -99,7 +99,7 @@ def parse_buscat(cat: str) -> dict:
     eff = BusType.PQ if (limited and typ == BusType.PV) else typ
     active = typ in (BusType.PV, BusType.SLACK) and not limited
     ctrl_str = "+".join(
-        f.name for f in BusCtrl if f in ctrl and f.name
+        f.name for f in BusCtrl if f is not BusCtrl.NONE and f in ctrl
     ) or "NONE"
 
     return {
