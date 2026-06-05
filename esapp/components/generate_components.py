@@ -7,7 +7,7 @@ import re
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
 from enum import Flag, auto
-from typing import Optional, List, Dict, Set
+from typing import Iterator, Optional, List, Dict, Set
 
 
 class FieldRole(Flag):
@@ -99,15 +99,26 @@ class ComponentGenerator:
     # Manual field definitions for fields not properly defined in PWRaw
     # Format: {ObjectType: [FieldDefinition, ...]}
     MANUAL_FIELDS = {
-        'Substation': [
+        'PlantController_REPCA1': [
             FieldDefinition(
-                variable_name='GICUsedSubGroundOhms',
-                python_name='GICUsedSubGroundOhms',
-                concise_name='RgroundUsed',
+                variable_name='Dbd:3',
+                python_name='Dbd__3',
+                concise_name='dbdupper',
                 data_type='Real',
-                description='Substation grounding ohms actually used in the geomagnetic induced current calculations.',
-                role=FieldRole.STANDARD,
-                enterable=False
+                description='Deadband upper in control',
+                role=FieldRole.STANDARD_FIELD,
+                enterable=True
+            ),
+        ],
+        'PlantController_REPCTA1': [
+            FieldDefinition(
+                variable_name='Dbd:3',
+                python_name='Dbd__3',
+                concise_name='dbdupper',
+                data_type='Real',
+                description='Deadband upper in control',
+                role=FieldRole.STANDARD_FIELD,
+                enterable=True
             ),
         ],
     }
@@ -140,45 +151,23 @@ class ComponentGenerator:
         """Parses object definitions for components.py."""
         current_obj: Optional[ObjectTypeDefinition] = None
 
-        with open(self.raw_file_path, 'r', encoding='utf-8') as f:
-            next(f, None)  # Skip header
+        for line in self._iter_raw_rows():
+            parts = line.split('\t')
 
-            for line in f:
-                line = line.rstrip('\n')
-                if not line.strip():
+            if self._is_object_header(parts):
+                obj_name = parts[0].strip()
+
+                if obj_name in self.EXCLUDE_OBJECTS:
+                    current_obj = None
                     continue
 
-                parts = line.split('\t')
+                subdata = self._get_column(parts, 1).lower() == 'yes'
+                current_obj = ObjectTypeDefinition(name=obj_name, subdata_allowed=subdata)
+                self.objects[obj_name] = current_obj
 
-                if not line.startswith('\t'):
-                    obj_name = parts[0].strip()
-
-                    if not obj_name or len(obj_name) <= 1 or obj_name in self.EXCLUDE_OBJECTS:
-                        current_obj = None
-                        continue
-
-                    subdata = self._get_column(parts, 1).lower() == 'yes'
-                    current_obj = ObjectTypeDefinition(name=obj_name, subdata_allowed=subdata)
-                    self.objects[obj_name] = current_obj
-
-                elif current_obj is not None:
-                    var_name = self._get_column(parts, 3)
-                    if not var_name or var_name in self.EXCLUDE_FIELDS or '/' in var_name:
-                        continue
-
-                    key_str = self._get_column(parts, 2)
-                    enterable = self._parse_enterable(self._get_column(parts, 8))
-
-                    field_def = FieldDefinition(
-                        variable_name=var_name,
-                        python_name=self._sanitize_for_python(var_name),
-                        concise_name=self._get_column(parts, 4),
-                        data_type=self._get_column(parts, 5),
-                        description=self._get_column(parts, 6, strip_q=True),
-                        role=self._parse_key_symbol(key_str),
-                        enterable=enterable,
-                        available_list=self._get_column(parts, 7, strip_q=True)
-                    )
+            elif current_obj is not None and self._is_field_row(line):
+                field_def = self._parse_field_definition(parts)
+                if field_def is not None:
                     current_obj.fields.append(field_def)
 
     def _extract_ts_fields(self) -> None:
@@ -186,65 +175,60 @@ class ComponentGenerator:
         # Track seen python attributes per object type to avoid duplicates (e.g. from indexed fields)
         seen_attrs: Dict[str, Set[str]] = defaultdict(set)
 
-        with open(self.raw_file_path, 'r', encoding='utf-8') as f:
-            next(f, None)
+        for line in self._iter_raw_rows():
+            if not self._is_field_row(line):
+                continue
 
-            for line in f:
-                line = line.rstrip('\n')
-                if not line.strip() or not line.startswith('\t'):
-                    continue
+            parts = line.split('\t')
+            var_name = self._get_column(parts, 3)
+            if not var_name:
+                continue
 
-                parts = line.split('\t')
-                var_name = self._get_column(parts, 3)
-                if not var_name:
-                    continue
+            matched_prefix = None
+            matched_type = None
+            for prefix, obj_type in self.TS_OBJECT_MAPPING.items():
+                if var_name.startswith(prefix):
+                    matched_prefix = prefix
+                    matched_type = obj_type
+                    break
 
-                # Identify Object Type
-                matched_type = None
-                for prefix, obj_type in self.TS_OBJECT_MAPPING.items():
-                    if var_name.startswith(prefix):
-                        matched_type = obj_type
-                        break
-                
-                if not matched_type:
-                    continue
+            if not matched_prefix or not matched_type:
+                continue
 
-                if 'TSSave' in var_name or 'TSResult' in var_name:
-                    continue
+            if 'TSSave' in var_name or 'TSResult' in var_name:
+                continue
 
-                # Handle Indexed Fields (e.g. TSBusInput:1 -> TSBusInput)
-                # We strip the index to create a base field.
-                # The generated TSField class will support indexing.
-                base_var_name = re.sub(r':\d+$', '', var_name)
-                
-                # Determine Python Attribute Name
-                # Remove prefix (e.g. TSBus)
-                prefix_len = len([p for p in self.TS_OBJECT_MAPPING.keys() if base_var_name.startswith(p)][0])
-                python_attr = base_var_name[prefix_len:]
-                python_attr = self._sanitize_for_python(python_attr)
+            # Handle Indexed Fields (e.g. TSBusInput:1 -> TSBusInput)
+            # We strip the index to create a base field.
+            # The generated TSField class will support indexing.
+            base_var_name = re.sub(r':\d+$', '', var_name)
 
-                if not python_attr:
-                    continue
+            # Determine Python Attribute Name
+            # Remove prefix (e.g. TSBus)
+            python_attr = self._sanitize_for_python(base_var_name[len(matched_prefix):])
 
-                if python_attr in seen_attrs[matched_type]:
-                    continue
-                
-                seen_attrs[matched_type].add(python_attr)
+            if not python_attr:
+                continue
 
-                concise_name = self._get_column(parts, 4)
-                description = self._get_column(parts, 6, strip_q=True)
+            if python_attr in seen_attrs[matched_type]:
+                continue
 
-                field_def = TSFieldDefinition(
-                    pw_field_name=base_var_name,
-                    concise_name=concise_name,
-                    description=description,
-                    python_attr=python_attr,
-                    object_type=matched_type
-                )
+            seen_attrs[matched_type].add(python_attr)
 
-                if matched_type not in self.ts_fields:
-                    self.ts_fields[matched_type] = []
-                self.ts_fields[matched_type].append(field_def)
+            concise_name = self._get_column(parts, 4)
+            description = self._get_column(parts, 6, strip_q=True)
+
+            field_def = TSFieldDefinition(
+                pw_field_name=base_var_name,
+                concise_name=concise_name,
+                description=description,
+                python_attr=python_attr,
+                object_type=matched_type
+            )
+
+            if matched_type not in self.ts_fields:
+                self.ts_fields[matched_type] = []
+            self.ts_fields[matched_type].append(field_def)
 
     def generate_components(self, output_path: str) -> None:
         """Writes grid.py to the components module."""
@@ -263,14 +247,10 @@ from .gobject import *
                 cls_name = self._sanitize_for_python(obj_name.split(" ")[0])
                 f.write(f'\n\nclass {cls_name}(GObject):')
 
-                # Inject manual fields for this object type
-                if obj_name in self.MANUAL_FIELDS:
-                    for manual_field in self.MANUAL_FIELDS[obj_name]:
-                        obj_def.fields.append(manual_field)
+                fields = self._fields_with_manual_fields(obj_name, obj_def.fields)
+                fields.sort(key=self._get_sort_key)
 
-                obj_def.fields.sort(key=self._get_sort_key)
-
-                for field_def in obj_def.fields:
+                for field_def in fields:
                     dtype = self.DTYPE_MAP.get(field_def.data_type, "str")
                     pw_name = self._fix_pw_string(field_def.python_name)
                     flags = self._build_field_priority_flags(field_def)
@@ -354,6 +334,82 @@ class TS:
 
     # --- Helpers ---
 
+    def _iter_raw_rows(self) -> Iterator[str]:
+        """Yields logical PWRaw rows, joining wrapped quoted field rows."""
+        with open(self.raw_file_path, 'r', encoding='utf-8') as f:
+            next(f, None)  # Skip header
+            yield from self._join_continuation_lines(f)
+
+    @classmethod
+    def _join_continuation_lines(cls, lines) -> Iterator[str]:
+        current = None
+        for raw_line in lines:
+            line = raw_line.rstrip('\n')
+            if not line.strip():
+                continue
+
+            if current is None:
+                current = line
+                continue
+
+            if cls._starts_logical_row(line):
+                yield current
+                current = line
+            else:
+                current = f"{current}\n{line}"
+
+        if current is not None:
+            yield current
+
+    @classmethod
+    def _starts_logical_row(cls, line: str) -> bool:
+        return cls._is_field_row(line) or cls._is_object_header(line.split('\t'))
+
+    @staticmethod
+    def _is_field_row(line: str) -> bool:
+        return line.startswith('\t')
+
+    @classmethod
+    def _is_object_header(cls, parts: list) -> bool:
+        obj_name = cls._get_column(parts, 0)
+        if not obj_name or len(obj_name) <= 1:
+            return False
+
+        subdata_value = cls._get_column(parts, 1).lower()
+        maintainer_value = cls._get_column(parts, 9).lower()
+        return subdata_value in {'yes', 'no'} or maintainer_value in {'yes', 'no', 'inheritalways'}
+
+    def _parse_field_definition(self, parts: list) -> Optional[FieldDefinition]:
+        var_name = self._get_column(parts, 3)
+        if not var_name or var_name in self.EXCLUDE_FIELDS or '/' in var_name:
+            return None
+
+        key_str = self._get_column(parts, 2)
+        return FieldDefinition(
+            variable_name=var_name,
+            python_name=self._sanitize_for_python(var_name),
+            concise_name=self._get_column(parts, 4),
+            data_type=self._get_column(parts, 5),
+            description=self._get_column(parts, 6, strip_q=True),
+            role=self._parse_key_symbol(key_str),
+            enterable=self._parse_enterable(self._get_column(parts, 8)),
+            available_list=self._get_column(parts, 7, strip_q=True)
+        )
+
+    def _fields_with_manual_fields(self, obj_name: str, fields: List[FieldDefinition]) -> List[FieldDefinition]:
+        merged = list(fields)
+        seen_pw_names = {field.variable_name for field in merged}
+        seen_python_names = {field.python_name for field in merged}
+
+        for manual_field in self.MANUAL_FIELDS.get(obj_name, []):
+            if manual_field.variable_name in seen_pw_names or manual_field.python_name in seen_python_names:
+                continue
+            merged.append(manual_field)
+            seen_pw_names.add(manual_field.variable_name)
+            seen_python_names.add(manual_field.python_name)
+
+        return merged
+
     @staticmethod
     def _get_column(parts: list, index: int, strip_q: bool = False) -> str:
         value = parts[index].strip() if index < len(parts) else ""
@@ -382,6 +438,7 @@ class TS:
     @staticmethod
     def _sanitize_description(desc: str) -> str:
         desc = desc.replace("\\", "/")
+        desc = desc.replace("\r\n", "\\n").replace("\n", "\\n")
         desc = desc.replace('"""', r'\"\"\"')
         desc = desc.replace('"', r'\"')
         return desc

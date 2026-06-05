@@ -70,6 +70,22 @@ def test_gobject_is_settable(test_gobject_class):
     assert test_gobject_class.is_settable('nonexistent') is False
 
 
+def test_generated_substation_metadata_contains_expected_fields():
+    """Substation should include fields after the wrapped PWRaw row."""
+    for field_name in [
+        "SubNum",
+        "SubName",
+        "Latitude",
+        "Longitude",
+        "GICSubGroundOhms",
+        "GICUsedSubGroundOhms",
+    ]:
+        assert field_name in grid.Substation.fields()
+
+    assert "SubNum" in grid.Substation.keys()
+    assert "SubName" in grid.Substation.secondary()
+
+
 @pytest.mark.parametrize("g_object_class", get_all_gobject_subclasses())
 def test_real_gobject_subclass_is_well_formed(g_object_class: Type[grid.GObject]):
     """Validates every auto-generated GObject subclass has correct structure."""
