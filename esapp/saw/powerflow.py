@@ -2,7 +2,7 @@ from typing import List, Union
 import pandas as pd
 
 from ._exceptions import PowerWorldError
-from ._enums import YesNo, SolverMethod, format_filter
+from ._enums import YesNo, SolverMethod, FilterKeyword, KeyFieldType, FilterType, format_filter
 
 
 class PowerflowMixin:
@@ -136,7 +136,7 @@ class PowerflowMixin:
         """
         return self._run_script("ZeroOutMismatches", object_type)
 
-    def ConditionVoltagePockets(self, voltage_threshold: float, angle_threshold: float, filter_name: str = "ALL"):
+    def ConditionVoltagePockets(self, voltage_threshold: float, angle_threshold: float, filter_name: FilterType = FilterKeyword.ALL):
         """Finds pockets of buses with bad initial voltage estimates and conditions them.
 
         Identifies pockets of buses bounded by branches that meet the condition that
@@ -198,7 +198,7 @@ class PowerflowMixin:
         """Sets the present case as the base case for difference case comparison."""
         return self._run_script("DiffCaseSetAsBase")
 
-    def DiffCaseKeyType(self, key_type: str):
+    def DiffCaseKeyType(self, key_type: Union[KeyFieldType, str]):
         """Changes the key type used when comparing fields in difference case mode.
 
         Parameters
@@ -232,7 +232,7 @@ class PowerflowMixin:
         """
         return self._run_script("DiffCaseRefresh")
 
-    def DiffCaseWriteCompleteModel(self, filename: str, append: bool = False, save_added: bool = True, save_removed: bool = True, save_both: bool = True, key_fields: str = "PRIMARY", export_format: str = "", use_area_zone: bool = False, use_data_maintainer: bool = False, assume_base_meet: bool = True, include_clear_pf_aids: bool = True, delete_branches_flip: bool = False):
+    def DiffCaseWriteCompleteModel(self, filename: str, append: bool = False, save_added: bool = True, save_removed: bool = True, save_both: bool = True, key_fields: Union[KeyFieldType, str] = KeyFieldType.PRIMARY, export_format: str = "", use_area_zone: bool = False, use_data_maintainer: bool = False, assume_base_meet: bool = True, include_clear_pf_aids: bool = True, delete_branches_flip: bool = False):
         """Creates an auxiliary file with difference case comparison information.
 
         Creates an auxiliary file containing information about objects that have been

@@ -1,7 +1,9 @@
 """PV (Power-Voltage) Analysis specific functions."""
 
 
-from esapp.saw._enums import YesNo
+from typing import Union
+
+from esapp.saw._enums import YesNo, KeyFieldType
 
 
 class PVMixin:
@@ -50,7 +52,7 @@ class PVMixin:
         """
         return self._run_script("PVRun", source, sink)
 
-    def PVDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: str = "PRIMARY"):
+    def PVDataWriteOptionsAndResults(self, filename: str, append: bool = True, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
         """
         Write all PV analysis information to an auxiliary file.
 

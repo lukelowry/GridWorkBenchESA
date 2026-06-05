@@ -1,7 +1,7 @@
 """Geomagnetically Induced Current (GIC) specific functions."""
-from typing import List
+from typing import List, Union
 
-from ._enums import YesNo
+from ._enums import YesNo, KeyFieldType
 
 
 class GICMixin:
@@ -340,7 +340,7 @@ class GICMixin:
         uf = YesNo.from_bool(use_filters)
         return self._run_script("GICWriteFilePTI", f'"{filename}"', uf, version)
 
-    def GICWriteOptions(self, filename: str, key_field: str = "PRIMARY"):
+    def GICWriteOptions(self, filename: str, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
         """Writes the current GIC solution options to an auxiliary file.
 
         Parameters

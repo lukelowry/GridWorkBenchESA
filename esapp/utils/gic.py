@@ -17,6 +17,8 @@ esapp.saw.matrices : Matrix retrieval functions including get_gmatrix().
 
 from typing import Union, Optional
 
+from ..saw._enums import GICCalcMode
+
 import numpy as np
 from pandas import DataFrame, read_csv
 from scipy.sparse import csr_matrix, eye as speye, hstack, vstack, diags
@@ -102,7 +104,7 @@ class GIC:
         self,
         pf_include: bool = True,
         ts_include: bool = False,
-        calc_mode: str = 'SnapShot'
+        calc_mode: Union[GICCalcMode, str] = GICCalcMode.SNAPSHOT
     ) -> None:
         """
         Configure GIC options with sensible defaults.

@@ -464,8 +464,18 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture(autouse=True)
-def _capture_pw_log(request, saw_session):
+def _capture_pw_log(request):
     """Clear the PW log before each test; on failure, dump it to stdout."""
+    should_capture = (
+        "saw_session" in request.fixturenames
+        or request.node.get_closest_marker("integration") is not None
+    )
+    if not should_capture:
+        yield
+        return
+
+    saw_session = request.getfixturevalue("saw_session")
+
     try:
         saw_session.LogClear()
     except Exception:

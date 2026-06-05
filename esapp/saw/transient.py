@@ -3,7 +3,7 @@ from typing import List, Tuple, Union, Optional
 
 import numpy as np
 import pandas as pd
-from ._enums import YesNo, TSGetResultsMode
+from ._enums import YesNo, TSGetResultsMode, KeyFieldType, FilterKeyword, FileFormat
 from ._exceptions import PowerWorldError
 from ._helpers import format_list, get_temp_filepath, load_ts_csv_results, pack_args
 
@@ -131,7 +131,7 @@ class TransientMixin:
 
         This is a wrapper for the ``TSClearResultsFromRAM`` script command.
         """
-        if ctg_name.upper() not in ["ALL", "SELECTED"] and not ctg_name.startswith('"'):
+        if ctg_name.upper() not in [FilterKeyword.ALL.value, FilterKeyword.SELECTED.value] and not ctg_name.startswith('"'):
             ctg_name = f'"{ctg_name}"'
 
         c_sum = YesNo.from_bool(clear_summary)
@@ -227,7 +227,7 @@ class TransientMixin:
         save_plot_definitions: bool = True,
         save_transient_limit_monitors: bool = True,
         save_result_analyzer_time_window: bool = True,
-        key_field: str = "PRIMARY",
+        key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY,
     ):
         """Save transient stability option settings to an auxiliary file."""
         opts = [
@@ -483,7 +483,7 @@ class TransientMixin:
         self._run_script("TSSetSelectedForTransientReferences", set_what, set_how, objs, models)
 
     def TSSaveDynamicModels(
-        self, filename: str, file_type: str, object_type: str, filter_name: str = "", append: bool = False
+        self, filename: str, file_type: Union[FileFormat, str] = "AUX", object_type: str = "", filter_name: str = "", append: bool = False
     ):
         """Save dynamics models for specified object types to file."""
         app = YesNo.from_bool(append)

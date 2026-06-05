@@ -41,6 +41,19 @@ Network graph analysis including incidence matrices, Laplacians, and path calcul
 .. autoclass:: BranchType
    :members:
 
+Bus Classification
+------------------
+
+Bus type classification engine for analyzing power flow Jacobian structure and voltage control.
+
+.. currentmodule:: esapp.utils.buscat
+
+.. autoclass:: BusCat
+   :members:
+   :show-inheritance:
+
+.. autofunction:: parse_buscat
+
 Dynamics
 --------
 

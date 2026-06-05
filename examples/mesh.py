@@ -800,3 +800,30 @@ def normlap(
     else:
         return Di @ L @ Di
 
+
+def hermitify(A: NDArray | sp.spmatrix) -> NDArray:
+    """
+    Convert a complex symmetric matrix to Hermitian form.
+
+    For a complex symmetric matrix (A = A^T), this function produces
+    a Hermitian matrix by pairing the upper triangle's conjugate with
+    the lower triangle.
+
+    Parameters
+    ----------
+    A : np.ndarray or scipy.sparse matrix
+        Input complex symmetric matrix.
+
+    Returns
+    -------
+    np.ndarray
+        The Hermitian form of the matrix.
+
+    Notes
+    -----
+    Useful for converting admittance matrices to a form suitable
+    for eigenvalue algorithms that require Hermitian input.
+    """
+    dense = A if isinstance(A, np.ndarray) else A.toarray()
+    return (np.triu(dense).conjugate() + np.tril(dense)) / 2
+

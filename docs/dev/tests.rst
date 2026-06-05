@@ -27,6 +27,8 @@ Test Coverage
      - Dynamics module: ContingencyBuilder, SimAction enum
    * - ``test_utils.py``
      - Utility modules: timing decorator, B3D file format
+   * - ``test_buscat_unit.py``
+     - BusCat string parsing: all known PowerWorld BusCat variants (Slack, PV, PQ with controls/roles/limits)
 
 **Integration Tests** — Require PowerWorld
 
@@ -44,6 +46,8 @@ Test Coverage
      - Power flow, matrices (Ybus, Jacobian), PTDF/LODF
    * - ``test_integration_saw_contingency.py``
      - Contingency auto-insertion, solving, OTDF
+   * - ``test_integration_buscat.py``
+     - BusCat module: refresh, index methods, voltage setpoints, classification DataFrame
    * - ``test_integration_network.py``
      - Network topology, incidence matrices, graph analysis
    * - ``test_integration_saw_gic.py``

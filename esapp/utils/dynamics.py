@@ -12,6 +12,7 @@ from typing import List, Tuple, Dict, Any, Type, Optional
 from pandas import DataFrame
 
 from ..components import GObject
+from ..saw._enums import TSGetResultsMode
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ def get_ts_results(esa, ctg: str, fields: List[str]) -> Tuple[Optional[DataFrame
     Tuple[Optional[DataFrame], Optional[DataFrame]]
         Tuple of (Metadata DataFrame, Data DataFrame), or (None, None).
     """
-    result = esa.TSGetResults("SEPARATE", [ctg], fields)
+    result = esa.TSGetResults(TSGetResultsMode.SEPARATE, [ctg], fields)
     if result is None:
         return None, None
     return result

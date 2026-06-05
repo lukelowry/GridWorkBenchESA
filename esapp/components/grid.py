@@ -121143,6 +121143,8 @@ class PlantController_REPCA1(GObject):
 	"""It is possible for the terminal bus to belong to a different zone than the device belongs.  This is the Zone number of the Generator"""
 	ZoneNum__1 = ("ZoneNum:1", int, FieldPriority.OPTIONAL)
 	"""It is possible for the terminal bus to belong to a different zone than the device belongs.  This is the Zone number of the bus"""
+	Dbd__3 = ("Dbd:3", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Deadband upper in control"""
 
 	ObjectString = 'PlantController_REPCA1'
 
@@ -121679,6 +121681,8 @@ class PlantController_REPCTA1(GObject):
 	"""It is possible for the terminal bus to belong to a different zone than the device belongs.  This is the Zone number of the Generator"""
 	ZoneNum__1 = ("ZoneNum:1", int, FieldPriority.OPTIONAL)
 	"""It is possible for the terminal bus to belong to a different zone than the device belongs.  This is the Zone number of the bus"""
+	Dbd__3 = ("Dbd:3", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Deadband upper in control"""
 
 	ObjectString = 'PlantController_REPCTA1'
 
@@ -154695,6 +154699,10 @@ class Subnet(GObject):
 
 
 class Substation(GObject):
+	SubNum = ("SubNum", int, FieldPriority.PRIMARY)
+	"""Substation Num"""
+	SubName = ("SubName", str, FieldPriority.SECONDARY | FieldPriority.EDITABLE)
+	"""Substation Name"""
 	ThreeWXFNum = ("3WXFNum", int, FieldPriority.OPTIONAL)
 	"""Number of three-winding transformers that connect to the group"""
 	AggrMVAOverload = ("AggrMVAOverload", float, FieldPriority.OPTIONAL)
@@ -155223,8 +155231,322 @@ class Substation(GObject):
 	"""Custom earth resistivity region hotspot scaling for the substation; set to -1 to use the default region value"""
 	GICGeoMagGraphicScalar = ("GICGeoMagGraphicScalar", float, FieldPriority.OPTIONAL)
 	"""Product of the geomagnetic latitude and earth resistivity region scalars for the substation's location"""
+	GICGLatScalar = ("GICGLatScalar", float, FieldPriority.OPTIONAL)
+	"""Geomagnetic latitude scalar for the substation buses"""
+	GICQLosses = ("GICQLosses", float, FieldPriority.OPTIONAL)
+	"""Total GIC induced Mvar losses for the substation's transformers"""
+	GICSubDCGroundVolt = ("GICSubDCGroundVolt", float, FieldPriority.OPTIONAL)
+	"""Geomagnetically induced DC voltage [in Volts] on the ground point underneath the subsation"""
+	GICSubDCNeutralVolt = ("GICSubDCNeutralVolt", float, FieldPriority.OPTIONAL)
+	"""Geomagnetically induced DC neutral voltage [in Volts] at the substation"""
+	GICSubGroundOhms = ("GICSubGroundOhms", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Resistance [in Ohms] between the substation neutral and ground."""
+	GICSubRDP = ("GICSubRDP", float, FieldPriority.OPTIONAL)
+	"""GIC driving point resistance (in ohms)"""
+	GICSubRGFlag = ("GICSubRGFlag", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Description of method used to get the grounding resistance (such as assumed)"""
+	GICSubRTH = ("GICSubRTH", float, FieldPriority.OPTIONAL)
+	"""GIC Thevenin resistance (in Ohms) looking into network"""
+	GICSubScriptR = ("GICSubScriptR", float, FieldPriority.OPTIONAL)
+	"""GIC Thevenin Ratio"""
+	GICSubVTH = ("GICSubVTH", float, FieldPriority.OPTIONAL)
+	"""GIC Thevenin voltage (volts)"""
 	GICUsedSubGroundOhms = ("GICUsedSubGroundOhms", float, FieldPriority.OPTIONAL)
 	"""Substation grounding ohms actually used in the geomagnetic induced current calculations."""
+	GICXFIEffective1Max = ("GICXFIEffective1Max", float, FieldPriority.OPTIONAL)
+	"""Maximum Ieffective considering all transformers with buses in the group; in amps per phase"""
+	GICXFNeutralAmps3Max = ("GICXFNeutralAmps3Max", float, FieldPriority.OPTIONAL)
+	"""Maximum neutral current considering all tranformers with buses in the group; in amps total """
+	HarmonicsFloat = ("HarmonicsFloat", float, FieldPriority.OPTIONAL)
+	"""THDv Max for Group"""
+	HarmonicsString = ("HarmonicsString", str, FieldPriority.OPTIONAL)
+	"""THDv Valid for Group"""
+	InjGrpNum = ("InjGrpNum", int, FieldPriority.OPTIONAL)
+	"""Number of injection groups that have participation points that belong to the group"""
+	IslandNumber = ("IslandNumber", int, FieldPriority.OPTIONAL)
+	"""Number of viable islands that are contained in the group"""
+	Label = ("Label", str, FieldPriority.OPTIONAL)
+	"""This field is when reading from an auxiliary file (or pasting from a spreadsheet).  The label field will automatically be used as the identifying field for the object.  When shown in the user interface, the field will always shown the primary label"""
+	LabelAppend = ("LabelAppend", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""A write-only field which appends a new label to the current list"""
+	LabelAppend__1 = ("LabelAppend:1", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Used to set or change the primary label for an object"""
+	LabelAppend__2 = ("LabelAppend:2", int, FieldPriority.OPTIONAL)
+	"""A read-only field showing the number of labels assigned to the object"""
+	LabelAppend__3 = ("LabelAppend:3", str, FieldPriority.OPTIONAL)
+	"""A read-only field showing a comma-delimited list of all labels except for the primary label"""
+	Latitude = ("Latitude", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Geographic Latitude in decimal degrees.  Note: negative values represent the southern hemisphere"""
+	LatitudeString = ("LatitudeString", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Geographic Latitude using a string of the form DDD:MM:SS followed by a N for north or S for south"""
+	LineMVR = ("LineMVR", float, FieldPriority.OPTIONAL)
+	"""The amount of Mvar flow going through (sum of the tie-line flows into the area with the positive generation, load, bus shunt, and switched shunt injections)"""
+	LineMW = ("LineMW", float, FieldPriority.OPTIONAL)
+	"""The amount of MW flow going through (sum of the tie-line flows into the area with the positive generation, load, bus shunt, and switched shunt injections)"""
+	LineShuntNum = ("LineShuntNum", int, FieldPriority.OPTIONAL)
+	"""Number of line shunts that are in the group"""
+	LoadNetMvar = ("LoadNetMvar", float, FieldPriority.OPTIONAL)
+	"""Load Net Mvar.  Equal to the Load Mvar - Distributed Gen Mvar."""
+	LoadNetMW = ("LoadNetMW", float, FieldPriority.OPTIONAL)
+	"""Load Net MW.  Equal to the Load MW - Distributed Gen MW."""
+	Longitude = ("Longitude", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Geographic Longitude in decimal degrees.  Note: negative values represent the western hemisphere"""
+	LongitudeString = ("LongitudeString", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Geographic Longitude using a string of the form DDD:MM:SS followed by a E for east or W for west"""
+	MinKVOfHighestNomkV = ("MinKVOfHighestNomkV", float, FieldPriority.OPTIONAL)
+	"""Returns the lowest kV voltage at a bus which is one of the highest nominal kV buses in the substation"""
+	MinPUOfHighestNomkV = ("MinPUOfHighestNomkV", float, FieldPriority.OPTIONAL)
+	"""Returns the lowest per unit voltage at a bus which is one of the highest nominal kV buses in the substation"""
+	MSLineNum = ("MSLineNum", int, FieldPriority.OPTIONAL)
+	"""Number of multi-section lines that connect to the group"""
+	MTDCNum = ("MTDCNum", int, FieldPriority.OPTIONAL)
+	"""Number of multi-terminal DC line networks that connect to the group"""
+	MWDistance = ("MWDistance", float, FieldPriority.OPTIONAL)
+	"""MW*Distance"""
+	NERCCIP14AggWeight = ("NERCCIP14AggWeight", int, FieldPriority.OPTIONAL)
+	"""A substation with agg. weight > 3000 meets the critieria in NERC CIP-14-01. Each tielines' weight is determined  from their Nominal kV [= 500, = 300, = 200], which maps to their respective weight values [3100, 1300, 700]."""
+	NumberOfConnections = ("NumberOfConnections", int, FieldPriority.OPTIONAL)
+	"""Sum of the Number of connections field over all buses"""
+	ObjectGroup = ("ObjectGroup", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""ObjectGroup names assigned by user input as a comma-delimited list of ObjectGroup names"""
+	ObjectGroup__1 = ("ObjectGroup:1", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""To append to more ObjectGroup,  enter a comma-delimited list of ObjectGroup names to append"""
+	ObjectID = ("ObjectID", str, FieldPriority.OPTIONAL)
+	"""When writing out this field uses option key fields to use in SUBDATA Section to identify the object either by primary, secondary, or label identifier.  When reading from an AUX file we will attempt to use any of these identifiers to identify the object"""
+	ObjectMemo = ("ObjectMemo", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""One custom memo may also be specified for each object.  This respresents multiple lines of text and can be seen on many dialogs"""
+	ODObjectString = ("ODObjectString", str, FieldPriority.OPTIONAL)
+	"""Id for the OpenDSS object"""
+	ODObjectString__1 = ("ODObjectString:1", str, FieldPriority.OPTIONAL)
+	"""If yes then the object is included in the GICHarm analysis; this is set on an area basis, with options for some neighboring buses to be included"""
+	OpenDSSFloat = ("OpenDSSFloat", float, FieldPriority.OPTIONAL)
+	"""Latitude"""
+	OpenDSSFloat__1 = ("OpenDSSFloat:1", float, FieldPriority.OPTIONAL)
+	"""Longitude"""
+	ReferenceDistance = ("ReferenceDistance", float, FieldPriority.OPTIONAL)
+	"""Distance to the case reference point in miles (blank if locations not defined)"""
+	ReferenceDistance__1 = ("ReferenceDistance:1", float, FieldPriority.OPTIONAL)
+	"""Distance to the case reference point in km (blank if locations not defined)"""
+	RegionInteger = ("RegionInteger", int, FieldPriority.OPTIONAL)
+	"""Count of the geographic regions that contain the object"""
+	RegionString = ("RegionString", str, FieldPriority.OPTIONAL)
+	"""Comma separated list of all the full names of the geographic regions that contain the object"""
+	RegionString__1 = ("RegionString:1", str, FieldPriority.OPTIONAL)
+	"""Comma separated list of all the class  names of the geographic regions that contain the object"""
+	RegionString__2 = ("RegionString:2", str, FieldPriority.OPTIONAL)
+	"""Comma separated list of all the first proper names of the geographic regions that contain the object"""
+	RegionString__3 = ("RegionString:3", str, FieldPriority.OPTIONAL)
+	"""Comma separated list of all the second proper names of the geographic regions that contain the object"""
+	SAName = ("SAName", str, FieldPriority.OPTIONAL)
+	"""Name of the super area to which the substation's more common area belongs"""
+	Selected = ("Selected", str, FieldPriority.OPTIONAL)
+	"""YES or NO field which displays if record has been selected.  The field can be used in combination with numerous script commands in auxiliary files.  Is also used to help choose records in the user interface sometimes"""
+	sgBGNDeadBus = ("sgBGNDeadBus", int, FieldPriority.OPTIONAL)
+	"""Number of dead buses in the group"""
+	SolarValue = ("SolarValue", float, FieldPriority.OPTIONAL)
+	"""Gives the sun's elevation about the horizon, with 90 degrees straight overhead"""
+	SolarValue__1 = ("SolarValue:1", float, FieldPriority.OPTIONAL)
+	"""Gives the sun's azimuth using the compass, with 0 due north,  90 degrees due east, 180 due south and 270 due west."""
+	SolarValue__2 = ("SolarValue:2", float, FieldPriority.OPTIONAL)
+	"""Gives an estimate of the atmospheric transmittance with 1 for the sun directly overhead, decreasing as it approaches the horizon; zero if below the horizon"""
+	SSMaxMVR = ("SSMaxMVR", float, FieldPriority.OPTIONAL)
+	"""Sum of the switched shunt Mvar maximum"""
+	SSMaxMVR__1 = ("SSMaxMVR:1", float, FieldPriority.OPTIONAL)
+	"""Sum of the switched shunt Mvar maximum ignoring the status field"""
+	SSMinMVR = ("SSMinMVR", float, FieldPriority.OPTIONAL)
+	"""Sum of the switched shunt Mvar minimum"""
+	SSMinMVR__1 = ("SSMinMVR:1", float, FieldPriority.OPTIONAL)
+	"""Sum of the switched shunt Mvar minimum ignoring the status field"""
+	SSMVRPercent = ("SSMVRPercent", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Percent"""
+	SSMVRPercent__1 = ("SSMVRPercent:1", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Percent Ignoring Status"""
+	SSMVRRange = ("SSMVRRange", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range"""
+	SSMVRRange__1 = ("SSMVRRange:1", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range Ignoring Status"""
+	SSMVRRangeDown = ("SSMVRRangeDown", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range Down"""
+	SSMVRRangeDown__1 = ("SSMVRRangeDown:1", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range Down Ignoring Status"""
+	SSMVRRangeUp = ("SSMVRRangeUp", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range Up"""
+	SSMVRRangeUp__1 = ("SSMVRRangeUp:1", float, FieldPriority.OPTIONAL)
+	"""Switched Shunt Mvar Range Up Ignoring Status"""
+	SSNum = ("SSNum", int, FieldPriority.OPTIONAL)
+	"""Number of switched shunts that belong to the group"""
+	SubAutoInserted = ("SubAutoInserted", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""When performing GIC calculations, Simulator may auto-create some substations definitions.  This flag will be set to YES by default for these auto-created substations."""
+	SubEstimated = ("SubEstimated", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""If yes then the substation's latitude and longitude have been estimated and may need to be corrected"""
+	SubID = ("SubID", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Substation ID.  An extra string identifier.  Normally use the Name field"""
+	SubNumberOf = ("SubNumberOf", int, FieldPriority.OPTIONAL)
+	"""Number of substations with buses that overlap the group"""
+	TieLineNumber = ("TieLineNumber", int, FieldPriority.OPTIONAL)
+	"""Number of Tie Lines"""
+	TimeDomainSelected = ("TimeDomainSelected", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Selected for storing in the time domain"""
+	TopologyType = ("TopologyType", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Specify the node-breaker topology configuration of the substation.  """
+	TSH = ("TSH", float, FieldPriority.OPTIONAL)
+	"""Shows the sum of generators' active machine model's inertia on the system MVA base."""
+	TSSaveAll = ("TSSaveAll", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save All"""
+	TSSaveSubAvgFreqHz = ("TSSaveSubAvgFreqHz", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Average Frequency (Hz)"""
+	TSSaveSubAvgPUVolt = ("TSSaveSubAvgPUVolt", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Average Voltage (pu)"""
+	TSSaveSubGenAccP = ("TSSaveSubGenAccP", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Gen Acceleration MW Sum Substation"""
+	TSSaveSubGenP = ("TSSaveSubGenP", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Gen MW Sum Substation"""
+	TSSaveSubGenPMech = ("TSSaveSubGenPMech", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Generator Mech Input Sum Substation"""
+	TSSaveSubGenQ = ("TSSaveSubGenQ", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Gen Mvar Sum Substation"""
+	TSSaveSubGICEFieldDeg = ("TSSaveSubGICEFieldDeg", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save GIC Efield Directions (degrees)"""
+	TSSaveSubGICEFieldMag = ("TSSaveSubGICEFieldMag", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save GIC Efield Magnitude"""
+	TSSaveSubGICIAmp = ("TSSaveSubGICIAmp", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Total GIC (amps)"""
+	TSSaveSubGICQ = ("TSSaveSubGICQ", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Total GIC Mvar Losses"""
+	TSSaveSubLoadP = ("TSSaveSubLoadP", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Load MW Sum Substation"""
+	TSSaveSubLoadQ = ("TSSaveSubLoadQ", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Load Mvar Sum Substation"""
+	TSSaveSubMaxPUVolt = ("TSSaveSubMaxPUVolt", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Maximum Voltage (pu)"""
+	TSSaveSubMinPUOfHighestNomkV = ("TSSaveSubMinPUOfHighestNomkV", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Lowest Voltage (pu) of Highest Nominal Voltage Buses"""
+	TSSaveSubMinPUVolt = ("TSSaveSubMinPUVolt", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save Minimum Voltage (pu)"""
+	TSSaveSubROCOFHz = ("TSSaveSubROCOFHz", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Save DSC::TSTimePointResult_TSSubROCOFHz"""
+	TSSubAvgFreqHz = ("TSSubAvgFreqHz", float, FieldPriority.OPTIONAL)
+	"""Average Frequency (Hz)"""
+	TSSubAvgPUVolt = ("TSSubAvgPUVolt", float, FieldPriority.OPTIONAL)
+	"""Average Voltage (pu)"""
+	TSSubGenAccP = ("TSSubGenAccP", float, FieldPriority.OPTIONAL)
+	"""Gen Acceleration MW Sum Substation"""
+	TSSubGenP = ("TSSubGenP", float, FieldPriority.OPTIONAL)
+	"""Gen MW Sum Substation"""
+	TSSubGenPMech = ("TSSubGenPMech", float, FieldPriority.OPTIONAL)
+	"""Generator Mech Input Sum Substation"""
+	TSSubGenQ = ("TSSubGenQ", float, FieldPriority.OPTIONAL)
+	"""Gen Mvar Sum Substation"""
+	TSSubGICEFieldDeg = ("TSSubGICEFieldDeg", float, FieldPriority.OPTIONAL)
+	"""GIC Efield Directions (degrees)"""
+	TSSubGICEFieldMag = ("TSSubGICEFieldMag", float, FieldPriority.OPTIONAL)
+	"""GIC Efield Magnitude"""
+	TSSubGICIAmp = ("TSSubGICIAmp", float, FieldPriority.OPTIONAL)
+	"""Total GIC (amps)"""
+	TSSubGICQ = ("TSSubGICQ", float, FieldPriority.OPTIONAL)
+	"""Total GIC Mvar Losses"""
+	TSSubLoadP = ("TSSubLoadP", float, FieldPriority.OPTIONAL)
+	"""Load MW Sum Substation"""
+	TSSubLoadQ = ("TSSubLoadQ", float, FieldPriority.OPTIONAL)
+	"""Load Mvar Sum Substation"""
+	TSSubMaxPUVolt = ("TSSubMaxPUVolt", float, FieldPriority.OPTIONAL)
+	"""Maximum Voltage (pu)"""
+	TSSubMinPUOfHighestNomkV = ("TSSubMinPUOfHighestNomkV", float, FieldPriority.OPTIONAL)
+	"""Lowest Voltage (pu) of Highest Nominal Voltage Buses"""
+	TSSubMinPUVolt = ("TSSubMinPUVolt", float, FieldPriority.OPTIONAL)
+	"""Minimum Voltage (pu)"""
+	TSSubROCOFHz = ("TSSubROCOFHz", float, FieldPriority.OPTIONAL)
+	"""DSC::TSTimePointResult_TSSubROCOFHz"""
+	UTMEasting = ("UTMEasting", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""UTM Easting Coordinates"""
+	UTMLongitudeZone = ("UTMLongitudeZone", int, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""UTM Longitude Zone"""
+	UTMMGRS = ("UTMMGRS", str, FieldPriority.OPTIONAL)
+	"""Geographic UTM/MGRS"""
+	UTMNorthing = ("UTMNorthing", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""UTM Northing Coordinates"""
+	UTMNorthSouth = ("UTMNorthSouth", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""UTM North-South Hemisphere"""
+	WeatherMeas = ("WeatherMeas", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station assigned by user input"""
+	WeatherStationDistance = ("WeatherStationDistance", float, FieldPriority.OPTIONAL)
+	"""Distance to the closest weather station in miles"""
+	WeatherStationDistance__1 = ("WeatherStationDistance:1", float, FieldPriority.OPTIONAL)
+	"""Distance to the closest weather station in km"""
+	WeatherStationName = ("WeatherStationName", str, FieldPriority.OPTIONAL)
+	"""Name of the closest weather station"""
+	WeatherValue = ("WeatherValue", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station TempF : Temperature in Fahrenheit"""
+	WeatherValue__1 = ("WeatherValue:1", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station TempC : Temperature in Celsius"""
+	WeatherValue__2 = ("WeatherValue:2", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station DewPointF : Dew Point in Fahrenheit"""
+	WeatherValue__3 = ("WeatherValue:3", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station DewPointC : Dew Point in Celsius"""
+	WeatherValue__4 = ("WeatherValue:4", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station CloudCoverPerc : Cloud cover percentage (0 is clear, 100 totally overcast)"""
+	WeatherValue__5 = ("WeatherValue:5", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeedmph : Wind speed in miles per hour"""
+	WeatherValue__6 = ("WeatherValue:6", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindDirection : Wind direction in degrees (0=North, 90=East, etc)"""
+	WeatherValue__7 = ("WeatherValue:7", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeedKnots : Wind speed in knots"""
+	WeatherValue__8 = ("WeatherValue:8", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeedMsec : Wind speed in meters per second"""
+	WeatherValue__9 = ("WeatherValue:9", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeedkmph : Wind speed in km per hour"""
+	WeatherValue__10 = ("WeatherValue:10", float, FieldPriority.OPTIONAL)
+	"""Weather Station InsolationPerc : Insolation percent (100 for sun directly overhead)"""
+	WeatherValue__11 = ("WeatherValue:11", float, FieldPriority.OPTIONAL)
+	"""Weather Station Humidity : Relative humdity"""
+	WeatherValue__12 = ("WeatherValue:12", float, FieldPriority.OPTIONAL)
+	"""Weather Station HeatIndexF : Heat index in Fahrenheit"""
+	WeatherValue__13 = ("WeatherValue:13", float, FieldPriority.OPTIONAL)
+	"""Weather Station HeatIndexC : Heat index in Celsius"""
+	WeatherValue__14 = ("WeatherValue:14", float, FieldPriority.OPTIONAL)
+	"""Weather Station WindChillF : Wind chill in Fahrenheit"""
+	WeatherValue__15 = ("WeatherValue:15", float, FieldPriority.OPTIONAL)
+	"""Weather Station WindChillC : Wind chill in Celsius"""
+	WeatherValue__16 = ("WeatherValue:16", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeed100mph : Wind Speed at 100 m in miles per hour"""
+	WeatherValue__17 = ("WeatherValue:17", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeed100ms : Wind Speed at 100 m in meters per second"""
+	WeatherValue__18 = ("WeatherValue:18", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeed100knots : Wind Speed at 100 m in knots"""
+	WeatherValue__19 = ("WeatherValue:19", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindSpeed100kmph : Wind Speed at 100 m in km per hour"""
+	WeatherValue__20 = ("WeatherValue:20", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station GlobalHorzIrradWM2 : Global Horizontal Irradiance in watts per square meter"""
+	WeatherValue__21 = ("WeatherValue:21", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station DirectHorzIrradWM2 : Direct Horizontal Irradiance in watts per square meter"""
+	WeatherValue__22 = ("WeatherValue:22", float, FieldPriority.OPTIONAL)
+	"""Weather Station DirectNormIrradWM2 : Direct Normal Irradiance in watts per square meter"""
+	WeatherValue__23 = ("WeatherValue:23", float, FieldPriority.OPTIONAL)
+	"""Weather Station DiffuseHorzIrradWM2 : Diffuse Horizontal Irradiance in watts per square meter"""
+	WeatherValue__24 = ("WeatherValue:24", float, FieldPriority.OPTIONAL)
+	"""Weather Station WindTerrFrictCoeff : Wind terrain friction coefficient"""
+	WeatherValue__25 = ("WeatherValue:25", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindGustmph : Wind Gust (mph)"""
+	WeatherValue__26 = ("WeatherValue:26", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindGustms : Wind Gust (m/sec)"""
+	WeatherValue__27 = ("WeatherValue:27", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station WindGustKnots : Wind Gust (knots)"""
+	WeatherValue__28 = ("WeatherValue:28", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station SmokeVertIntMgM2 : Smoke verically integrated (mg/m^2)"""
+	WeatherValue__29 = ("WeatherValue:29", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station PrecipRateMMHr : Precipitation Rate (mm/hr)"""
+	WeatherValue__30 = ("WeatherValue:30", float, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
+	"""Weather Station PrecipPercFrozen : Precipitation Percent Frozen"""
+	WeatherValueString = ("WeatherValueString", str, FieldPriority.OPTIONAL)
+	"""Weather Station Enabled : When NO, all values on this record will be ignored and appear as blank."""
+	WeatherValueString__2 = ("WeatherValueString:2", str, FieldPriority.OPTIONAL)
+	"""Weather Station ObservationTime : Observation time (UTC) in ISO8601 format. A blank entry indicates the time is not valid."""
+	ZoneName = ("ZoneName", str, FieldPriority.OPTIONAL)
+	"""Zone Name"""
+	ZoneNum = ("ZoneNum", int, FieldPriority.OPTIONAL)
+	"""Zone Number"""
+	ZoneNumberOf = ("ZoneNumberOf", int, FieldPriority.OPTIONAL)
+	"""Number of zones with buses that overlap the group"""
 
 	ObjectString = 'Substation'
 

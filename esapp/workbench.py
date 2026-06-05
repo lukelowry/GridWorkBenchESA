@@ -8,10 +8,12 @@ from pandas import DataFrame, concat
 
 from .utils.gic import GIC
 from .utils.network import Network
+from .utils.buscat import BusCat
 from .utils.dynamics import get_ts_results, process_ts_results
 from .indexable import Indexable
 from .components import Bus, Branch, Gen, Load, Shunt, Area, Zone, Sim_Solution_Options
 from .saw._helpers import create_object_string
+from .saw._enums import JacobianForm, SolverMethod, LinearMethod, PowerWorldMode, BranchDeviceType
 from ._descriptors import SolverOption
 
 import tempfile
@@ -33,6 +35,7 @@ class PowerWorld(Indexable):
         # Embedded application modules (back-reference to self)
         self.network = Network(self)
         self.gic     = GIC(self)
+        self.buscat  = BusCat(self)
 
         if fname:
             self.fname = fname
@@ -213,7 +216,7 @@ class PowerWorld(Indexable):
         """
         return self.esa.get_ybus(dense)
 
-    def jacobian(self, dense: bool = False, form: str = 'R', ids: bool = False):
+    def jacobian(self, dense: bool = False, form: Union[JacobianForm, str] = JacobianForm.RECTANGULAR, ids: bool = False):
         """
         Get the power flow Jacobian matrix.
 
@@ -271,7 +274,7 @@ class PowerWorld(Indexable):
         """
         return self.network.buscoords(astuple)
 
-    def pflow(self, getvolts: bool = True, method: str = "POLARNEWT") -> Optional[Union[pd.Series, Tuple[pd.Series, pd.Series]]]:
+    def pflow(self, getvolts: bool = True, method: Union[SolverMethod, str] = SolverMethod.POLARNEWT) -> Optional[Union[pd.Series, Tuple[pd.Series, pd.Series]]]:
         """
         Solve Power Flow.
 
@@ -423,11 +426,11 @@ class PowerWorld(Indexable):
 
     def edit_mode(self) -> None:
         """Enter PowerWorld into EDIT mode."""
-        self.esa.EnterMode("EDIT")
+        self.esa.EnterMode(PowerWorldMode.EDIT)
 
     def run_mode(self) -> None:
         """Enter PowerWorld into RUN mode."""
-        self.esa.EnterMode("RUN")
+        self.esa.EnterMode(PowerWorldMode.RUN)
 
     # --- Data Retrieval ---
 
@@ -474,7 +477,7 @@ class PowerWorld(Indexable):
             All branch fields for branches with ``BranchDeviceType == "Line"``.
         """
         branches = self[Branch, :]
-        return branches[branches["BranchDeviceType"] == "Line"]
+        return branches[branches["BranchDeviceType"] == BranchDeviceType.LINE]
 
     def transformers(self) -> DataFrame:
         """
@@ -486,7 +489,7 @@ class PowerWorld(Indexable):
             All branch fields for branches with ``BranchDeviceType == "Transformer"``.
         """
         branches = self[Branch, :]
-        return branches[branches["BranchDeviceType"] == "Transformer"]
+        return branches[branches["BranchDeviceType"] == BranchDeviceType.TRANSFORMER]
 
     def areas(self) -> DataFrame:
         """
@@ -557,7 +560,7 @@ class PowerWorld(Indexable):
         df = self.flows()
         return df[df["LinePercent"] > threshold]
 
-    def ptdf(self, seller: int, buyer: int, method: str = "DC") -> DataFrame:
+    def ptdf(self, seller: int, buyer: int, method: Union[LinearMethod, str] = LinearMethod.DC) -> DataFrame:
         """Calculate Power Transfer Distribution Factors.
 
         Parameters
@@ -579,7 +582,7 @@ class PowerWorld(Indexable):
         self.esa.CalculatePTDF(seller_str, buyer_str, method)
         return self[Branch, ["LinePTDF"]]
 
-    def lodf(self, branch: tuple, method: str = "DC") -> DataFrame:
+    def lodf(self, branch: tuple, method: Union[LinearMethod, str] = LinearMethod.DC) -> DataFrame:
         """Calculate Line Outage Distribution Factors.
 
         Parameters

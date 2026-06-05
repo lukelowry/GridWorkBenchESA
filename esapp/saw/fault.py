@@ -1,7 +1,9 @@
 """Fault analysis specific functions."""
 
 
-from esapp.saw._enums import YesNo
+from typing import Union
+
+from esapp.saw._enums import YesNo, FaultType
 
 
 class FaultMixin:
@@ -10,7 +12,7 @@ class FaultMixin:
     def RunFault(
         self,
         element: str,
-        fault_type: str,
+        fault_type: Union[FaultType, str],
         r: float = 0.0,
         x: float = 0.0,
         location: float = None,

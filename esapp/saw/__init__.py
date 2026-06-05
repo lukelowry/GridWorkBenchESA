@@ -69,9 +69,15 @@ from ._enums import (
     RatingSet,
     FieldListColumn,
     SpecificFieldListColumn,
+    PowerWorldMode,
+    FaultType,
+    GICCalcMode,
     format_filter,
     format_filter_selected_only,
     format_filter_areazone,
+    BusType,
+    BusCtrl,
+    Role,
 )
 
 
@@ -129,7 +135,13 @@ __all__ = [
     "RatingSet",
     "FieldListColumn",
     "SpecificFieldListColumn",
+    "PowerWorldMode",
+    "FaultType",
+    "GICCalcMode",
     "format_filter",
     "format_filter_selected_only",
     "format_filter_areazone",
+    "BusType",
+    "BusCtrl",
+    "Role",
 ]

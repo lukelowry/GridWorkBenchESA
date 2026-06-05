@@ -1,3 +1,20 @@
+[0.1.4] - 2026-06-05
+--------------------
+
+**Added**
+- `BusCat` module (`esapp.utils.buscat`) for bus type classification and Jacobian structure analysis
+- `BusType`, `BusCtrl`, `Role` enums for type-safe bus classification
+- API documentation for BusCat, embedded modules, and new enums
+
+**Changed**
+- Moved plotting and geospatial dependencies out of core install requirements and into optional extras
+
+**Fixed**
+- Fixed PWRaw component generation so wrapped field rows no longer truncate generated objects
+- Restored complete generated `Substation` metadata, including key, location, and GIC fields
+- Added generated metadata for hidden `Dbd:3` fields on `PlantController_REPCA1` and `PlantController_REPCTA1`
+- Fixed `BusCat` control flag formatting so `NONE` is not combined with active control flags
+
 [0.1.3] - 2026-02-03
 --------------------
 
@@ -9,28 +26,24 @@
 --------------------
 
 **Changed**
-- SimAuto Wrapper implementations'
-- GridWorkbench is now PowerWorld
-- Misc Performance Improvements
+- Completed SimAuto Wrapper mixin implementations for full API coverage
+- Renamed GridWorkbench to PowerWorld
+- Miscellaneous performance improvements
 
 **Added**
-- TS Field Helpers
-- GICOption and SolveOption Helpers
+- Transient stability field helpers (TS class with IDE intellisense)
+- GICOption and SolverOption descriptor classes
 
 **Removed**
-- Old specific application code 
-
+- Legacy application-specific code
 
 [0.1.1] - 2026-01-25
 --------------------
 
 **Changed**
-
-- Improved the component dev tool
-- More helper functions
-- Coverage
-- Misc. Still in Beta
+- Improved component generation tool
+- Added helper functions for data conversion
+- Expanded test coverage
 
 **Added**
-
 - SubData helper functions

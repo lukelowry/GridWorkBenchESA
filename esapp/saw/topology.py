@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
+from typing import Union
 import pandas as pd
 
-from ._enums import YesNo, format_filter
+from ._enums import (
+    YesNo, format_filter,
+    BranchDistanceMeasure as _BranchDistanceMeasure,
+    BranchFilterMode, FileFormat,
+)
 from ._helpers import format_list, get_temp_filepath
 
 
@@ -11,8 +16,8 @@ class TopologyMixin:
     def DeterminePathDistance(
         self,
         start: str,
-        BranchDistMeas: str = "X",
-        BranchFilter: str = "ALL",
+        BranchDistMeas: Union[_BranchDistanceMeasure, str] = _BranchDistanceMeasure.REACTANCE,
+        BranchFilter: Union[BranchFilterMode, str] = BranchFilterMode.ALL,
         BusField="CustomFloat:1",
     ) -> pd.DataFrame:
         """
@@ -50,7 +55,7 @@ class TopologyMixin:
         self._run_script("DeterminePathDistance", start, BranchDistMeas, BranchFilter, BusField)
 
     def DetermineBranchesThatCreateIslands(
-        self, Filter: str = "ALL", StoreBuses: bool = True, SetSelectedOnLines: bool = False
+        self, Filter: Union[BranchFilterMode, str] = BranchFilterMode.ALL, StoreBuses: bool = True, SetSelectedOnLines: bool = False
     ) -> pd.DataFrame:
         """
         Determine which branches, if opened, would create electrical islands.
@@ -90,14 +95,14 @@ class TopologyMixin:
         sb = YesNo.from_bool(StoreBuses)
         ssl = YesNo.from_bool(SetSelectedOnLines)
         try:
-            self._run_script("DetermineBranchesThatCreateIslands", Filter, sb, f'"{filename}"', ssl, "CSV")
+            self._run_script("DetermineBranchesThatCreateIslands", Filter, sb, f'"{filename}"', ssl, FileFormat.CSV)
             return pd.read_csv(filename, header=0)
         finally:
             if os.path.exists(filename):
                 os.unlink(filename)
 
     def DetermineShortestPath(
-        self, start: str, end: str, BranchDistanceMeasure: str = "X", BranchFilter: str = "ALL"
+        self, start: str, end: str, BranchDistanceMeasure: Union[_BranchDistanceMeasure, str] = _BranchDistanceMeasure.REACTANCE, BranchFilter: Union[BranchFilterMode, str] = BranchFilterMode.ALL
     ) -> pd.DataFrame:
         """
         Calculate the shortest path between two network locations.
@@ -379,7 +384,7 @@ class TopologyMixin:
         """
         return self._run_script("ExpandBusTopology", bus_identifier, topology_type)
 
-    def SaveConsolidatedCase(self, filename: str, filetype: str = "PWB", bus_format: str = "Number", truncate_ctg_labels: bool = False, add_comments: bool = False):
+    def SaveConsolidatedCase(self, filename: str, filetype: Union[FileFormat, str] = FileFormat.PWB, bus_format: str = "Number", truncate_ctg_labels: bool = False, add_comments: bool = False):
         """
         Save the full topology model as a consolidated case file.
 
