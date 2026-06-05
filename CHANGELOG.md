@@ -1,10 +1,19 @@
-[0.1.4] - Unreleased
+[0.1.4] - 2026-06-05
 --------------------
 
 **Added**
 - `BusCat` module (`esapp.utils.buscat`) for bus type classification and Jacobian structure analysis
 - `BusType`, `BusCtrl`, `Role` enums for type-safe bus classification
 - API documentation for BusCat, embedded modules, and new enums
+
+**Changed**
+- Moved plotting and geospatial dependencies out of core install requirements and into optional extras
+
+**Fixed**
+- Fixed PWRaw component generation so wrapped field rows no longer truncate generated objects
+- Restored complete generated `Substation` metadata, including key, location, and GIC fields
+- Added generated metadata for hidden `Dbd:3` fields on `PlantController_REPCA1` and `PlantController_REPCTA1`
+- Fixed `BusCat` control flag formatting so `NONE` is not combined with active control flags
 
 [0.1.3] - 2026-02-03
 --------------------
