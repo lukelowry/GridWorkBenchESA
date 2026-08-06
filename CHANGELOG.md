@@ -1,3 +1,11 @@
+[0.1.5] - 2026-08-05
+--------------------
+
+**Changed**
+- Corrected the supported Python range to 3.9 through 3.14
+- Removed the NumPy 1.x restriction to support NumPy 2
+- Made CI install ESApp and run the offline test suite across every supported Python version
+
 [0.1.4] - 2026-06-05
 --------------------
 
