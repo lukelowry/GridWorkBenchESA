@@ -124,13 +124,9 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css", "custom_tables.css"]
 
 autodoc_mock_imports = [
-    "win32com", 
-    "win32com.client", 
+    "win32com",
+    "win32com.client",
     "pythoncom",
-    "geopandas",
-    "shapely",
-    "fiona",
-    "pyproj",
 ]
 
 latex_documents = [

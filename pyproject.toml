@@ -60,14 +60,10 @@ dependencies = [
 test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-    "pytest-timeout>=2.1",
-    "pytest-mock>=3.10",
     "pytest-order>=1.2"
 ]
 dev = [
     "matplotlib",
-    "geopandas",
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-order>=1.2"
@@ -76,10 +72,7 @@ docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "sphinx-copybutton",
-    "nbsphinx",
-    "ipykernel",
-    "matplotlib",
-    "geopandas"
+    "nbsphinx"
 ]
 
 [project.urls]
