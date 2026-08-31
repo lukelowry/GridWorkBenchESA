@@ -32,6 +32,7 @@ __all__ = [
     # Matrix transformations
     'normlap',
     'hermitify',
+    'sorteig',
     # Mesh utilities
     'Mesh',
     'extract_unique_edges',
@@ -826,4 +827,28 @@ def hermitify(A: NDArray | sp.spmatrix) -> NDArray:
     """
     dense = A if isinstance(A, np.ndarray) else A.toarray()
     return (np.triu(dense).conjugate() + np.tril(dense)) / 2
+
+
+def sorteig(vals: NDArray, vecs: NDArray) -> tuple[NDArray, NDArray]:
+    """
+    Sort an eigendecomposition by ascending eigenvalue.
+
+    Eigensolvers such as :func:`scipy.sparse.linalg.eigsh` do not
+    guarantee ordering; this reorders both the eigenvalues and the
+    corresponding eigenvector columns.
+
+    Parameters
+    ----------
+    vals : np.ndarray
+        Eigenvalues, shape ``(k,)``.
+    vecs : np.ndarray
+        Eigenvectors as columns, shape ``(n, k)``.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        ``(vals, vecs)`` sorted by ascending eigenvalue.
+    """
+    order = np.argsort(vals)
+    return vals[order], vecs[:, order]
 

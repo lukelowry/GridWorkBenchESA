@@ -19,11 +19,13 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 
-# Import plotting utilities from examples.map
+# Import plotting utilities from the sibling map module. Notebooks add
+# the examples/ directory to sys.path, so the sibling import is primary;
+# the package-style import covers running from the repository root.
 try:
-    from examples.map import format_plot, border, plot_lines, plot_vecfield, darker_hsv_colormap
+    from map import format_plot, border, plot_lines, plot_vecfield, darker_hsv_colormap
 except ImportError:
-    pass
+    from examples.map import format_plot, border, plot_lines, plot_vecfield, darker_hsv_colormap
 
 # ---------------------------------------------------------------------------
 # Standard figure dimensions (inches) for 6.5" LaTeX text width

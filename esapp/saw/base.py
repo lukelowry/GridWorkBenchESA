@@ -357,7 +357,10 @@ class SAWBase(object):
         PowerWorldError
             If SimAuto returns an error message (e.g., invalid parameters, operation failed).
         """
-        self.log.debug("COM call: %s(%s)", func, ", ".join(repr(a) for a in args))
+        # repr() of variant payloads is expensive (renders the full data),
+        # so skip building the message entirely unless DEBUG is enabled.
+        if self.log.isEnabledFor(logging.DEBUG):
+            self.log.debug("COM call: %s(%s)", func, ", ".join(repr(a) for a in args))
         try:
             f = getattr(self._pwcom, func)
         except AttributeError:

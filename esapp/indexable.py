@@ -1,6 +1,5 @@
 from .saw import SAW, PowerWorldPrerequisiteError
 from .components import GObject
-from .utils import timing
 from typing import Type, Optional
 from pandas import DataFrame
 from os import path
@@ -22,7 +21,6 @@ class Indexable:
     esa: SAW
     fname: str
 
-    @timing
     def open(self):
         """
         Open the PowerWorld case and initialize transient stability.

@@ -148,7 +148,7 @@ def border(ax: Axes, shape: str = 'Texas') -> None:
     ax : matplotlib.axes.Axes
         The axes to plot on.
     shape : str, default 'Texas'
-        Name of the shape directory under ``esapp/utils/shapes/``.
+        Name of the shape directory under ``examples/shapes/``.
     """
     shapepath = _SHAPES_DIR / shape / 'Shape.shp'
     shapeobj = gpd.read_file(shapepath)

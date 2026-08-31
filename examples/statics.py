@@ -9,7 +9,7 @@ injection, generator limit checking, and random load variation.
 Example
 -------
     >>> from esapp import PowerWorld
-    >>> from examples.statics import Statics
+    >>> from statics import Statics  # with examples/ on sys.path
     >>> pw = PowerWorld("case.pwb")
     >>> s = Statics(pw)
     >>> interface = np.array([1, -1, 0, ...])
