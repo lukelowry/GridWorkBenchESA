@@ -588,5 +588,3 @@ def plot_comparative_dynamics(ctg_names, all_results, figsize=None):
         axes_flat[j].set_visible(False)
     plt.tight_layout()
     plt.show()
-
-
