@@ -534,19 +534,10 @@ class BusType(_StrEnum):
 
     The three fundamental bus types that determine which equations
     a bus contributes to the power flow Jacobian.
-
-    Attributes
-    ----------
-    SLACK : str
-        Reference bus — fixes voltage magnitude and angle.
-    PV : str
-        Generator bus — specifies P injection and V magnitude.
-    PQ : str
-        Load bus — specifies P and Q injection.
     """
-    SLACK = "Slack"
-    PV = "PV"
-    PQ = "PQ"
+    SLACK = "Slack"  #: Reference bus — fixes voltage magnitude and angle.
+    PV = "PV"        #: Generator bus — specifies P injection and V magnitude.
+    PQ = "PQ"        #: Load bus — specifies P and Q injection.
 
 
 class BusCtrl(IntFlag):
@@ -555,25 +546,12 @@ class BusCtrl(IntFlag):
     Bitwise-combinable flags describing how a bus participates in
     voltage regulation. A remotely regulated bus with droop control
     would have ``BusCtrl.REMOTE | BusCtrl.DROOP``.
-
-    Attributes
-    ----------
-    NONE : int
-        No special control.
-    REMOTE : int
-        Remote voltage regulation (controls voltage at another bus).
-    DROOP : int
-        Voltage droop control with deadband.
-    LDC : int
-        Line drop compensation.
-    TOL : int
-        Voltage setpoint tolerance band (PVTol mode).
     """
-    NONE   = 0
-    REMOTE = auto()
-    DROOP  = auto()
-    LDC    = auto()
-    TOL    = auto()
+    NONE   = 0       #: No special control.
+    REMOTE = auto()  #: Remote voltage regulation (controls voltage at another bus).
+    DROOP  = auto()  #: Voltage droop control with deadband.
+    LDC    = auto()  #: Line drop compensation.
+    TOL    = auto()  #: Voltage setpoint tolerance band (PVTol mode).
 
 
 class Role(_StrEnum):
@@ -581,19 +559,8 @@ class Role(_StrEnum):
 
     When multiple generators coordinate to regulate voltage at a
     remote bus, each participating bus takes on a distinct role.
-
-    Attributes
-    ----------
-    NONE : str
-        Not part of a regulation group (local control only).
-    PRIMARY : str
-        Enforces the voltage equation at the regulated bus.
-    SECONDARY : str
-        Shares reactive power proportionally with the primary.
-    TARGET : str
-        The bus whose voltage is being regulated remotely.
     """
-    NONE      = "None"
-    PRIMARY   = "Primary"
-    SECONDARY = "Secondary"
-    TARGET    = "Target"
+    NONE      = "None"       #: Not part of a regulation group (local control only).
+    PRIMARY   = "Primary"    #: Enforces the voltage equation at the regulated bus.
+    SECONDARY = "Secondary"  #: Shares reactive power proportionally with the primary.
+    TARGET    = "Target"     #: The bus whose voltage is being regulated remotely.

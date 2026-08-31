@@ -142,18 +142,21 @@ def test_setitem_broadcast(indexable_instance: Indexable, g_object: Type[grid.GO
     unique_keys = sorted(list(set(g_object.keys())))
 
     if not unique_keys:
+        # Keyless objects build the change DataFrame directly.
         indexable_instance[g_object, field] = 1.234
         expected_df = pd.DataFrame({field: [1.234]})
+        mock_esa.ChangeParametersMultipleElementRect.assert_called_once()
+        sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0][2]
+        assert_frame_equal(sent_df, expected_df)
     else:
-        mock_key_df = pd.DataFrame({k: [101, 102] for k in unique_keys})
-        mock_esa.GetParamsRectTyped.return_value = mock_key_df
+        # Keyed objects take the SetData fast path for numeric scalars:
+        # no key read, no Rect write.
         indexable_instance[g_object, field] = 1.234
-        expected_df = mock_key_df.copy()
-        expected_df[field] = 1.234
-
-    mock_esa.ChangeParametersMultipleElementRect.assert_called_once()
-    sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0][2]
-    assert_frame_equal(sent_df, expected_df)
+        mock_esa.RunScriptCommand.assert_called_once_with(
+            f"SetData({g_object.TYPE()}, [{field}], [1.234], ALL);"
+        )
+        mock_esa.GetParamsRectTyped.assert_not_called()
+        mock_esa.ChangeParametersMultipleElementRect.assert_not_called()
 
 
 def test_setitem_bulk_update_from_df(indexable_instance: Indexable, g_object: Type[grid.GObject]):
@@ -190,14 +193,42 @@ def test_setitem_broadcast_multiple_fields(indexable_instance: Indexable, g_obje
         assert sent_df.iloc[0][fields[0]] == values[0]
         return
 
-    mock_key_df = pd.DataFrame({k: [101, 102] for k in unique_keys})
-    mock_esa.GetParamsRectTyped.return_value = mock_key_df
+    # One numeric value per field takes the SetData fast path.
     indexable_instance[g_object, fields] = values
+    mock_esa.RunScriptCommand.assert_called_once_with(
+        f"SetData({g_object.TYPE()}, [{fields[0]}, {fields[1]}], [1.1, 2.2], ALL);"
+    )
+    mock_esa.ChangeParametersMultipleElementRect.assert_not_called()
 
-    expected_df = mock_key_df.copy()
-    expected_df[fields] = values
+
+def test_setitem_broadcast_array_uses_rect_path(indexable_instance: Indexable):
+    """Per-object array broadcasts read keys and use the Rect write path."""
+    mock_esa = indexable_instance.esa
+    keys = sorted(set(grid.Bus.keys()))
+    field = [f for f in grid.Bus.editable() if f not in grid.Bus.keys()][0]
+    mock_key_df = pd.DataFrame({k: [1, 2, 3] for k in keys})
+    mock_esa.GetParamsRectTyped.return_value = mock_key_df
+
+    indexable_instance[grid.Bus, field] = [1.0, 2.0, 3.0]
+
+    mock_esa.RunScriptCommand.assert_not_called()
+    mock_esa.ChangeParametersMultipleElementRect.assert_called_once()
     sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0][2]
-    assert_frame_equal(sent_df, expected_df)
+    assert list(sent_df[field]) == [1.0, 2.0, 3.0]
+
+
+def test_setitem_broadcast_string_uses_rect_path(indexable_instance: Indexable):
+    """Non-numeric scalar broadcasts read keys and use the Rect write path."""
+    mock_esa = indexable_instance.esa
+    keys = sorted(set(grid.Bus.keys()))
+    field = [f for f in grid.Bus.editable() if f not in grid.Bus.keys()][0]
+    mock_key_df = pd.DataFrame({k: [1, 2] for k in keys})
+    mock_esa.GetParamsRectTyped.return_value = mock_key_df
+
+    indexable_instance[grid.Bus, field] = "Connected"
+
+    mock_esa.RunScriptCommand.assert_not_called()
+    mock_esa.ChangeParametersMultipleElementRect.assert_called_once()
 
 
 # =============================================================================

@@ -44,19 +44,10 @@ __all__ = ['Network', 'BranchType']
 class BranchType(Enum):
     """
     Branch weighting schemes for Laplacian construction.
-
-    Attributes
-    ----------
-    LENGTH : int
-        Weight by inverse squared physical length (km^-2).
-    RES_DIST : int
-        Weight by inverse impedance magnitude (resistance distance).
-    DELAY : int
-        Weight by inverse squared propagation delay (s^-2).
     """
-    LENGTH = 1
-    RES_DIST = 2
-    DELAY = 3
+    LENGTH = 1    #: Weight by inverse squared physical length (km^-2).
+    RES_DIST = 2  #: Weight by inverse impedance magnitude (resistance distance).
+    DELAY = 3     #: Weight by inverse squared propagation delay (s^-2).
 
 
 class Network:

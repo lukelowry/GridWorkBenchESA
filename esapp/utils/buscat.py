@@ -134,11 +134,6 @@ class BusCat:
     ``LimHigh``, ``Type``, ``Ctrl``, ``Role``, ``Lim``, ``SVC``,
     ``Eff``, ``Reg``.
 
-    Attributes
-    ----------
-    df : DataFrame
-        Parsed classification data. Raises ``RuntimeError`` if
-        accessed before :meth:`refresh` is called.
     """
 
     _COL_MAP = {
