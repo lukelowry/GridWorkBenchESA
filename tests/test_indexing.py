@@ -350,16 +350,6 @@ def test_open_absolute_path():
         mock_saw_class.assert_called_once_with('/absolute/path/case.pwb', CreateIfNotFound=True, early_bind=True)
 
 
-def test_fexcept_helper():
-    """fexcept converts 'Three' prefix back to '3'."""
-    from esapp.indexable import fexcept
-
-    assert fexcept("ThreeWindingTransformer") == "3WindingTransformer"
-    assert fexcept("ThreePhase") == "3Phase"
-    assert fexcept("NormalName") == "NormalName"
-    assert fexcept("Bus") == "Bus"
-    assert fexcept("") == ""
-
 
 def test_getitem_with_gobject_enum_field(indexable_instance: Indexable):
     """idx[GObject, GObject.Field] retrieves field using enum member."""

@@ -267,28 +267,6 @@ class ATCMixin:
         app = YesNo.from_bool(append)
         return self._run_script("ATCDataWriteOptionsAndResults", f'"{filename}"', app, key_field)
 
-    def ATCWriteAllOptions(self, filename: str, append: bool = True, key_field: Union[KeyFieldType, str] = KeyFieldType.PRIMARY):
-        """Writes out all information related to ATC analysis (deprecated name).
-
-        .. deprecated::
-            Use `ATCDataWriteOptionsAndResults` instead. This method was renamed
-            in the December 9, 2021 patch of Simulator 22.
-
-        Parameters
-        ----------
-        filename : str
-            Name of the auxiliary file to save.
-        append : bool, optional
-            If True, appends results to existing file. Defaults to True.
-        key_field : str, optional
-            Identifier to use for the data. Defaults to "PRIMARY".
-
-        Returns
-        -------
-        None
-        """
-        return self.ATCDataWriteOptionsAndResults(filename, append, key_field)
-
     def ATCWriteResultsAndOptions(self, filename: str, append: bool = True):
         """Writes out all information related to ATC analysis to an auxiliary file.
 

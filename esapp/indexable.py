@@ -5,10 +5,6 @@ from pandas import DataFrame
 from os import path
 
 
-# Helper Function to parse Python Syntax/Field Syntax outliers
-# Example: fexcept('ThreeWindingTransformer') -> '3WindingTransformer
-fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
-
 # Power World Read/Write
 class Indexable:
     """

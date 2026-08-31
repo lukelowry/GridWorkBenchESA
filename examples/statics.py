@@ -329,14 +329,6 @@ class Statics:
         if self.stateidx >= self.maxstates:
             self.pw.esa.DeleteState(f'GWBState{self.stateidx - self.maxstates}')
 
-    def istore(self, n: int = 0, verbose: bool = False) -> None:
-        """Update the nth state in the chain with current state."""
-        if n > self.maxstates or n > self.stateidx:
-            raise Exception("State index out of range")
-        if verbose:
-            print(f'Store -> {self.stateidx - n}')
-        self.pw.esa.StoreState(f'GWBState{self.stateidx - n}')
-
     def irestore(self, n: int = 1, verbose: bool = False) -> None:
         """Restore the nth previous state from the chain."""
         if n > self.maxstates or n > self.stateidx:

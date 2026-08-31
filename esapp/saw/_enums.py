@@ -350,16 +350,6 @@ class FieldListColumn(_StrEnum):
         ]
 
     @classmethod
-    def old_columns(cls) -> list:
-        """Returns the legacy 4-column format (older Simulator versions)."""
-        return [
-            cls.KEY_FIELD.value,
-            cls.INTERNAL_FIELD_NAME.value,
-            cls.FIELD_DATA_TYPE.value,
-            cls.DESCRIPTION.value,
-        ]
-
-    @classmethod
     def new_columns(cls) -> list:
         """Returns the extended 6-column format (newer Simulator versions)."""
         return [

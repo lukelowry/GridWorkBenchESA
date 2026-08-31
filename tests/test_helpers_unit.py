@@ -492,21 +492,6 @@ class TestSAWValidation:
                 assert saw._pwcom is None
                 mock_pythoncom.CoUninitialize.assert_called_once()
 
-    def test_set_simauto_property_uivisible_attribute_error(self, saw_obj):
-        """set_simauto_property logs warning for UIVisible on old versions."""
-        saw_obj._pwcom.UIVisible = PropertyMock(side_effect=AttributeError)
-        with patch.object(saw_obj, '_set_simauto_property', side_effect=AttributeError):
-            saw_obj.set_simauto_property("UIVisible", True)
-
-    def test_uivisible_property_attribute_error(self, saw_obj):
-        """UIVisible property returns False on AttributeError."""
-        original = saw_obj._pwcom
-        mock_pwcom = MagicMock(spec=[])  # spec=[] means no attributes allowed
-        saw_obj._pwcom = mock_pwcom
-        result = saw_obj.UIVisible
-        assert result is False
-        saw_obj._pwcom = original
-
     def test_request_build_date(self, saw_obj):
         """RequestBuildDate property accesses COM."""
         saw_obj._pwcom.RequestBuildDate = 20230101
@@ -704,8 +689,8 @@ class TestSAWValidation:
         assert result is not None
         saw_obj.decimal_delimiter = "."
 
-    def test_set_simauto_property_non_uivisible_attribute_error(self, saw_obj):
-        """set_simauto_property re-raises AttributeError for non-UIVisible properties."""
+    def test_set_simauto_property_attribute_error_propagates(self, saw_obj):
+        """set_simauto_property propagates AttributeError from the COM property."""
         with patch.object(saw_obj, '_set_simauto_property', side_effect=AttributeError("oops")):
             with pytest.raises(AttributeError, match="oops"):
                 saw_obj.set_simauto_property("CreateIfNotFound", True)

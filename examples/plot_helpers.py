@@ -31,24 +31,16 @@ def format_plot(ax, title='', xlabel='', ylabel='', grid=True, **_ignored):
     if grid:
         ax.grid(alpha=0.3, linewidth=0.5)
 
-# ---------------------------------------------------------------------------
-# Standard figure dimensions (inches) for 6.5" LaTeX text width
-# ---------------------------------------------------------------------------
 _W1 = 4.5          # single panel width
 _H1 = 3.2          # single panel height
 _W2 = 6.5          # two-panel row width
 _H2 = 2.8          # two-panel row height
-_W3 = 6.5          # three-panel row width
-_H3 = 2.5          # three-panel row height
 _WFULL = 6.5       # full page width
 
 # Font sizes for multi-panel (3+) plots to avoid title crowding
 _FS3 = dict(titlesize=10, labelsize=9, ticksize=8)
 _FS2 = dict(titlesize=11, labelsize=9, ticksize=8)
 
-# ---------------------------------------------------------------------------
-# Professional color palette
-# ---------------------------------------------------------------------------
 _C1 = '#4C72B0'     # primary blue
 _C2 = '#DD8452'     # secondary orange
 _C3 = '#55A868'     # tertiary green
@@ -510,25 +502,6 @@ def plot_histograms(datasets, titles, xlabels, colors=None, bins=25, figsize=Non
 
 
 # ---------------------------------------------------------------------------
-# Direction sensitivity (GIC)
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# GIC matrix / sensitivity
-# ---------------------------------------------------------------------------
-
-
-# Keep backward compatibility alias
-plot_gic_bar_hist = plot_gic_distribution
-
-
-# ---------------------------------------------------------------------------
-# Geographic / E-field
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
 # Dynamics
 # ---------------------------------------------------------------------------
 
@@ -615,15 +588,5 @@ def plot_comparative_dynamics(ctg_names, all_results, figsize=None):
         axes_flat[j].set_visible(False)
     plt.tight_layout()
     plt.show()
-
-
-# ---------------------------------------------------------------------------
-# Discrete calculus / Grid2D utilities
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# Spectral analysis utilities
-# ---------------------------------------------------------------------------
 
 
