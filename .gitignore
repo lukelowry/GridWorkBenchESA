@@ -158,3 +158,6 @@ docs/examples/system_health_report.csv
 
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
+
+# Local case-path config for example notebooks (machine-specific)
+examples/data/*.txt

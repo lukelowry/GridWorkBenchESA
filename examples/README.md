@@ -20,7 +20,6 @@ notebook's own directory as the working directory (the Jupyter default).
 | Module | Description |
 |---|---|
 | `map.py` | Geographic visualization (borders, lines, vector fields) |
-| `mesh.py` | Discrete geometry, Grid2D, PLY mesh I/O, spectral helpers |
 | `plot_helpers.py` | Shared plotting functions for all notebooks |
 
 ## Notebooks
@@ -31,8 +30,11 @@ notebook's own directory as the working directory (the Jupyter default).
 | `steady_state/` | Contingency analysis, SCOPF, ATC, and CPF examples |
 | `gic/` | GIC analysis and sensitivity examples |
 | `network/` | Network topology and matrix extraction examples |
-| `nonuniform/` | Non-uniform electric field GIC analysis |
-| `visualization/` | Discrete calculus, spectral analysis, geographic plotting |
+| `visualization/` | Geographic plotting utilities demo |
 
-Integration notebooks expect a PowerWorld case path in `examples/data/case.txt`
-(see individual notebooks for details).
+## Case Configuration
+
+The notebooks read a machine-local PowerWorld case path from
+`examples/data/case.txt` (and `case_B.txt` where a second case is compared).
+These files are gitignored — copy `examples/data/case.txt.example` and point
+it at a case on your machine.
