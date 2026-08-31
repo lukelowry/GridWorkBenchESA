@@ -356,8 +356,6 @@ Exception classes for handling PowerWorld and COM errors.
      - Raised when a command requires an unlicensed PowerWorld add-on (e.g., TransLineCalc)
    * - ``COMError``
      - Raised when COM communication fails (SimAuto crash, unresponsive, or invalid function call)
-   * - ``CommandNotRespectedError``
-     - Raised when PowerWorld silently ignores a command (e.g., setting a value outside allowed limits)
    * - ``GridObjDNE``
      - Raised when a grid object data query fails (object does not exist in the case)
    * - ``FieldDataException``
@@ -394,8 +392,7 @@ Exception classes for handling PowerWorld and COM errors.
         └── PowerWorldError
             ├── SimAutoFeatureError
             ├── PowerWorldPrerequisiteError
-            ├── PowerWorldAddonError
-            └── CommandNotRespectedError
+            └── PowerWorldAddonError
 
 .. code-block:: python
 

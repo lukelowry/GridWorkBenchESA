@@ -77,11 +77,3 @@ Binary 3D electric field data I/O.
 
 .. automodule:: esapp.utils.b3d
    :members:
-
-General Helpers
----------------
-
-.. currentmodule:: esapp.utils.misc
-
-.. automodule:: esapp.utils.misc
-   :members:

@@ -82,13 +82,6 @@ napoleon_type_aliases = {
 
 exclude_patterns = [
     "_build",
-    "**/*.cpg",
-    "**/*.dbf",
-    "**/*.prj",
-    "**/*.shp",
-    "**/*.shx",
-    "**/Shape.xml",
-    "**/Shape.shp.ea.iso.xml",
     "**/PWRaw",
 ]
 
@@ -131,13 +124,9 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css", "custom_tables.css"]
 
 autodoc_mock_imports = [
-    "win32com", 
-    "win32com.client", 
+    "win32com",
+    "win32com.client",
     "pythoncom",
-    "geopandas",
-    "shapely",
-    "fiona",
-    "pyproj",
 ]
 
 latex_documents = [

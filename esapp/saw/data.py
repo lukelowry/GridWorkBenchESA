@@ -1,5 +1,4 @@
 """Data retrieval and modification functions (SimAuto data access layer)."""
-import re
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -216,27 +215,12 @@ class DataMixin:
             result = self._com_call("GetFieldList", ObjectType)
             result_arr = np.array(result)
 
-            # Try standard 5-column format first, fall back to old/new formats
-            base_cols = FieldListColumn.base_columns()
-            old_cols = FieldListColumn.old_columns()
-            new_cols = FieldListColumn.new_columns()
-
+            # Standard 5-column format, with the extended 6-column format
+            # from newer Simulator versions as the fallback.
             try:
-                output = pd.DataFrame(result_arr, columns=base_cols)
-            except ValueError as e:
-                exp_base = r"\([0-9]+,\s"
-                exp_end = r"{}\)"
-                r1 = re.search(exp_base + exp_end.format(len(old_cols)), e.args[0])
-                r2 = re.search(exp_base + exp_end.format(len(base_cols)), e.args[0])
-                r3 = re.search(exp_base + exp_end.format(len(new_cols)), e.args[0])
-
-                if (r1 is None) or (r2 is None):
-                    if r3 is None:
-                        raise e
-                    else:
-                        output = pd.DataFrame(result_arr, columns=new_cols)
-                else:
-                    output = pd.DataFrame(result_arr, columns=old_cols)
+                output = pd.DataFrame(result_arr, columns=FieldListColumn.base_columns())
+            except ValueError:
+                output = pd.DataFrame(result_arr, columns=FieldListColumn.new_columns())
 
             output.sort_values(by=[FieldListColumn.INTERNAL_FIELD_NAME.value], inplace=True)
             self._object_fields[object_type] = output

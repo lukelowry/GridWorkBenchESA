@@ -38,7 +38,6 @@ class SAWBase(object):
         UIVisible=False,
         CreateIfNotFound: bool = False,
         UseDefinedNamesInVariables: bool = False,
-        pw_order=False,
     ) -> None:
         """Initializes the SimAuto Wrapper (SAW) and establishes a COM connection to PowerWorld Simulator.
 
@@ -55,9 +54,6 @@ class SAWBase(object):
             Sets the SimAuto property to create new objects during `ChangeParameters` calls. Defaults to False.
         UseDefinedNamesInVariables : bool, optional
             If True, configures the case to use defined names instead of internal IDs. Defaults to False.
-        pw_order : bool, optional
-            If True, disables automatic sorting of DataFrames to match PowerWorld's internal memory order.
-            Defaults to False.
 
         Raises
         ------
@@ -88,7 +84,6 @@ class SAWBase(object):
         self.pwb_file_path = None
         self.set_simauto_property("CreateIfNotFound", CreateIfNotFound)
         self.set_simauto_property("UIVisible", UIVisible)
-        self.pw_order = pw_order
 
         # Initialize temporary file for UI updates
         self.empty_aux = get_temp_filepath(".axd")
@@ -141,9 +136,6 @@ class SAWBase(object):
         ValueError
             If the `property_name` is unsupported, the `property_value` has an incorrect type,
             or if `CurrentDir` is set to an invalid path.
-        AttributeError
-            If the property does not exist on the current SimAuto version (e.g., `UIVisible`
-            on older versions of Simulator).
         """
         if property_name not in self.SIMAUTO_PROPERTIES:
             raise ValueError(
@@ -161,16 +153,7 @@ class SAWBase(object):
         if property_name == "CurrentDir" and not os.path.isdir(property_value):
             raise ValueError(f"The given path for CurrentDir, {property_value}, is not a valid path!")
 
-        try:
-            self._set_simauto_property(property_name=property_name, property_value=property_value)
-        except AttributeError as e:
-            if property_name == "UIVisible":
-                self.log.warning(
-                    "UIVisible attribute could not be set. Note this SimAuto property was not introduced "
-                    "until Simulator version 20. Check your version with the get_simulator_version method."
-                )
-            else:
-                raise e from None
+        self._set_simauto_property(property_name=property_name, property_value=property_value)
 
     def _set_simauto_property(self, property_name, property_value):
         """Internal helper to directly set a SimAuto COM property."""
@@ -303,30 +286,15 @@ class SAWBase(object):
 
     @property
     def UIVisible(self) -> bool:
-        try:
-            return self._pwcom.UIVisible
-        except AttributeError:
-            self.log.warning(
-                "UIVisible attribute could not be accessed. Note this SimAuto property was not introduced "
-                "until Simulator version 20. Check your version with the get_simulator_version method."
-            )
-            return False
+        return self._pwcom.UIVisible
 
     @property
-    def ProgramInformation(self) -> Union[tuple, bool]:
+    def ProgramInformation(self) -> tuple:
         """Tuple property: Detailed information about the Simulator version and license."""
-        try:
-            result = self._pwcom.ProgramInformation
-            result = [list(x) for x in result]
-            result[0][2] = datetime.datetime.fromtimestamp(result[0][2].timestamp(), tz=result[0][2].tzinfo)
-            result = tuple(tuple(x) for x in result)
-            return result
-        except AttributeError:  # pragma: no cover
-            self.log.warning(
-                "ProgramInformation attribute could not be accessed. Note this SimAuto property was not "
-                "introduced until Simulator version 21. Check your version with the get_simulator_version method."
-            )
-            return False
+        result = self._pwcom.ProgramInformation
+        result = [list(x) for x in result]
+        result[0][2] = datetime.datetime.fromtimestamp(result[0][2].timestamp(), tz=result[0][2].tzinfo)
+        return tuple(tuple(x) for x in result)
 
     def _com_call(self, func: str, *args):
         """Internal helper to execute SimAuto COM methods and handle error codes.
@@ -357,7 +325,10 @@ class SAWBase(object):
         PowerWorldError
             If SimAuto returns an error message (e.g., invalid parameters, operation failed).
         """
-        self.log.debug("COM call: %s(%s)", func, ", ".join(repr(a) for a in args))
+        # repr() of variant payloads is expensive (renders the full data),
+        # so skip building the message entirely unless DEBUG is enabled.
+        if self.log.isEnabledFor(logging.DEBUG):
+            self.log.debug("COM call: %s(%s)", func, ", ".join(repr(a) for a in args))
         try:
             f = getattr(self._pwcom, func)
         except AttributeError:

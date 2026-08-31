@@ -17,7 +17,6 @@ from .saw import SAW
 from ._exceptions import (
     PowerWorldError,
     COMError,
-    CommandNotRespectedError,
     Error,
     SimAutoFeatureError,
     PowerWorldPrerequisiteError,
@@ -86,7 +85,6 @@ __all__ = [
     "SAW",
     "PowerWorldError",
     "COMError",
-    "CommandNotRespectedError",
     "Error",
     "SimAutoFeatureError",
     "PowerWorldPrerequisiteError",

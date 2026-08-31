@@ -132,22 +132,6 @@ class COMError(Error):
     pass
 
 
-class CommandNotRespectedError(PowerWorldError):
-    """
-    Raised if a command sent into PowerWorld is not respected, but
-    PowerWorld itself does not raise an error. This exception should
-    be used with helpers that double-check commands.
-
-    Nuance:
-    SimAuto may return "success" even if a parameter change was ignored due to
-    internal logic (e.g., setting a generator MW above its PMax when limits are
-    enforced). This error is raised by wrapper methods that verify the state
-    change actually occurred.
-    """
-
-    pass
-
-
 # =============================================================================
 # Application-level exceptions (consolidated from utils/exceptions.py)
 # =============================================================================

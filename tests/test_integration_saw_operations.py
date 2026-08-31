@@ -133,11 +133,6 @@ class TestATC:
         tmp_aux = temp_file(".aux")
         saw_instance.ATCDataWriteOptionsAndResults(tmp_aux, append=False, key_field="PRIMARY")
 
-    @pytest.mark.order(4041)
-    def test_atc_write_all_options_deprecated(self, saw_instance, temp_file):
-        tmp_aux = temp_file(".aux")
-        saw_instance.ATCWriteAllOptions(tmp_aux, append=True, key_field="PRIMARY")
-
     @pytest.mark.order(4042)
     def test_atc_write_results_and_options(self, saw_instance, temp_file):
         tmp_aux = temp_file(".aux")

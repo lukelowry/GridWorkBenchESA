@@ -112,7 +112,7 @@ class PowerWorld(Indexable):
         Returns
         -------
         pd.Series or tuple of pd.Series
-            If ``complex=True``, a complex-valued Series V = |V| * exp(j*theta).
+            If ``complex=True``, a complex-valued Series ``V = |V| * exp(j*theta)``.
             If ``complex=False``, a tuple ``(magnitude, angle_rad)``.
         """
         fields = ["BusPUVolt", "BusAngle"] if pu else ["BusKVVolt", "BusAngle"]

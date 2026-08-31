@@ -26,7 +26,7 @@ Test Coverage
    * - ``test_dynamics.py``
      - Dynamics module: ContingencyBuilder, SimAction enum
    * - ``test_utils.py``
-     - Utility modules: timing decorator, B3D file format
+     - Utility modules: B3D file format
    * - ``test_buscat_unit.py``
      - BusCat string parsing: all known PowerWorld BusCat variants (Slack, PV, PQ with controls/roles/limits)
 
@@ -62,8 +62,14 @@ Test Coverage
 Configuration
 -------------
 
-1. Copy ``tests/config_test.example.py`` to ``tests/config_test.py``
-2. Set ``SAW_TEST_CASE = r"C:\Path\To\Your\Case.pwb"``
+Preferred — environment variables (keeps machine-specific paths out of the repo):
+
+1. Set ``SAW_TEST_CASE`` to your PowerWorld case path
+2. Optionally set ``SAW_GIC_TEST_CASES`` to a ``;``-separated list of case
+   paths for the parametrized GIC tests
+
+Alternative — copy ``tests/config_test.example.py`` to ``tests/config_test.py``
+and set the same names there (the file is gitignored).
 
 Running Tests
 -------------
@@ -78,6 +84,6 @@ Running Tests
 Troubleshooting
 ---------------
 
-- **PowerWorld not found**: Ensure ``tests/config_test.py`` exists with valid case path
+- **PowerWorld not found**: Ensure ``SAW_TEST_CASE`` is set (or ``tests/config_test.py`` exists) with a valid case path
 - **Integration tests slow**: Use ``pytest -m "not integration"`` for unit-only runs
 - **Import errors**: Install in editable mode with ``pip install -e .``

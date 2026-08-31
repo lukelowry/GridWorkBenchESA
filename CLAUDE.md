@@ -8,7 +8,7 @@ ESA++ (`esapp`) is a Python toolkit for power system automation, providing a hig
 
 ## Environment Setup
 
-This project uses a **conda environment** named `esapp` located at `C:\Users\wyatt\.conda\envs\esapp` (Python 3.11). All commands (pytest, pip, flake8, etc.) should be run using this environment.
+This project uses a **conda environment** named `esapp` (Python 3.11). On this machine it lives at `C:\Users\wyattluke.lowery\AppData\Local\miniconda3\envs\esapp`. All commands (pytest, pip, flake8, etc.) should be run using this environment.
 
 ```bash
 # Activate the environment
@@ -52,8 +52,10 @@ cd docs && sphinx-build -b html . _build
 ## Test Configuration
 
 Integration tests require a PowerWorld case file path, configured via:
-1. Environment variable `SAW_TEST_CASE`, or
+1. Environment variables `SAW_TEST_CASE` and optionally `SAW_GIC_TEST_CASES` (`;`-separated list), or
 2. `tests/config_test.py` (user-created, not committed)
+
+On this machine the env vars point at `C:\Users\wyattluke.lowery\Documents\GitHub\cases` (Hawaii40.SimpleDynamics as the main case). Integration tests never modify the case file.
 
 Tests without PowerWorld access should use `-m unit`. The `--maxfail=5` default stops early on failures.
 
@@ -98,6 +100,5 @@ Embedded analysis applications accessible from `PowerWorld`:
 ## Key Constraints
 
 - **Windows-only**: Depends on `pywin32` for COM interop with PowerWorld
-- **numpy < 2.0**: Pinned in dependencies
-- **Python >= 3.7**: Minimum supported version
-- CI runs on Python 3.9, 3.10, 3.11
+- **Python >= 3.9**: Minimum supported version (numpy 2.x is supported)
+- CI runs on Python 3.9 through 3.14

@@ -49,18 +49,30 @@ def _get_gic_test_cases():
     """
     Get additional GIC test case paths from configuration.
 
+    Priority order:
+    1. Environment variable SAW_GIC_TEST_CASES (os.pathsep-separated paths)
+    2. config_test.py file
+    3. Empty list (GIC parametrized tests skip)
+
     Returns a list of (path, label) tuples for parametrization.
     Only includes paths that exist on disk.
     """
+    def _existing(paths):
+        cases = []
+        for path in paths:
+            if os.path.exists(path):
+                label = os.path.splitext(os.path.basename(path))[0]
+                cases.append((path, label))
+        return cases
+
+    env_paths = os.environ.get("SAW_GIC_TEST_CASES")
+    if env_paths:
+        return _existing(p.strip() for p in env_paths.split(os.pathsep) if p.strip())
+
     try:
         import config_test
         if hasattr(config_test, 'GIC_TEST_CASES'):
-            cases = []
-            for path in config_test.GIC_TEST_CASES:
-                if os.path.exists(path):
-                    label = os.path.splitext(os.path.basename(path))[0]
-                    cases.append((path, label))
-            return cases
+            return _existing(config_test.GIC_TEST_CASES)
     except ImportError:
         pass
     return []

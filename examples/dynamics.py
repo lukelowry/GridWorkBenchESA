@@ -10,7 +10,7 @@ Example
 -------
     >>> from esapp import PowerWorld
     >>> from esapp.utils import ContingencyBuilder, SimAction, TSWatch
-    >>> from examples.dynamics import Dynamics
+    >>> from dynamics import Dynamics  # with examples/ on sys.path
     >>> pw = PowerWorld("case.pwb")
     >>> dyn = Dynamics(pw)
     >>> dyn.watch(Gen, [TS.Gen.P, TS.Gen.W, TS.Gen.Delta])

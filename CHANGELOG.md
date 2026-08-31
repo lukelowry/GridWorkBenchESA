@@ -1,3 +1,22 @@
+[0.2.0] - 2026-08-31
+--------------------
+
+**Added**
+- Added a PEP 561 `py.typed` marker for downstream type checking
+- Added a faster single-command path for numeric scalar broadcasts
+- Added environment-variable configuration for PowerWorld integration test cases
+
+**Changed**
+- Streamlined package discovery, optional dependencies, and Read the Docs installation
+- Consolidated the maintained examples and moved GIC formulations into the main documentation
+- Reduced SimAuto logging overhead by avoiding expensive debug formatting unless enabled
+- Modernized supported Simulator field metadata and property behavior
+
+**Removed**
+- Removed deprecated or unused APIs: `ATCWriteAllOptions`, `CommandNotRespectedError`, `esapp.utils.timing`, and the `pw_order` constructor argument
+- Removed legacy four-column field metadata handling and compatibility fallbacks for older Simulator properties
+- Removed obsolete reference files, unrelated examples, bundled shapefiles, and machine-specific case paths
+
 [0.1.5] - 2026-08-05
 --------------------
 

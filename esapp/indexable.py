@@ -1,14 +1,11 @@
 from .saw import SAW, PowerWorldPrerequisiteError
 from .components import GObject
-from .utils import timing
 from typing import Type, Optional
+from numbers import Real
+from math import isfinite
 from pandas import DataFrame
 from os import path
 
-
-# Helper Function to parse Python Syntax/Field Syntax outliers
-# Example: fexcept('ThreeWindingTransformer') -> '3WindingTransformer
-fexcept = lambda t: "3" + t[5:] if t[:5] == "Three" else t
 
 # Power World Read/Write
 class Indexable:
@@ -22,7 +19,6 @@ class Indexable:
     esa: SAW
     fname: str
 
-    @timing
     def open(self):
         """
         Open the PowerWorld case and initialize transient stability.
@@ -252,10 +248,31 @@ class Indexable:
             else:
                 raise
 
+    @staticmethod
+    def _as_scalar_broadcast(fields: list[str], value) -> Optional[list]:
+        """Return one finite numeric value per field if `value` is a scalar
+        broadcast (a single number, or one number per field), else None."""
+        def ok(v):
+            return isinstance(v, Real) and not isinstance(v, bool) and isfinite(float(v))
+
+        if ok(value):
+            return [value] * len(fields)
+        if (
+            isinstance(value, (list, tuple))
+            and len(fields) > 1
+            and len(value) == len(fields)
+            and all(ok(v) for v in value)
+        ):
+            return list(value)
+        return None
+
     def _broadcast_update_to_fields(self, gtype: Type[GObject], fields: list[str], value):
         """Modifies specific fields for existing objects by broadcasting a value.
 
         This corresponds to the use case: `pw[ObjectType, 'FieldName'] = value`.
+        Numeric scalar broadcasts are dispatched as a single ``SetData`` script
+        command (no key read); arrays and non-numeric values are written via
+        ``ChangeParametersMultipleElementRect`` after reading the primary keys.
 
         Parameters
         ----------
@@ -279,6 +296,20 @@ class Indexable:
             raise ValueError(
                 f"Cannot set read-only field(s) on {gtype.TYPE()}: {non_settable}"
             )
+
+        # Fast path: numeric scalar broadcasts need no key read — a single
+        # SetData script call updates every object of the type in place.
+        # Per-object arrays and non-numeric values use the Rect path below.
+        if gtype.keys():
+            per_field = self._as_scalar_broadcast(fields, value)
+            if per_field is not None:
+                field_list = ", ".join(fields)
+                value_list = ", ".join(str(v) for v in per_field)
+                self.esa.RunScriptCommand(
+                    f"SetData({gtype.TYPE()}, [{field_list}], [{value_list}], ALL);"
+                )
+                return
+
         # For objects without keys (e.g., Sim_Solution_Options), we construct
         # the change DataFrame directly without reading from PowerWorld first.
         if not gtype.keys():

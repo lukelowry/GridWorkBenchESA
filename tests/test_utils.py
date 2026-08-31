@@ -2,8 +2,7 @@
 Unit tests for the esapp.utils module.
 
 These are **unit tests** that do NOT require PowerWorld Simulator. They test
-the timing decorator (esapp.utils.misc) and B3D file format I/O
-(esapp.utils.b3d).
+B3D file format I/O (esapp.utils.b3d).
 
 USAGE:
     pytest tests/test_utils.py -v
@@ -16,32 +15,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from esapp.utils.misc import timing
 from esapp.utils.b3d import B3D
-
-
-# =============================================================================
-# timing decorator
-# =============================================================================
-
-
-class TestTiming:
-
-    def test_preserves_return_value(self, capsys):
-        @timing
-        def add(a, b):
-            return a + b
-
-        result = add(2, 3)
-        assert result == 5
-        assert "'add' took:" in capsys.readouterr().out
-
-    def test_preserves_function_name(self):
-        @timing
-        def my_func():
-            pass
-
-        assert my_func.__name__ == 'my_func'
 
 
 # =============================================================================
