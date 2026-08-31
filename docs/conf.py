@@ -82,13 +82,6 @@ napoleon_type_aliases = {
 
 exclude_patterns = [
     "_build",
-    "**/*.cpg",
-    "**/*.dbf",
-    "**/*.prj",
-    "**/*.shp",
-    "**/*.shx",
-    "**/Shape.xml",
-    "**/Shape.shp.ea.iso.xml",
     "**/PWRaw",
 ]
 

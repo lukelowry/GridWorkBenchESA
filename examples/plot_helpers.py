@@ -6,7 +6,7 @@ notebook cells remain focused on core esapp operations. Import from
 a hidden cell near the top of each notebook::
 
     import sys; sys.path.insert(0, '..')
-    from plot_helpers import plot_barh_top, plot_direction_sensitivity, ...
+    from plot_helpers import plot_voltage_profile, plot_sensitivity_map, ...
 
 Figure sizes are optimized for PDF documentation rendering via nbsphinx
 with a LaTeX text width of 6.5 inches. All figures fit within page width
@@ -19,13 +19,17 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 
-# Import plotting utilities from the sibling map module. Notebooks add
-# the examples/ directory to sys.path, so the sibling import is primary;
-# the package-style import covers running from the repository root.
-try:
-    from map import format_plot, border, plot_lines, plot_vecfield, darker_hsv_colormap
-except ImportError:
-    from examples.map import format_plot, border, plot_lines, plot_vecfield, darker_hsv_colormap
+
+def format_plot(ax, title='', xlabel='', ylabel='', grid=True, **_ignored):
+    """Minimal axis labeling (replaces the removed map.py styling engine)."""
+    if title:
+        ax.set_title(title)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if grid:
+        ax.grid(alpha=0.3, linewidth=0.5)
 
 # ---------------------------------------------------------------------------
 # Standard figure dimensions (inches) for 6.5" LaTeX text width
@@ -60,28 +64,6 @@ _LIMIT = '#C44E52'  # limit/warning lines
 # Generic chart helpers
 # ---------------------------------------------------------------------------
 
-def plot_barh_top(values, labels=None, n=20, title='', xlabel='', ylabel='',
-                  color=None, figsize=(_WFULL, 3.5), ax=None):
-    """Horizontal bar chart of the top-*n* items sorted descending."""
-    if color is None:
-        color = _C1
-    top = values[:n] if len(values) <= n else values.sort_values(ascending=False).head(n)
-    if labels is None:
-        labels = [f'{i+1}' for i in range(len(top))]
-    show = ax is None
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    ax.barh(range(len(top)), top.values if hasattr(top, 'values') else top,
-            color=color)
-    ax.set_yticks(range(len(top)))
-    ax.set_yticklabels(labels[:len(top)])
-    ax.invert_yaxis()
-    format_plot(ax, title=title, xlabel=xlabel, ylabel=ylabel, plotarea='white')
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return ax
-
 
 def plot_dual_bar(values_a, values_b, label_a='A', label_b='B',
                   xlabel='Index', ylabel='Value', title='',
@@ -109,7 +91,7 @@ def plot_dual_bar(values_a, values_b, label_a='A', label_b='B',
 # ---------------------------------------------------------------------------
 
 
-def plot_sensitivity_map(lines, values, shape=None, title='Sensitivity Map',
+def plot_sensitivity_map(lines, values, title='Sensitivity Map',
                          clabel='Factor', cmap='RdBu_r', symmetric=True,
                          figsize=(_W2, 2.8), ax=None, fig=None):
     """Geographic network map with lines colored by sensitivity values.
@@ -120,8 +102,6 @@ def plot_sensitivity_map(lines, values, shape=None, title='Sensitivity Map',
         Branch data with 'Longitude', 'Longitude:1', 'Latitude', 'Latitude:1'.
     values : array-like
         One value per branch (PTDF, LODF, etc.). Length must match ``lines``.
-    shape : str, optional
-        Shape name for geographic border overlay (e.g. 'Texas', 'US').
     title : str
         Plot title.
     clabel : str
@@ -163,9 +143,6 @@ def plot_sensitivity_map(lines, values, shape=None, title='Sensitivity Map',
     ax.scatter(cX.ravel(), cY.ravel(), c=_CG, s=8, zorder=3,
                edgecolors='white', linewidth=0.2)
 
-    if shape is not None:
-        border(ax, shape)
-
     ax.autoscale_view()
     sm = ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
@@ -182,7 +159,7 @@ def plot_sensitivity_map(lines, values, shape=None, title='Sensitivity Map',
     return ax
 
 
-def plot_sensitivity_dual(lines, vals_a, vals_b, shape=None,
+def plot_sensitivity_dual(lines, vals_a, vals_b,
                           titles=('PTDF', 'LODF'),
                           clabels=('PTDF', 'LODF'),
                           cmaps=('RdBu_r', 'RdBu_r'),
@@ -190,17 +167,17 @@ def plot_sensitivity_dual(lines, vals_a, vals_b, shape=None,
                           figsize=(_W2, 2.8)):
     """Side-by-side geographic sensitivity maps (2-panel)."""
     fig, axes = plt.subplots(1, 2, figsize=figsize)
-    plot_sensitivity_map(lines, vals_a, shape=shape, title=titles[0],
+    plot_sensitivity_map(lines, vals_a, title=titles[0],
                          clabel=clabels[0], cmap=cmaps[0],
                          symmetric=symmetric[0], ax=axes[0], fig=fig)
-    plot_sensitivity_map(lines, vals_b, shape=shape, title=titles[1],
+    plot_sensitivity_map(lines, vals_b, title=titles[1],
                          clabel=clabels[1], cmap=cmaps[1],
                          symmetric=symmetric[1], ax=axes[1], fig=fig)
     plt.tight_layout()
     plt.show()
 
 
-def plot_sensitivity_triple(lines, vals_list, shape=None,
+def plot_sensitivity_triple(lines, vals_list,
                             titles=('A', 'B', 'C'),
                             clabels=('', '', ''),
                             cmaps=('RdBu_r', 'RdBu_r', 'RdBu_r'),
@@ -210,14 +187,14 @@ def plot_sensitivity_triple(lines, vals_list, shape=None,
     fig, axes = plt.subplots(1, 3, figsize=figsize)
     for ax, vals, t, cl, cm, sym in zip(axes, vals_list, titles,
                                          clabels, cmaps, symmetric):
-        plot_sensitivity_map(lines, vals, shape=shape, title=t,
+        plot_sensitivity_map(lines, vals, title=t,
                              clabel=cl, cmap=cm, symmetric=sym,
                              ax=ax, fig=fig)
     plt.tight_layout()
     plt.show()
 
 
-def plot_flow_map(lines, loading, shape=None,
+def plot_flow_map(lines, loading,
                   title='Branch Loading', clabel='Loading (%)',
                   threshold=100.0, highlight_idx=None,
                   figsize=(_W2, 2.8), ax=None, fig=None):
@@ -273,9 +250,6 @@ def plot_flow_map(lines, loading, shape=None,
 
     ax.scatter(cX.ravel(), cY.ravel(), c=_CG, s=6, zorder=3,
                edgecolors='white', linewidth=0.2)
-
-    if shape is not None:
-        border(ax, shape)
 
     ax.autoscale_view()
     sm = ScalarMappable(cmap=cm, norm=norm)
@@ -539,361 +513,19 @@ def plot_histograms(datasets, titles, xlabels, colors=None, bins=25, figsize=Non
 # Direction sensitivity (GIC)
 # ---------------------------------------------------------------------------
 
-def plot_direction_sensitivity(directions, max_gics, title='Max GIC vs Direction',
-                               figsize=(_W2, 2.8)):
-    """Line plot + polar plot of GIC vs. storm direction (2-panel)."""
-    fig = plt.figure(figsize=figsize)
-
-    ax1 = fig.add_subplot(121)
-    ax1.plot(directions, max_gics, 'o-', color=_C1, markersize=3)
-    format_plot(ax1, title=title,
-                xlabel='Direction (deg from N)',
-                ylabel='Max |GIC| (A)', plotarea='white', **_FS2)
-
-    ax2 = fig.add_subplot(122, projection='polar')
-    theta = np.radians(directions)
-    ax2.plot(theta, max_gics, 'o-', color=_C2, markersize=3)
-    ax2.set_title('Polar Response', pad=15, fontsize=10)
-
-    plt.tight_layout()
-    plt.show()
-
-    worst = directions[np.argmax(max_gics)]
-    print(f"Worst-case direction: {worst} degrees")
-    print(f"Worst-case max GIC: {max_gics.max():.2f} Amps")
-
-
-def plot_direction_profiles(directions, gic_profiles, labels, figsize=(_W2, 2.8)):
-    """Multi-transformer direction sensitivity: line + polar (2-panel)."""
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
-
-    pal = [_C1, _C2, _C3, _C4, _C5]
-    for j, lbl in enumerate(labels):
-        axes[0].plot(directions, gic_profiles[:, j], label=lbl,
-                     color=pal[j % len(pal)])
-    format_plot(axes[0], title='Transformer GIC vs Direction',
-                xlabel='Direction (deg from N)', ylabel='|GIC| (A)',
-                plotarea='white', **_FS2)
-    axes[0].legend(fontsize=7)
-
-    ax_polar = fig.add_axes(axes[1].get_position(), projection='polar')
-    axes[1].set_visible(False)
-    theta = np.radians(directions)
-    for j, lbl in enumerate(labels):
-        ax_polar.plot(theta, gic_profiles[:, j], label=lbl,
-                      color=pal[j % len(pal)])
-    ax_polar.set_title('Polar Response', pad=15, fontsize=10)
-    ax_polar.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=7)
-
-    plt.tight_layout()
-    plt.show()
-
 
 # ---------------------------------------------------------------------------
 # GIC matrix / sensitivity
 # ---------------------------------------------------------------------------
-
-def plot_gic_distribution(gic_abs, n=15, figsize=(_W2, _H2)):
-    """Histogram + top-N bar chart for GIC magnitudes (2-panel)."""
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
-
-    axes[0].hist(gic_abs, bins=20, color=_C1, edgecolor='white')
-    format_plot(axes[0], title='GIC Distribution',
-                xlabel='|GIC| (A)', ylabel='Count',
-                plotarea='white', **_FS2)
-
-    top = gic_abs.sort_values(ascending=False).head(n)
-    axes[1].barh(range(len(top)), top.values, color=_C1)
-    axes[1].set_yticks(range(len(top)))
-    axes[1].set_yticklabels([f'XF {i + 1}' for i in range(len(top))], fontsize=7)
-    axes[1].invert_yaxis()
-    format_plot(axes[1], title=f'Top {n} Transformer GICs',
-                xlabel='|GIC| (A)', ylabel='Transformer',
-                plotarea='white', **_FS2)
-
-    plt.tight_layout()
-    plt.show()
 
 
 # Keep backward compatibility alias
 plot_gic_bar_hist = plot_gic_distribution
 
 
-def plot_gmatrix_comparison(G_model, G_pw, figsize=(_W3, _H3)):
-    """Compare model G-matrix vs PowerWorld G-matrix with difference (3-panel)."""
-    fig, axes = plt.subplots(1, 3, figsize=figsize)
-
-    im0 = axes[0].imshow(np.abs(G_model), cmap='Blues', aspect='auto')
-    fig.colorbar(im0, ax=axes[0], shrink=0.7)
-    format_plot(axes[0], title='|G| Model', plotarea='white',
-                grid=False, **_FS3)
-
-    im1 = axes[1].imshow(np.abs(G_pw), cmap='Blues', aspect='auto')
-    fig.colorbar(im1, ax=axes[1], shrink=0.7)
-    format_plot(axes[1], title='|G| PowerWorld', plotarea='white',
-                grid=False, **_FS3)
-
-    if G_model.shape == G_pw.shape:
-        diff = np.abs(G_model - G_pw)
-        im2 = axes[2].imshow(diff, cmap='Reds', aspect='auto')
-        fig.colorbar(im2, ax=axes[2], shrink=0.7)
-        format_plot(axes[2], title=f'|Diff| max={diff.max():.2e}',
-                    plotarea='white', grid=False, **_FS3)
-    else:
-        axes[2].text(0.5, 0.5, 'Shape mismatch',
-                     ha='center', va='center', transform=axes[2].transAxes,
-                     fontsize=9)
-        format_plot(axes[2], title='Difference', plotarea='white',
-                    grid=False, **_FS3)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_jacobian_sensitivity(J_dense, figsize=(_W2, _H2)):
-    """dI/dE Jacobian heatmap + row-wise sensitivity bar chart (2-panel)."""
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
-
-    im0 = axes[0].imshow(np.abs(J_dense), cmap='Blues', aspect='auto')
-    fig.colorbar(im0, ax=axes[0], shrink=0.7)
-    format_plot(axes[0], title='|dI/dE| Jacobian',
-                xlabel='Branch index', ylabel='Transformer index',
-                plotarea='white', grid=False, **_FS2)
-
-    row_sens = np.sum(np.abs(J_dense), axis=1)
-    axes[1].barh(range(len(row_sens)), row_sens, color=_C1)
-    axes[1].invert_yaxis()
-    format_plot(axes[1], title='Transformer E-Field Sensitivity',
-                xlabel='Total sensitivity', ylabel='Transformer index',
-                plotarea='white', **_FS2)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_branch_impact(col_sens, top_n=5, figsize=(_W2, _H2)):
-    """Branch impact bar chart + top-N detail (2-panel)."""
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
-
-    top_branches = np.argsort(col_sens)[::-1][:top_n]
-    colors = [_C2 if i in top_branches else _C1 for i in range(len(col_sens))]
-    axes[0].bar(range(len(col_sens)), col_sens, color=colors, width=1.0)
-    format_plot(axes[0], title='Branch Impact on GIC',
-                xlabel='Branch index', ylabel='Aggregate |dI/dE|',
-                plotarea='white', **_FS2)
-
-    axes[1].barh(range(top_n), col_sens[top_branches], color=_C2)
-    axes[1].set_yticks(range(top_n))
-    axes[1].set_yticklabels([f'Branch {b}' for b in top_branches], fontsize=7)
-    axes[1].invert_yaxis()
-    format_plot(axes[1], title=f'Top {top_n} Branches',
-                xlabel='|dI/dE|', plotarea='white', **_FS2)
-
-    plt.tight_layout()
-    plt.show()
-
-    print(f"\nTop {top_n} most influential branches: {top_branches}")
-
-
 # ---------------------------------------------------------------------------
 # Geographic / E-field
 # ---------------------------------------------------------------------------
-
-def plot_geo_grid_buses(LON, LAT, lon, lat, shape, xlim, ylim,
-                        figsize=(_W2, 2.8), ax=None, fig=None):
-    """Grid points + bus locations on a geographic border."""
-    show = ax is None
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    ax.scatter(LON.ravel(), LAT.ravel(), s=1, c=_C7, alpha=0.5,
-               label='Grid points')
-    ax.scatter(lon, lat, s=12, c=_C4, zorder=5, label='Bus locations')
-    border(ax, shape)
-    ax.set_xlim(xlim[0] - 0.1, xlim[1] + 0.1)
-    ax.set_ylim(ylim[0] - 0.1, ylim[1] + 0.1)
-    format_plot(ax, title='Grid & Bus Locations',
-                xlabel=r'Lon ($^\circ$E)', ylabel=r'Lat ($^\circ$N)',
-                plotarea='white', grid=False, **_FS2)
-    ax.legend(fontsize=7, loc='lower right')
-    ax.set_aspect('equal')
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return ax
-
-
-def plot_efield_comparison(LON, LAT, fields, shape, figsize=None):
-    """Side-by-side magnitude heatmaps for E-field patterns (>= 2-panel).
-
-    Parameters
-    ----------
-    fields : list of (name, Ex, Ey) tuples
-    """
-    n = max(len(fields), 2)
-    if figsize is None:
-        figsize = (_WFULL, _H3)
-    fig, axes = plt.subplots(1, n, figsize=figsize)
-    if n == 1:
-        axes = [axes]
-    fs = _FS3 if n >= 3 else _FS2
-    for ax, (name, Ex, Ey) in zip(axes, fields):
-        magnitude = np.sqrt(Ex ** 2 + Ey ** 2)
-        im = ax.pcolormesh(LON, LAT, magnitude, cmap='hot_r', shading='auto')
-        border(ax, shape)
-        ax.set_xlim(LON.min(), LON.max())
-        ax.set_ylim(LAT.min(), LAT.max())
-        fig.colorbar(im, ax=ax, label='|E| (V/km)', shrink=0.7)
-        format_plot(ax, title=f'{name} |E|',
-                    xlabel=r'Lon ($^\circ$E)',
-                    ylabel=r'Lat ($^\circ$N)',
-                    plotarea='white', grid=False, **fs)
-        ax.set_aspect('equal')
-    for j in range(len(fields), n):
-        axes[j].set_visible(False)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_efield_vectors(LON, LAT, Ex, Ey, shape, step=3,
-                        figsize=(_W2, 2.8), ax=None, fig=None):
-    """Heatmap of E-field magnitude + vector field overlay."""
-    show = ax is None
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    magnitude = np.sqrt(Ex ** 2 + Ey ** 2)
-    im = ax.pcolormesh(LON, LAT, magnitude, cmap='YlOrRd', shading='auto', alpha=0.6)
-    border(ax, shape)
-    ax.set_xlim(LON.min(), LON.max())
-    ax.set_ylim(LAT.min(), LAT.max())
-
-    sm = plot_vecfield(ax, LON[::step, ::step], LAT[::step, ::step],
-                       Ex[::step, ::step], Ey[::step, ::step],
-                       scale=40, width=0.003)
-    if fig is not None:
-        fig.colorbar(im, ax=ax, label='|E| (V/km)', shrink=0.7)
-    format_plot(ax, title='E-Field Vectors',
-                xlabel=r'Lon ($^\circ$E)',
-                ylabel=r'Lat ($^\circ$N)', grid=False, **_FS2)
-    ax.set_aspect('equal')
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return ax
-
-
-def plot_network_efield(LON, LAT, magnitude, lines, lon, lat, Ex, Ey,
-                        shape, step=4, figsize=(_W2, 2.8), ax=None, fig=None):
-    """Full network overlay: heatmap + lines + buses + E-field vectors."""
-    show = ax is None
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-
-    im = ax.pcolormesh(LON, LAT, magnitude, cmap='YlOrRd', shading='auto', alpha=0.4)
-    border(ax, shape)
-    plot_lines(ax, lines, ms=4, lw=0.6)
-    ax.scatter(lon, lat, s=12, c='navy', zorder=6, label='Buses',
-               edgecolors='white', linewidth=0.4)
-    ax.quiver(LON[::step, ::step], LAT[::step, ::step],
-              Ex[::step, ::step], Ey[::step, ::step],
-              color='darkred', alpha=0.7, scale=30, width=0.002, zorder=7)
-    ax.set_xlim(LON.min(), LON.max())
-    ax.set_ylim(LAT.min(), LAT.max())
-
-    if fig is not None:
-        fig.colorbar(im, ax=ax, label='|E| (V/km)', shrink=0.7)
-    format_plot(ax, title='Network + E-Field',
-                xlabel=r'Lon ($^\circ$E)',
-                ylabel=r'Lat ($^\circ$N)',
-                plotarea='white', grid=False, **_FS2)
-    ax.legend(loc='lower right', fontsize=7)
-    ax.set_aspect('equal')
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return ax
-
-
-def plot_gic_geo_map(lines, xf_geo, gic_mag, shape, xlim, ylim,
-                     figsize=(_W2, 2.8), ax=None, fig=None):
-    """GIC magnitudes on a geographic map with transmission network."""
-    show = ax is None
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    border(ax, shape)
-    plot_lines(ax, lines, ms=3, lw=0.4)
-
-    sizes = 10 + 120 * gic_mag / gic_mag.max()
-    sc = ax.scatter(xf_geo['Longitude'], xf_geo['Latitude'],
-                    s=sizes, c=gic_mag, cmap='Reds', zorder=8,
-                    edgecolors='black', linewidth=0.4)
-    if fig is not None:
-        fig.colorbar(sc, ax=ax, label='|GIC| (A)', shrink=0.7)
-
-    ax.set_xlim(*xlim)
-    ax.set_ylim(*ylim)
-    format_plot(ax, title='Transformer GIC Map',
-                xlabel=r'Lon ($^\circ$E)',
-                ylabel=r'Lat ($^\circ$N)',
-                plotarea='white', grid=False, **_FS2)
-    ax.set_aspect('equal')
-    if show:
-        plt.tight_layout()
-        plt.show()
-    return ax
-
-
-def plot_b3d_roundtrip(LON, LAT, ex_orig, ex_loaded, shape, ny, nx,
-                       figsize=(_W2, _H2)):
-    """Side-by-side original vs loaded Ex from B3D (2-panel)."""
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
-
-    ex_2d_orig = ex_orig[0].reshape(ny, nx, order='F')
-    ex_2d_load = ex_loaded[0].reshape(ny, nx, order='F')
-
-    for ax, data, title in zip(axes,
-                               [ex_2d_orig, ex_2d_load],
-                               ['Original Ex', 'B3D Round-Trip Ex']):
-        im = ax.pcolormesh(LON, LAT, data, cmap='RdBu_r', shading='auto')
-        border(ax, shape)
-        ax.set_xlim(LON.min(), LON.max())
-        ax.set_ylim(LAT.min(), LAT.max())
-        fig.colorbar(im, ax=ax, label='Ex (V/km)')
-        format_plot(ax, title=title,
-                    xlabel=r'Lon ($^\circ$E)',
-                    ylabel=r'Lat ($^\circ$N)',
-                    plotarea='white', grid=False, **_FS2)
-        ax.set_aspect('equal')
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_b3d_components(LON, LAT, Ex, Ey, shape, suptitle='',
-                        figsize=(_W3, _H3)):
-    """Three-panel plot: |E|, Ex, Ey on a geographic background."""
-    magnitude = np.sqrt(Ex ** 2 + Ey ** 2)
-    fig, axes = plt.subplots(1, 3, figsize=figsize)
-
-    for ax, data, cmap, label, title in zip(
-        axes,
-        [magnitude, Ex, Ey],
-        ['hot_r', 'RdBu_r', 'RdBu_r'],
-        ['|E| (V/km)', 'Ex (V/km)', 'Ey (V/km)'],
-        ['|E| Magnitude', 'Ex (Eastward)', 'Ey (Northward)'],
-    ):
-        im = ax.pcolormesh(LON, LAT, data, cmap=cmap, shading='auto')
-        border(ax, shape)
-        fig.colorbar(im, ax=ax, label=label, shrink=0.7)
-        format_plot(ax, title=title,
-                    xlabel=r'Lon ($^\circ$E)',
-                    ylabel=r'Lat ($^\circ$N)',
-                    plotarea='white', grid=False, **_FS3)
-        ax.set_aspect('equal')
-
-    if suptitle:
-        plt.suptitle(suptitle, fontsize=12)
-    plt.tight_layout()
-    plt.show()
 
 
 # ---------------------------------------------------------------------------

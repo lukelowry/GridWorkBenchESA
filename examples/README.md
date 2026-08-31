@@ -19,7 +19,6 @@ notebook's own directory as the working directory (the Jupyter default).
 
 | Module | Description |
 |---|---|
-| `map.py` | Geographic visualization (borders, lines, vector fields) |
 | `plot_helpers.py` | Shared plotting functions for all notebooks |
 
 ## Notebooks
@@ -28,7 +27,6 @@ notebook's own directory as the working directory (the Jupyter default).
 |---|---|
 | `dynamics/` | Transient stability simulation examples |
 | `steady_state/` | Contingency analysis, SCOPF, ATC, and CPF examples |
-| `gic/` | GIC analysis and sensitivity examples |
 | `network/` | Network topology and matrix extraction examples |
 
 ## Case Configuration
