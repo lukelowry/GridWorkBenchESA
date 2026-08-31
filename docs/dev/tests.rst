@@ -26,7 +26,7 @@ Test Coverage
    * - ``test_dynamics.py``
      - Dynamics module: ContingencyBuilder, SimAction enum
    * - ``test_utils.py``
-     - Utility modules: timing decorator, B3D file format
+     - Utility modules: B3D file format
    * - ``test_buscat_unit.py``
      - BusCat string parsing: all known PowerWorld BusCat variants (Slack, PV, PQ with controls/roles/limits)
 

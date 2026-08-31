@@ -30,7 +30,6 @@ notebook's own directory as the working directory (the Jupyter default).
 | `steady_state/` | Contingency analysis, SCOPF, ATC, and CPF examples |
 | `gic/` | GIC analysis and sensitivity examples |
 | `network/` | Network topology and matrix extraction examples |
-| `visualization/` | Geographic plotting utilities demo |
 
 ## Case Configuration
 
