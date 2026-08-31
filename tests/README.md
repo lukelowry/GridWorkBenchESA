@@ -8,7 +8,9 @@ pytest -k "not integration"    # Unit tests only (no PowerWorld)
 pytest -m integration          # Integration tests only
 ```
 
-**PowerWorld Setup**: Copy `config_test.example.py` to `config_test.py` and set `SAW_TEST_CASE` path.
+**PowerWorld Setup**: Set the `SAW_TEST_CASE` environment variable to a case path
+(and optionally `SAW_GIC_TEST_CASES`, a `;`-separated list for the parametrized
+GIC tests). Alternatively, copy `config_test.example.py` to `config_test.py`.
 
 ## Test Categories
 
@@ -26,7 +28,14 @@ pytest --cov=esapp --cov-report=html
 
 ## Configuration
 
-Create `config_test.py` from the example template:
+Preferred: environment variables (keep machine-specific paths out of the repo):
+
+```powershell
+setx SAW_TEST_CASE "C:\path\to\test_case.pwb"
+setx SAW_GIC_TEST_CASES "C:\path\case1.pwb;C:\path\case2.pwb"
+```
+
+Alternative: create `config_test.py` from the example template:
 
 ```python
 SAW_TEST_CASE = r"C:\path\to\test_case.pwb"

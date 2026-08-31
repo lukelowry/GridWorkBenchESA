@@ -52,8 +52,10 @@ cd docs && sphinx-build -b html . _build
 ## Test Configuration
 
 Integration tests require a PowerWorld case file path, configured via:
-1. Environment variable `SAW_TEST_CASE`, or
+1. Environment variables `SAW_TEST_CASE` and optionally `SAW_GIC_TEST_CASES` (`;`-separated list), or
 2. `tests/config_test.py` (user-created, not committed)
+
+On this machine the env vars point at `C:\Users\wyattluke.lowery\Documents\GitHub\cases` (Hawaii40.SimpleDynamics as the main case). Integration tests never modify the case file.
 
 Tests without PowerWorld access should use `-m unit`. The `--maxfail=5` default stops early on failures.
 

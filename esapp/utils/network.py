@@ -224,7 +224,7 @@ class Network:
 
     def zmag(self) -> Series:
         """
-        Get branch impedance magnitudes |Z|.
+        Get branch impedance magnitudes ``|Z|``.
 
         Returns
         -------
