@@ -17,7 +17,7 @@ class ThreeWXFormer(GObject):
 	"""Bus identifiers: Primary Secondary Tertiary"""
 	LineCircuit = ("LineCircuit", str, FieldPriority.PRIMARY)
 	"""Circuit"""
-	BusIdentifier__3 = ("BusIdentifier:3", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusIdentifier__3 = ("BusIdentifier:3", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""Star  bus identifier using the format described by the case information option for which key fields to use. Also, when using this field as part of creating a three-winding transformer from an AUX file additional magic strings are available. (1) Number : enter an unused bus number and Simulator will create this bus as part of creating the three-winding transformer.; (2) STAR : enter this and Simulator will create a star bus by starting at the primary bus number and incrementing by 1 until a unique number is found.; (3) STARMAX : enter this and Simulator will create a star bus with a number equal to the maximum bus number plus 1.; (4) STAR98765 : enter this and Simulator will create a star bus by starting at the number given after STAR and incrementing by 1 until a unique number is found.; Syntax Note: You may optionally put a spaces between \"STAR MAX\" or \"STAR 98765\". If the string starts with STAR but doesn't match this syntax we default to treating it as though it said STAR only."""
 	BusName3W__3 = ("BusName3W:3", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
 	"""Bus Name Star"""
@@ -115759,47 +115759,47 @@ class MultiSectionLine(GObject):
 	"""Number at To bus"""
 	BusName_NomVolt = ("BusName_NomVolt", str, FieldPriority.SECONDARY)
 	"""Name_Nominal kV at From bus"""
-	BusInt = ("BusInt", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt = ("BusInt", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__1 = ("BusInt:1", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__1 = ("BusInt:1", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__2 = ("BusInt:2", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__2 = ("BusInt:2", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__3 = ("BusInt:3", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__3 = ("BusInt:3", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__4 = ("BusInt:4", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__4 = ("BusInt:4", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__5 = ("BusInt:5", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__5 = ("BusInt:5", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__6 = ("BusInt:6", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__6 = ("BusInt:6", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__7 = ("BusInt:7", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__7 = ("BusInt:7", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__8 = ("BusInt:8", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__8 = ("BusInt:8", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__9 = ("BusInt:9", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__9 = ("BusInt:9", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__10 = ("BusInt:10", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__10 = ("BusInt:10", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__11 = ("BusInt:11", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__11 = ("BusInt:11", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__12 = ("BusInt:12", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__12 = ("BusInt:12", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__13 = ("BusInt:13", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__13 = ("BusInt:13", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__14 = ("BusInt:14", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__14 = ("BusInt:14", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__15 = ("BusInt:15", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__15 = ("BusInt:15", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__16 = ("BusInt:16", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__16 = ("BusInt:16", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__17 = ("BusInt:17", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__17 = ("BusInt:17", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__18 = ("BusInt:18", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__18 = ("BusInt:18", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__19 = ("BusInt:19", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__19 = ("BusInt:19", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
-	BusInt__20 = ("BusInt:20", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE)
+	BusInt__20 = ("BusInt:20", str, FieldPriority.SECONDARY | FieldPriority.REQUIRED | FieldPriority.EDITABLE | FieldPriority.EDIT_MODE)
 	"""These fields show the intermediate buses in order."""
 	AllLabels = ("AllLabels", str, FieldPriority.OPTIONAL | FieldPriority.EDITABLE)
 	"""This represents a comma-separated list of the label identifiers for this object.  If labels are specified they can be used to input data into the model instead of using the key or secondary key fields"""

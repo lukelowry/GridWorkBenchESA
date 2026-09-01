@@ -1,3 +1,17 @@
+[0.2.1] - 2026-09-01
+--------------------
+
+**Added**
+- Typed writes through the indexable interface: DataFrame columns and field arguments accept component members (`pw[Gen] = pd.DataFrame({Gen.BusNum: ...})`)
+- Bool serialization on writes via a per-field vocabulary registry (`True` -> `"Closed"`/`"YES"`; see `BOOL_FIELD_VOCAB`)
+- Alternate key sets for identifying and creating objects (`GObject.key_sets()`, e.g. Branch by `BusNum`/`BusNum:1`/`LineCircuit`)
+- `FieldPriority.EDIT_MODE` field metadata; failed writes on EDIT-mode-only fields now hint to call `EnterMode('EDIT')`
+
+**Changed**
+- Unknown or read-only columns on writes now warn instead of raising, so a newer Simulator's fields are never blocked by the generated schema
+- Consolidated all write paths through a single normalize/validate/serialize funnel
+- Condensed indexable docstrings and error messages
+
 [0.2.0] - 2026-08-31
 --------------------
 

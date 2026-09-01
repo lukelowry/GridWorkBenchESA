@@ -34,6 +34,7 @@ class FieldDefinition:
     description: str
     role: FieldRole
     enterable: bool
+    edit_mode_only: bool = False
     available_list: str = ""
 
     @property
@@ -385,6 +386,7 @@ class TS:
             return None
 
         key_str = self._get_column(parts, 2)
+        enterable_value = self._normalize_enterable(self._get_column(parts, 8))
         return FieldDefinition(
             variable_name=var_name,
             python_name=self._sanitize_for_python(var_name),
@@ -392,7 +394,8 @@ class TS:
             data_type=self._get_column(parts, 5),
             description=self._get_column(parts, 6, strip_q=True),
             role=self._parse_key_symbol(key_str),
-            enterable=self._parse_enterable(self._get_column(parts, 8)),
+            enterable=enterable_value in ('yes', 'edit mode only'),
+            edit_mode_only=enterable_value == 'edit mode only',
             available_list=self._get_column(parts, 7, strip_q=True)
         )
 
@@ -459,11 +462,11 @@ class TS:
         return role
 
     @staticmethod
-    def _parse_enterable(value: str) -> bool:
+    def _normalize_enterable(value: str) -> str:
         value = value.strip().lower()
         if value.startswith("'") and value.endswith("'"):
             value = value[1:-1]
-        return value in ('yes', 'edit mode only')
+        return value
 
     @staticmethod
     def _get_sort_key(field_def: FieldDefinition) -> int:
@@ -484,6 +487,7 @@ class TS:
         else: flags.append('FieldPriority.OPTIONAL')
         if field_def.is_base_value: flags.append('FieldPriority.REQUIRED')
         if field_def.enterable: flags.append('FieldPriority.EDITABLE')
+        if field_def.edit_mode_only: flags.append('FieldPriority.EDIT_MODE')
         return ' | '.join(flags)
 
 

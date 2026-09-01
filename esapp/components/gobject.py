@@ -25,6 +25,49 @@ class FieldPriority(Flag):
     REQUIRED  = auto()  #: Field is required for data retrieval or updates.
     OPTIONAL  = auto()  #: Field is optional.
     EDITABLE  = auto()  #: Field is user-modifiable.
+    EDIT_MODE = auto()  #: Field is only enterable while PowerWorld is in EDIT mode.
+
+
+#: PowerWorld string vocabularies for fields commonly written as Python bools.
+#: Maps a PowerWorld field name to its (True, False) string pair. Indexed
+#: variants (e.g. ``"LineStatus:1"``) resolve to their base field name.
+#: Extend with one entry per field as needs surface.
+_CLOSED_OPEN = ('Closed', 'Open')
+_YES_NO = ('YES', 'NO')
+_CONNECTED_DISCONNECTED = ('Connected', 'Disconnected')
+
+BOOL_FIELD_VOCAB = {
+    'GenStatus': _CLOSED_OPEN,
+    'LineStatus': _CLOSED_OPEN,
+    'LoadStatus': _CLOSED_OPEN,
+    'SSStatus': _CLOSED_OPEN,
+    'BusStatus': _CONNECTED_DISCONNECTED,
+    'BusSlack': _YES_NO,
+    'GenAGCAble': _YES_NO,
+    'GenAVRAble': _YES_NO,
+}
+
+
+def bool_vocab(field_name: str):
+    """Return the (True, False) strings for a field, or None if unregistered."""
+    base = field_name.split(':', 1)[0]
+    return BOOL_FIELD_VOCAB.get(base)
+
+
+#: Alternate complete key sets accepted in addition to an object's primary
+#: keys, keyed by PowerWorld object type string. Each entry is a tuple of
+#: key sets; a DataFrame containing every field of any one set can identify
+#: (and create) objects of that type. Extend with one line per type.
+ALT_KEY_SETS = {
+    'Bus': (('BusName_NomVolt',),),
+    'Gen': (('BusName_NomVolt', 'GenID'),),
+    'Load': (('BusName_NomVolt', 'LoadID'),),
+    'Shunt': (('BusName_NomVolt', 'ShuntID'),),
+    'Branch': (
+        ('BusNum', 'BusNum:1', 'LineCircuit'),
+        ('BusName_NomVolt', 'BusName_NomVolt:1', 'LineCircuit'),
+    ),
+}
 
 
 class GObject(Enum):
@@ -67,6 +110,8 @@ class GObject(Enum):
             cls._SECONDARY = []
         if '_EDITABLE' not in cls.__dict__:
             cls._EDITABLE = []
+        if '_EDIT_MODE' not in cls.__dict__:
+            cls._EDIT_MODE = []
 
         # The object type string name is the only argument for this member
         if len(args) == 1:
@@ -103,6 +148,10 @@ class GObject(Enum):
             if field_priority & FieldPriority.EDITABLE == FieldPriority.EDITABLE:
                 cls._EDITABLE.append(field_name_str)
 
+            # A field only enterable in EDIT mode carries the EDIT_MODE flag.
+            if field_priority & FieldPriority.EDIT_MODE == FieldPriority.EDIT_MODE:
+                cls._EDIT_MODE.append(field_name_str)
+
             return obj
 
     def __repr__(self) -> str:
@@ -135,6 +184,27 @@ class GObject(Enum):
     @classmethod
     def editable(cls):
         return getattr(cls, '_EDITABLE', [])
+
+    @classmethod
+    def edit_mode_only(cls):
+        """Fields that are only enterable while PowerWorld is in EDIT mode."""
+        return getattr(cls, '_EDIT_MODE', [])
+
+    @classmethod
+    def is_edit_mode_only(cls, field_name: str) -> bool:
+        """Check if a field requires PowerWorld to be in EDIT mode to set."""
+        return field_name in cls.edit_mode_only()
+
+    @classmethod
+    def key_sets(cls):
+        """Complete key sets that identify objects of this type, in preference
+        order: the primary keys first, then any registered alternates."""
+        sets = []
+        if cls.keys():
+            sets.append(frozenset(cls.keys()))
+        for alt in ALT_KEY_SETS.get(cls.TYPE(), ()):
+            sets.append(frozenset(alt))
+        return sets
 
     @classmethod
     def identifiers(cls):
