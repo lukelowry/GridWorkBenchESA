@@ -243,23 +243,26 @@ def test_setitem_invalid_index(indexable_instance: Indexable):
         indexable_instance[(123, "field")] = "value"
 
 
-def test_setitem_non_settable_field(indexable_instance: Indexable):
-    """ValueError when setting a read-only field."""
+def test_setitem_non_settable_field_warns(indexable_instance: Indexable):
+    """Read-only fields warn but the write is still attempted —
+    PowerWorld is the authority, not the generated schema."""
     non_settable = [f for f in grid.Bus.fields() if f not in grid.Bus.settable()]
     if not non_settable:
         pytest.skip("Bus has no non-settable fields.")
-    with pytest.raises(ValueError, match="Cannot set read-only field"):
+    with pytest.warns(UserWarning, match="Read-only field"):
         indexable_instance[grid.Bus, non_settable[0]] = 1.0
+    indexable_instance.esa.RunScriptCommand.assert_called_once()
 
 
-def test_setitem_bulk_non_settable_column(indexable_instance: Indexable):
-    """ValueError when bulk update includes a read-only column."""
+def test_setitem_bulk_non_settable_column_warns(indexable_instance: Indexable):
+    """A read-only column in a bulk update warns but is still sent."""
     non_settable = [f for f in grid.Bus.fields() if f not in grid.Bus.settable()]
     if not non_settable:
         pytest.skip("Bus has no non-settable fields.")
     update_df = pd.DataFrame({"BusNum": [1, 2], non_settable[0]: [100, 200]})
-    with pytest.raises(ValueError, match="Cannot set read-only field"):
+    with pytest.warns(UserWarning, match="Read-only field"):
         indexable_instance[grid.Bus] = update_df
+    indexable_instance.esa.ChangeParametersMultipleElementRect.assert_called_once()
 
 
 # =============================================================================
@@ -475,7 +478,7 @@ def test_bulk_update_not_found_missing_identifiers(indexable_instance: Indexable
         "Object not found in case"
     )
 
-    with pytest.raises(ValueError, match="Missing required primary key field"):
+    with pytest.raises(ValueError, match="missing key field"):
         indexable_instance[grid.Gen] = update_df
 
 
@@ -523,6 +526,129 @@ def test_bulk_update_other_error(indexable_instance: Indexable):
 
     with pytest.raises(PowerWorldPrerequisiteError, match="Some other PowerWorld error"):
         indexable_instance[grid.Gen] = update_df
+
+
+# =============================================================================
+# Typed writes: enum columns, bool serialization, key sets, EDIT-mode hints
+# =============================================================================
+
+def test_setitem_bulk_enum_columns_and_bool_status(indexable_instance: Indexable):
+    """Enum-member columns are normalized and bools serialized on bulk writes."""
+    mock_esa = indexable_instance.esa
+    df = pd.DataFrame({
+        grid.Gen.BusNum: [1, 2],
+        grid.Gen.GenID: ["1", "1"],
+        grid.Gen.GenStatus: [True, False],
+        grid.Gen.GenMW: [100.0, 200.0],
+    })
+    indexable_instance[grid.Gen] = df
+
+    obj_type, cols, sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0]
+    assert obj_type == "Gen"
+    assert sorted(cols) == sorted(["BusNum", "GenID", "GenStatus", "GenMW"])
+    assert list(sent_df["GenStatus"]) == ["Closed", "Open"]
+    # The caller's DataFrame is never mutated.
+    assert list(df[grid.Gen.GenStatus]) == [True, False]
+
+
+def test_setitem_bulk_nullable_boolean_dtype(indexable_instance: Indexable):
+    """Pandas' nullable 'boolean' dtype is serialized like plain bool."""
+    mock_esa = indexable_instance.esa
+    df = pd.DataFrame({
+        "BusNum": [1, 2], "GenID": ["1", "1"],
+        "GenStatus": pd.array([True, False], dtype="boolean"),
+    })
+    indexable_instance[grid.Gen] = df
+    sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0][2]
+    assert list(sent_df["GenStatus"]) == ["Closed", "Open"]
+
+
+def test_setitem_broadcast_enum_field_bool_value(indexable_instance: Indexable):
+    """idx[Gen, Gen.GenStatus] = True broadcasts the serialized vocabulary."""
+    mock_esa = indexable_instance.esa
+    keys = sorted(set(grid.Gen.keys()))
+    mock_esa.GetParamsRectTyped.return_value = pd.DataFrame({k: [1, 2] for k in keys})
+
+    indexable_instance[grid.Gen, grid.Gen.GenStatus] = True
+
+    sent_df = mock_esa.ChangeParametersMultipleElementRect.call_args[0][2]
+    assert list(sent_df["GenStatus"]) == ["Closed", "Closed"]
+
+
+def test_setitem_bool_without_vocabulary_raises(indexable_instance: Indexable):
+    """A bool aimed at a field with no registered vocabulary is rejected —
+    there is no string to send, so guessing would corrupt data."""
+    df = pd.DataFrame({"BusNum": [1], "GenID": ["1"], "GenVoltSet": [True]})
+    with pytest.raises(ValueError, match="No bool mapping"):
+        indexable_instance[grid.Gen] = df
+
+
+def test_setitem_unknown_field_warns(indexable_instance: Indexable):
+    """Unknown columns warn distinctly but are still sent — the schema
+    may lag the installed PowerWorld version."""
+    df = pd.DataFrame({"BusNum": [1], "GenID": ["1"], "NotAField": [1]})
+    with pytest.warns(UserWarning, match="Unknown field"):
+        indexable_instance[grid.Gen] = df
+    # Cross-class enum members are flagged the same way.
+    df = pd.DataFrame({grid.Load.BusNum: [1], grid.Gen.GenMW: [5.0]})
+    with pytest.warns(UserWarning, match="Unknown field"):
+        indexable_instance[grid.Load] = df
+    assert indexable_instance.esa.ChangeParametersMultipleElementRect.call_count == 2
+
+
+def test_bulk_update_alternate_key_set_accepted(indexable_instance: Indexable):
+    """Branch identified by BusNum/BusNum:1/LineCircuit passes the create
+    fallback even though the generated primary keys demand BusName_NomVolt:1."""
+    from esapp.saw import PowerWorldPrerequisiteError
+    mock_esa = indexable_instance.esa
+    mock_esa.ChangeParametersMultipleElementRect.side_effect = \
+        PowerWorldPrerequisiteError("Object not found")
+
+    branch_df = pd.DataFrame({
+        "BusNum": [1], "BusNum:1": [2], "LineCircuit": ["1"], "LineR": [0.01],
+    })
+    indexable_instance[grid.Branch] = branch_df
+
+    mock_esa.ChangeParametersMultipleElement.assert_called_once()
+
+
+def test_bulk_update_incomplete_key_set_rejected(indexable_instance: Indexable):
+    """No complete key set -> ValueError naming the accepted sets."""
+    from esapp.saw import PowerWorldPrerequisiteError
+    mock_esa = indexable_instance.esa
+    mock_esa.ChangeParametersMultipleElementRect.side_effect = \
+        PowerWorldPrerequisiteError("Object not found")
+
+    with pytest.raises(ValueError, match="missing key field"):
+        indexable_instance[grid.Branch] = pd.DataFrame({"BusNum": [1], "LineR": [0.01]})
+
+
+def test_bulk_update_edit_mode_hint(indexable_instance: Indexable):
+    """Failed writes touching EDIT-mode-only fields carry an EnterMode hint."""
+    from esapp.saw import PowerWorldPrerequisiteError
+    classes = [c for c in [grid.MultiSectionLine, grid.ThreeWXFormer]
+               if c.edit_mode_only()]
+    assert classes, "expected at least one class with EDIT-mode-only fields"
+    cls = classes[0]
+    field = cls.edit_mode_only()[0]
+
+    mock_esa = indexable_instance.esa
+    mock_esa.ChangeParametersMultipleElementRect.side_effect = \
+        PowerWorldPrerequisiteError("Change failed")
+
+    df = pd.DataFrame({k: [1] for k in cls.keys()})
+    df[field] = ["x"]
+    with pytest.raises(PowerWorldPrerequisiteError, match="EnterMode"):
+        indexable_instance[cls] = df
+
+
+def test_gobject_key_sets():
+    """key_sets returns primary keys first, then registered alternates."""
+    gen_sets = grid.Gen.key_sets()
+    assert gen_sets[0] == frozenset(grid.Gen.keys())
+    assert frozenset({"BusName_NomVolt", "GenID"}) in gen_sets
+    branch_sets = grid.Branch.key_sets()
+    assert frozenset({"BusNum", "BusNum:1", "LineCircuit"}) in branch_sets
 
 
 def test_getitem_single_string_field(indexable_instance: Indexable):

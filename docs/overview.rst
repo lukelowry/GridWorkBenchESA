@@ -58,7 +58,9 @@ Quick Example
     from esapp.components import *
 
     pw = PowerWorld("path/to/case.pwb")
-    voltages = pw[Bus, "BusPUVolt"]
+    voltages = pw[Bus, "BusPUVolt"]      # read: DataFrame of key fields + BusPUVolt
+    pw[Gen, Gen.GenMW] = 100.0           # write: fields as strings or typed members
+    pw[Gen, Gen.GenStatus] = True        # bools serialize ("Closed"/"Open", "YES"/"NO")
 
 See the :doc:`examples <examples/index>` for walkthroughs of reading data,
 writing data, power flow, and workbench utilities.
