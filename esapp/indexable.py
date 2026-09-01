@@ -1,10 +1,12 @@
-from .saw import SAW, PowerWorldPrerequisiteError
+from .saw import SAW, PowerWorldError, PowerWorldPrerequisiteError
 from .components import GObject
+from .components.gobject import bool_vocab
 from typing import Type, Optional
 from numbers import Real
 from math import isfinite
 from pandas import DataFrame
 from os import path
+import numpy as np
 
 
 # Power World Read/Write
@@ -94,12 +96,9 @@ class Indexable:
                 requested_fields = [requested_fields]
             
             for field in requested_fields:
-                if isinstance(field, GObject):
-                    fields_to_get.add(field.value[1])
-                elif isinstance(field, str):
-                    fields_to_get.add(field)
-                elif isinstance(field, slice):
+                if isinstance(field, slice):
                     raise ValueError("Only the full slice [:] is supported for selecting fields.")
+                fields_to_get.add(self._field_name(field))
 
         # 4. Handle edge case where no fields are identified.
         if not fields_to_get:
@@ -157,11 +156,13 @@ class Indexable:
             if not (isinstance(gtype, type) and issubclass(gtype, GObject)):
                 raise TypeError(f"First element of index must be a GObject subclass, not {type(gtype)}")
 
-            # Normalize fields to be a list of strings
-            if isinstance(fields, str):
+            # Normalize fields to a list of PowerWorld field-name strings.
+            # Accepts strings, GObject field members, or a mixed list of both.
+            if isinstance(fields, (str, GObject)):
                 fields = [fields]
             elif not isinstance(fields, (list, tuple)):
                 raise TypeError("Fields must be a string or a list/tuple of strings.")
+            fields = [self._field_name(f) for f in fields]
 
             self._broadcast_update_to_fields(gtype, fields, value)
             return
@@ -180,9 +181,10 @@ class Indexable:
         3. **If** the call raises ``PowerWorldPrerequisiteError`` with
            *"not found"*:
 
-           a. Check whether the DataFrame contains all **primary keys**
-              (``gtype.keys()``).  If any are missing, raise ``ValueError``
-              — we cannot identify/create objects without them.
+           a. Check whether the DataFrame contains a **complete key set**
+              (``gtype.key_sets()`` — the primary keys or a registered
+              alternate).  If none is complete, raise ``ValueError``
+              — we cannot identify/create objects without one.
            b. Fall back to ``ChangeParametersMultipleElement`` which
               iterates row-by-row.  When the SAW property
               ``CreateIfNotFound`` is ``True`` **and** PowerWorld is in
@@ -217,24 +219,25 @@ class Indexable:
         if not isinstance(df, DataFrame):
             raise TypeError("A DataFrame is required for bulk updates.")
 
-        # Validate that all columns are settable (keys or editable)
-        non_settable = [c for c in df.columns if not gtype.is_settable(c)]
-        if non_settable:
-            raise ValueError(
-                f"Cannot set read-only field(s) on {gtype.TYPE()}: {non_settable}"
-            )
+        df = self._prepare_write(gtype, df)
 
         try:
-            self.esa.ChangeParametersMultipleElementRect(gtype.TYPE(), df.columns.tolist(), df)
+            self._send_rect(gtype, df)
         except PowerWorldPrerequisiteError as e:
             if "not found" in str(e).lower():
-                missing_keys = set(gtype.keys()) - set(df.columns)
-                if missing_keys:
+                # Objects must be identified by a complete key set — the
+                # primary keys, or any registered alternate (e.g. name-based
+                # Branch keys). See GObject.key_sets().
+                key_sets = gtype.key_sets()
+                columns = set(df.columns)
+                if key_sets and not any(ks <= columns for ks in key_sets):
+                    missing_keys = key_sets[0] - columns
+                    accepted = " or ".join(str(sorted(ks)) for ks in key_sets)
                     raise ValueError(
                         f"Missing required primary key field(s) for {gtype.TYPE()}: {missing_keys}. "
-                        f"All primary keys must be included to create new objects."
+                        f"A complete key set ({accepted}) must be included to create new objects."
                     ) from e
-                # Primary keys present — fall back to
+                # A complete key set is present — fall back to
                 # ChangeParametersMultipleElement which creates objects
                 # that do not yet exist.  The "not found" message from
                 # this call is expected and suppressed.
@@ -247,6 +250,99 @@ class Indexable:
                         raise
             else:
                 raise
+
+    @staticmethod
+    def _field_name(field) -> str:
+        """Normalize a field given as a string or GObject member to its
+        PowerWorld field-name string."""
+        if isinstance(field, GObject):
+            return str(field)
+        if isinstance(field, str):
+            return field
+        raise TypeError(
+            f"Field must be a string or GObject field member, not {type(field)}"
+        )
+
+    def _prepare_write(self, gtype: Type[GObject], df: DataFrame) -> DataFrame:
+        """Normalize, validate, and serialize a DataFrame for writing.
+
+        The single funnel every write path goes through:
+
+        1. Rename GObject-member columns to PowerWorld field-name strings,
+           so ``pd.DataFrame({Gen.BusNum: ..., Gen.GenMW: ...})`` works.
+        2. Reject read-only columns.
+        3. Serialize Python bools into the field's PowerWorld vocabulary
+           (e.g. ``True`` -> ``"Closed"`` for GenStatus).
+
+        The input DataFrame is never mutated; a copy is made only when a
+        transformation is actually needed.
+        """
+        if any(isinstance(c, GObject) for c in df.columns):
+            df = df.rename(
+                columns=lambda c: str(c) if isinstance(c, GObject) else c
+            )
+
+        non_settable = [c for c in df.columns if not gtype.is_settable(c)]
+        if non_settable:
+            raise ValueError(
+                f"Cannot set read-only field(s) on {gtype.TYPE()}: {non_settable}"
+            )
+
+        return self._serialize_bools(gtype, df)
+
+    @staticmethod
+    def _serialize_bools(gtype: Type[GObject], df: DataFrame) -> DataFrame:
+        """Convert Python bool values into PowerWorld vocabulary strings.
+
+        Columns of bool dtype (and bools inside object columns) are mapped
+        via the ``BOOL_FIELD_VOCAB`` registry in ``components.gobject``.
+        A bool in a field with no registered vocabulary raises ``ValueError``
+        rather than guessing between YES/NO, Closed/Open, etc.
+        """
+        out = df
+        for col in df.columns:
+            series = df[col]
+            if series.dtype == bool:
+                mask = None  # Whole column is bool.
+            elif series.dtype == object:
+                is_bool = series.map(lambda v: isinstance(v, (bool, np.bool_)))
+                if not is_bool.any():
+                    continue
+                mask = is_bool
+            else:
+                continue
+
+            vocab = bool_vocab(col)
+            if vocab is None:
+                raise ValueError(
+                    f"Field '{col}' on {gtype.TYPE()} received Python bool values but has "
+                    f"no registered vocabulary; pass the string PowerWorld expects "
+                    f"(e.g. 'YES'/'NO' or 'Closed'/'Open'), or register the field in "
+                    f"esapp.components.gobject.BOOL_FIELD_VOCAB."
+                )
+
+            true_str, false_str = vocab
+            if out is df:
+                out = df.copy()
+            if mask is None:
+                out[col] = series.map({True: true_str, False: false_str})
+            else:
+                out.loc[mask, col] = series[mask].map({True: true_str, False: false_str})
+        return out
+
+    def _send_rect(self, gtype: Type[GObject], df: DataFrame) -> None:
+        """Send a prepared DataFrame via ChangeParametersMultipleElementRect,
+        annotating failures on EDIT-mode-only fields with a usable hint."""
+        try:
+            self.esa.ChangeParametersMultipleElementRect(gtype.TYPE(), df.columns.tolist(), df)
+        except PowerWorldError as e:
+            edit_only = [c for c in df.columns if gtype.is_edit_mode_only(c)]
+            if not edit_only:
+                raise
+            raise type(e)(
+                f"{e} (field(s) {edit_only} are only enterable in EDIT mode — "
+                f"call esa.EnterMode('EDIT') first)"
+            ) from e
 
     @staticmethod
     def _as_scalar_broadcast(fields: list[str], value) -> Optional[list]:
@@ -343,5 +439,5 @@ class Indexable:
             else:
                 change_df[fields] = value
         
-        # Send the minimal DataFrame to PowerWorld.
-        self.esa.ChangeParametersMultipleElementRect(gtype.TYPE(), change_df.columns.tolist(), change_df)
+        # Send the minimal DataFrame through the same funnel as bulk writes.
+        self._send_rect(gtype, self._serialize_bools(gtype, change_df))
